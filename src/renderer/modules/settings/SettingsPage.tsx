@@ -75,7 +75,7 @@ export function SettingsPage() {
       </div>
     </section>
     <section className="about-card">
-      <div><h2>MAR Helper</h2><p>Deine Daten bleiben lokal auf diesem Gerät. Die drei Module funktionieren unabhängig voneinander.</p><span>Version 1.0.0</span></div>
+      <div><h2>MAR Helper</h2><p>Deine Daten bleiben lokal auf diesem Gerät. Die drei Module funktionieren unabhängig voneinander.</p><span>Version 1.1.0</span></div>
     </section>
     <ConfirmDialog open={!!deletingModel} title="Modell löschen?" description={`„${deletingModel?.name ?? ''}“ wird aus der Auswahl entfernt. Bestehende Prompt-Einträge behalten ihren gespeicherten Modellnamen.`} onCancel={() => setDeletingModel(null)} onConfirm={confirmDelete}/>
   </Page>;

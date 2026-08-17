@@ -1,7 +1,7 @@
 import type { AppState, JournalEntry, PlannerTask, PromptEntry } from './models';
 import { EXPORT_FORMAT, EXPORT_FORMAT_VERSION } from './importers';
 
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0';
 
 const csvCell = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
 const csv = (rows: unknown[][]) => rows.map((row) => row.map(csvCell).join(',')).join('\r\n');
