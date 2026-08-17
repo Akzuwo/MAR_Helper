@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { CalendarClock, Clock3, Pencil, Plus, Save, Trash2, WandSparkles } from 'lucide-react';
-import brandLogo from '../../../../references/logo/screen.png';
 import type { ModuleId, PromptModel } from '../../../shared/models';
 import { useAppData } from '../../state/AppDataContext';
 import { Button, ConfirmDialog, Field, IconButton, Input } from '../../components/ui';
 import { Page, PageHeader } from '../../layout/Page';
+import { GitIntegrationSettings } from '../git-integration/GitIntegrationSettings';
 
 const modules: Array<{ id: ModuleId; title: string; description: string; icon: React.ReactNode }> = [
   { id: 'journal', title: 'Arbeitsjournal', description: 'Zeiterfassung und Arbeitsverlauf', icon: <Clock3 size={21}/> },
@@ -48,7 +48,7 @@ export function SettingsPage() {
   };
 
   return <Page>
-    <PageHeader title="Einstellungen" description="Konfiguriere aktive Module und deine Modellliste."/>
+    <PageHeader title="Einstellungen" description="Konfiguriere aktive Module, Git-Integration und deine Modellliste."/>
     <section className="settings-card">
       <header><h2>Aktive Module</h2><p>Nur aktive Module erscheinen in der Navigation. Gespeicherte Daten bleiben beim Deaktivieren erhalten.</p></header>
       <div>
@@ -59,6 +59,7 @@ export function SettingsPage() {
         </div>)}
       </div>
     </section>
+    <GitIntegrationSettings/>
     <section className="settings-card">
       <header><h2>KI-Modelle</h2><p>Diese Modelle stehen beim Erfassen eines Prompts zur Auswahl. Alte Einträge behalten beim Löschen ihren Modellnamen.</p></header>
       <div className="model-manager">
@@ -74,7 +75,6 @@ export function SettingsPage() {
       </div>
     </section>
     <section className="about-card">
-      <img src={brandLogo} alt="MAR Helper Logo"/>
       <div><h2>MAR Helper</h2><p>Deine Daten bleiben lokal auf diesem Gerät. Die drei Module funktionieren unabhängig voneinander.</p><span>Version 1.0.0</span></div>
     </section>
     <ConfirmDialog open={!!deletingModel} title="Modell löschen?" description={`„${deletingModel?.name ?? ''}“ wird aus der Auswahl entfernt. Bestehende Prompt-Einträge behalten ihren gespeicherten Modellnamen.`} onCancel={() => setDeletingModel(null)} onConfirm={confirmDelete}/>

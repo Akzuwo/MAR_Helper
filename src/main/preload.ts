@@ -6,6 +6,13 @@ const api: MarHelperApi = {
   saveState: (state) => ipcRenderer.invoke('state:save', state) as Promise<AppState>,
   saveExport: (request: SaveFileRequest) => ipcRenderer.invoke('export:save', request),
   openImport: () => ipcRenderer.invoke('import:open'),
+  commitImport: (sessionId, mode) => ipcRenderer.invoke('import:commit', sessionId, mode),
+  checkGit: () => ipcRenderer.invoke('git:check'),
+  selectGitRepository: () => ipcRenderer.invoke('git:select-repository'),
+  verifyGitRepository: (repositoryPath) => ipcRenderer.invoke('git:verify-repository', repositoryPath),
+  listGitCommits: (repositoryPath, skip, limit) => ipcRenderer.invoke('git:list-commits', repositoryPath, skip, limit),
+  readGitCommit: (repositoryPath, commitHash) => ipcRenderer.invoke('git:read-commit', repositoryPath, commitHash),
+  openGitDownload: () => ipcRenderer.invoke('git:open-download'),
   downloadAndInstallUpdate: () => ipcRenderer.invoke('update:download-and-install'),
   onUpdateStatus: (listener: (status: UpdateStatus) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, status: UpdateStatus) => listener(status);

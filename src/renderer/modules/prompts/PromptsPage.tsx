@@ -57,7 +57,7 @@ export function PromptsPage() {
   };
 
   if (selected) return <>
-    <PromptDetail entry={selected} onBack={() => setSelectedId(null)} onEdit={() => { setEditing(selected); setEditorOpen(true); }} onDelete={() => setDeleteEntry(selected)} onCopied={() => toast('Prompt und Antwort kopiert')}/>
+    <PromptDetail entry={selected} onBack={() => setSelectedId(null)} onEdit={() => { setEditing(selected); setEditorOpen(true); }} onDelete={() => setDeleteEntry(selected)} onCopied={() => toast('Prompt und Antwort kopiert')} onRemoveGit={() => void updateState((current) => ({ ...current, promptEntries: current.promptEntries.map((entry) => entry.id === selected.id ? { ...entry, gitSnapshot: undefined, updatedAt: new Date().toISOString() } : entry) }), 'Git-Verknüpfung entfernt')}/>
     <PromptEditor open={editorOpen} entry={editing} models={state.promptModels} onClose={() => { setEditorOpen(false); setEditing(null); }} onSave={save} onManageModels={() => toast('Modelle verwaltest du in den Einstellungen.', 'info')}/>
     <ConfirmDialog open={!!deleteEntry} title="Prompt löschen?" description="Prompt und Antwort werden dauerhaft entfernt." onCancel={() => setDeleteEntry(null)} onConfirm={confirmDelete}/>
   </>;

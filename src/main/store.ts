@@ -30,16 +30,35 @@ export class JsonStore {
 
   async save(input: AppState): Promise<AppState> {
     const state = normalizeState(input);
-    this.writeQueue = this.writeQueue.then(async () => {
-      await fs.mkdir(path.dirname(this.filePath), { recursive: true });
-      const tempPath = `${this.filePath}.tmp`;
-      await fs.writeFile(tempPath, JSON.stringify(state, null, 2), 'utf8');
-      await fs.rename(tempPath, this.filePath).catch(async () => {
-        await fs.copyFile(tempPath, this.filePath);
-        await fs.unlink(tempPath).catch(() => undefined);
-      });
-    });
+    const write = () => this.writeState(state);
+    this.writeQueue = this.writeQueue.then(write, write);
     await this.writeQueue;
     return state;
+  }
+
+  async transaction(mutator: (current: AppState) => AppState): Promise<AppState> {
+    let result: AppState | undefined;
+    const run = async () => {
+      const raw = await fs.readFile(this.filePath, 'utf8');
+      const current = normalizeState(JSON.parse(raw) as Partial<AppState>);
+      result = normalizeState(mutator(current));
+      await this.writeState(result);
+    };
+    this.writeQueue = this.writeQueue.then(run, run);
+    await this.writeQueue;
+    if (!result) throw new Error('Die lokale Datenbank konnte nicht aktualisiert werden.');
+    return result;
+  }
+
+  private async writeState(state: AppState): Promise<void> {
+    await fs.mkdir(path.dirname(this.filePath), { recursive: true });
+    const tempPath = `${this.filePath}.tmp`;
+    await fs.writeFile(tempPath, JSON.stringify(state, null, 2), 'utf8');
+    try {
+      await fs.rename(tempPath, this.filePath);
+    } catch (error) {
+      await fs.unlink(tempPath).catch(() => undefined);
+      throw error;
+    }
   }
 }

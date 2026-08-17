@@ -3,12 +3,13 @@ import type { PromptEntry } from '../../../shared/models';
 import { Button, IconButton } from '../../components/ui';
 import { MarkdownContent } from '../../components/MarkdownContent';
 import { Page, PageHeader } from '../../layout/Page';
+import { GitSnapshotView } from '../git-integration/GitSnapshotView';
 
 const dateTime = (iso: string) => new Intl.DateTimeFormat('de-CH', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso));
 const titleFromPrompt = (prompt: string) => prompt.split('\n').find((line) => line.trim())?.replace(/^#+\s*/, '').slice(0, 72) || 'Prompt-Detail';
 
-export function PromptDetail({ entry, onBack, onEdit, onDelete, onCopied }: {
-  entry: PromptEntry; onBack: () => void; onEdit: () => void; onDelete: () => void; onCopied: () => void
+export function PromptDetail({ entry, onBack, onEdit, onDelete, onCopied, onRemoveGit }: {
+  entry: PromptEntry; onBack: () => void; onEdit: () => void; onDelete: () => void; onCopied: () => void; onRemoveGit: () => void
 }) {
   const copyAll = async () => {
     await navigator.clipboard.writeText(`Prompt:\n${entry.prompt}\n\nAntwort:\n${entry.response}`);
@@ -26,5 +27,6 @@ export function PromptDetail({ entry, onBack, onEdit, onDelete, onCopied }: {
       <header><span className="markdown-card__icon"><WandSparkles size={17}/></span><h2>Antwort</h2></header>
       <MarkdownContent>{entry.response}</MarkdownContent>
     </article>
+    {entry.gitSnapshot && <GitSnapshotView snapshot={entry.gitSnapshot} onChange={onEdit} onRemove={onRemoveGit}/>}
   </Page>;
 }

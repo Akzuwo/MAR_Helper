@@ -22,15 +22,35 @@ describe('MAR Helper imports', () => {
 
   it('rejects invalid and mixed content', () => {
     expect(() => parseImport('{broken')).toThrow('kein gültiges JSON');
-    expect(() => parseImport(JSON.stringify([{ id: 'x' }]))).toThrow('gemischte oder ungültige');
+    expect(() => parseImport(JSON.stringify([{ id: 'x' }]))).toThrow('kein gültiger MAR-Helper-Export');
+    expect(() => parseImport(JSON.stringify({ format: 'mar-helper-export', formatVersion: 99, data: {} }))).toThrow('noch nicht unterstützt');
   });
 
-  it('merges by ID and replaces an individual module', () => {
+  it('keeps different records with the same ID and replaces an individual module', () => {
     const state = createDefaultState();
     state.plannerTasks = [{ ...task, title: 'Alter Titel' }];
     const bundle = parseImport(JSON.stringify({ module: 'planner', data: [task] }));
-    expect(applyImport(state, bundle, 'merge').plannerTasks).toEqual([task]);
+    const merged = applyImport(state, bundle, 'merge').plannerTasks;
+    expect(merged).toHaveLength(2);
+    expect(merged[0].title).toBe('Alter Titel');
+    expect(merged[1].title).toBe(task.title);
+    expect(merged[1].id).not.toBe(task.id);
     const empty = parseImport(JSON.stringify({ module: 'planner', data: [] }));
     expect(applyImport(state, empty, 'replace').plannerTasks).toEqual([]);
+  });
+
+  it('skips identical IDs and preserves locally disabled modules for a full restore', () => {
+    const state = createDefaultState();
+    state.settings.modules.prompts = false;
+    state.plannerTasks = [task];
+    const incoming = createDefaultState();
+    incoming.plannerTasks = [task];
+    incoming.settings.modules.prompts = true;
+    const bundle = parseImport(JSON.stringify({
+      format: 'mar-helper-export', formatVersion: 1, appVersion: '1.0.0', exportedAt: new Date().toISOString(), data: incoming
+    }));
+    const merged = applyImport(state, bundle, 'merge');
+    expect(merged.plannerTasks).toEqual([task]);
+    expect(merged.settings.modules.prompts).toBe(false);
   });
 });

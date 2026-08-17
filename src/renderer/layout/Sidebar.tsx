@@ -1,4 +1,5 @@
-import { CalendarClock, Clock3, FileOutput, Settings, Sparkles, WandSparkles } from 'lucide-react';
+import { CalendarClock, Clock3, FileOutput, Settings, WandSparkles } from 'lucide-react';
+import brandLogo from '../../../references/logo/screen.png';
 import type { ModuleId } from '../../shared/models';
 
 export type PageId = ModuleId | 'export' | 'settings';
@@ -14,7 +15,7 @@ export function Sidebar({ page, modules, onNavigate }: {
 }) {
   return <aside className="sidebar">
     <div className="sidebar__brand">
-      <div className="brand-mark"><Sparkles size={21}/></div>
+      <div className="brand-logo" aria-hidden="true"><img src={brandLogo} alt=""/></div>
       <div><strong>MAR Helper</strong><span>Modular Assistant</span></div>
     </div>
     <nav className="sidebar__nav" aria-label="Hauptnavigation">
@@ -26,7 +27,7 @@ export function Sidebar({ page, modules, onNavigate }: {
       {!Object.values(modules).some(Boolean) && <p className="sidebar__empty">Keine Module aktiv</p>}
     </nav>
     <nav className="sidebar__nav sidebar__nav--bottom" aria-label="Verwaltung">
-      <button className={page === 'export' ? 'active' : ''} onClick={() => onNavigate('export')}><FileOutput size={20}/><span>Export</span></button>
+      <button className={page === 'export' ? 'active' : ''} onClick={() => onNavigate('export')}><FileOutput size={20}/><span>Import & Export</span></button>
       <button className={page === 'settings' ? 'active' : ''} onClick={() => onNavigate('settings')}><Settings size={20}/><span>Einstellungen</span></button>
     </nav>
   </aside>;

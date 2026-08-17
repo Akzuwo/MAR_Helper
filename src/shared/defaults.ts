@@ -3,9 +3,10 @@ import type { AppState } from './models';
 const now = new Date().toISOString();
 
 export const createDefaultState = (): AppState => ({
-  version: 1,
+  version: 2,
   settings: {
-    modules: { journal: true, prompts: true, planner: true }
+    modules: { journal: true, prompts: true, planner: true },
+    gitIntegration: { enabled: false, repositories: [] }
   },
   journalEntries: [],
   activeTimer: null,
@@ -25,10 +26,16 @@ export function normalizeState(input: Partial<AppState> | undefined): AppState {
   return {
     ...defaults,
     ...input,
+    version: 2,
     settings: {
       ...defaults.settings,
       ...input.settings,
-      modules: { ...defaults.settings.modules, ...input.settings?.modules }
+      modules: { ...defaults.settings.modules, ...input.settings?.modules },
+      gitIntegration: {
+        ...defaults.settings.gitIntegration,
+        ...input.settings?.gitIntegration,
+        repositories: Array.isArray(input.settings?.gitIntegration?.repositories) ? input.settings.gitIntegration.repositories : []
+      }
     },
     journalEntries: Array.isArray(input.journalEntries) ? input.journalEntries : [],
     activeTimer: input.activeTimer ?? null,

@@ -1,4 +1,7 @@
 import type { AppState, JournalEntry, PlannerTask, PromptEntry } from './models';
+import { EXPORT_FORMAT, EXPORT_FORMAT_VERSION } from './importers';
+
+const APP_VERSION = '1.0.0';
 
 const csvCell = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
 const csv = (rows: unknown[][]) => rows.map((row) => row.map(csvCell).join(',')).join('\r\n');
@@ -17,6 +20,32 @@ const deDateTime = (iso: string) => new Intl.DateTimeFormat('de-CH', {
   dateStyle: 'medium', timeStyle: 'short'
 }).format(new Date(iso));
 
+const diffFence = (diff: string) => '`'.repeat(Math.max(3, ...Array.from(diff.matchAll(/`+/g), (match) => match[0].length + 1)));
+
+const gitMarkdown = (entry: PromptEntry): string[] => {
+  const git = entry.gitSnapshot;
+  if (!git) return [];
+  const fence = diffFence(git.diff);
+  return [
+    '### Codeänderungen',
+    `**Repository:** ${git.repositoryName}  `,
+    `**Commit:** ${git.shortCommitHash}  `,
+    `**Message:** ${git.commitMessage}  `,
+    `**Änderungen:** ${git.filesChanged} Dateien, +${git.additions} / -${git.deletions}`,
+    '',
+    '#### Dateien',
+    '',
+    ...git.files.map((file) => `- \`${file.path.replaceAll('`', '\\`')}\`${file.binary ? ' – Binärdatei geändert' : ` +${file.additions ?? 0} -${file.deletions ?? 0}`}`),
+    '',
+    '#### Diff',
+    '',
+    `${fence}diff`,
+    git.diff,
+    fence,
+    ''
+  ];
+};
+
 export const exportPromptsMarkdown = (entries: PromptEntry[]) => [
   '# Promptprotokoll',
   '',
@@ -30,20 +59,24 @@ export const exportPromptsMarkdown = (entries: PromptEntry[]) => [
     '### Antwort',
     entry.response,
     '',
+    ...gitMarkdown(entry),
     '---',
     ''
   ])
 ].join('\n');
 
 export const exportAllJson = (state: AppState) => JSON.stringify({
+  format: EXPORT_FORMAT,
+  formatVersion: EXPORT_FORMAT_VERSION,
+  appVersion: APP_VERSION,
   exportedAt: new Date().toISOString(),
-  application: 'MAR Helper',
   data: state
 }, null, 2);
 
 export const exportModuleJson = (module: 'journal' | 'prompts' | 'planner', data: JournalEntry[] | PromptEntry[] | PlannerTask[]) => JSON.stringify({
-  format: 'mar-helper',
-  version: 1,
+  format: EXPORT_FORMAT,
+  formatVersion: EXPORT_FORMAT_VERSION,
+  appVersion: APP_VERSION,
   module,
   exportedAt: new Date().toISOString(),
   data
