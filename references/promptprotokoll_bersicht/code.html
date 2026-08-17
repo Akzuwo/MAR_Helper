@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<html class="light" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MAR Helper - Promptprotokoll</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary": "#575e70",
+                      "surface-container": "#edeeef",
+                      "outline-variant": "#c7c4d8",
+                      "on-secondary-fixed": "#141b2b",
+                      "on-primary-container": "#dad7ff",
+                      "on-primary-fixed-variant": "#3323cc",
+                      "on-tertiary-container": "#ffd2be",
+                      "inverse-primary": "#c3c0ff",
+                      "on-surface": "#191c1d",
+                      "on-primary-fixed": "#0f0069",
+                      "on-secondary": "#ffffff",
+                      "on-secondary-fixed-variant": "#404758",
+                      "primary-container": "#4f46e5",
+                      "tertiary": "#7e3000",
+                      "primary-fixed-dim": "#c3c0ff",
+                      "error-container": "#ffdad6",
+                      "surface-tint": "#4d44e3",
+                      "inverse-on-surface": "#f0f1f2",
+                      "secondary-fixed-dim": "#c0c6db",
+                      "on-tertiary-fixed": "#351000",
+                      "error": "#ba1a1a",
+                      "surface-bright": "#f8f9fa",
+                      "inverse-surface": "#2e3132",
+                      "surface-container-high": "#e7e8e9",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-highest": "#e1e3e4",
+                      "on-primary": "#ffffff",
+                      "surface-variant": "#e1e3e4",
+                      "primary": "#3525cd",
+                      "background": "#f8f9fa",
+                      "on-background": "#191c1d",
+                      "on-secondary-container": "#5c6274",
+                      "outline": "#777587",
+                      "tertiary-fixed-dim": "#ffb695",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary-container": "#a44100",
+                      "secondary-fixed": "#dce2f7",
+                      "on-error": "#ffffff",
+                      "surface-container-low": "#f3f4f5",
+                      "on-tertiary-fixed-variant": "#7b2f00",
+                      "surface": "#f8f9fa",
+                      "surface-dim": "#d9dadb",
+                      "on-surface-variant": "#464555",
+                      "primary-fixed": "#e2dfff",
+                      "secondary-container": "#d9dff5",
+                      "tertiary-fixed": "#ffdbcc",
+                      "on-error-container": "#93000a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin_desktop": "24px",
+                      "component_padding_y": "8px",
+                      "component_padding_x": "12px",
+                      "unit": "4px",
+                      "gutter": "16px",
+                      "sidebar_width": "240px"
+              },
+              "fontFamily": {
+                      "label-sm": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "display": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display": [
+                              "30px",
+                              {
+                                      "lineHeight": "38px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "letterSpacing": "0",
+                                      "fontWeight": "400"
+                              }
+                      }
+              }
+            },
+          }
+      </script>
+</head>
+<body class="bg-background text-on-background font-body-md h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="bg-surface dark:bg-inverse-surface w-sidebar_width h-screen flex-shrink-0 border-r border-outline-variant dark:border-outline flex flex-col py-component_padding_y px-component_padding_x hidden md:flex">
+<!-- Header -->
+<div class="mb-8 px-2 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold shadow-sm">
+                M
+            </div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface dark:text-inverse-on-surface">MAR Helper</h1>
+<p class="font-label-sm text-label-sm text-secondary">Modular Assistant</p>
+</div>
+</div>
+<!-- Main Navigation -->
+<div class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors cursor-pointer rounded-lg duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">edit_note</span>
+<span class="font-body-md text-body-md">Arbeitsjournal</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 bg-secondary-container dark:bg-secondary text-primary dark:text-on-secondary-fixed rounded-lg cursor-pointer transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">history_edu</span>
+<span class="font-body-md text-body-md font-medium">Promptprotokoll</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors cursor-pointer rounded-lg duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">schedule</span>
+<span class="font-body-md text-body-md">Zeitplan</span>
+</a>
+</div>
+<!-- Footer Navigation -->
+<div class="mt-auto space-y-1 pt-4 border-t border-outline-variant dark:border-outline">
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors cursor-pointer rounded-lg duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">ios_share</span>
+<span class="font-body-md text-body-md">Export</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors cursor-pointer rounded-lg duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">Einstellungen</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col h-screen overflow-hidden bg-background">
+<!-- TopAppBar (Mobile Only) -->
+<header class="bg-surface-container-lowest dark:bg-surface-dim border-b border-outline-variant dark:border-outline full-width h-16 flex justify-between items-center px-margin_desktop w-full md:hidden">
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-inverse-primary">MAR Helper</h1>
+<div class="flex items-center gap-4">
+<button class="text-secondary hover:bg-surface-container dark:hover:bg-surface-container-high p-2 rounded-full transition-colors flex items-center">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-secondary hover:bg-surface-container dark:hover:bg-surface-container-high p-2 rounded-full transition-colors flex items-center">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Canvas -->
+<div class="flex-1 overflow-y-auto p-margin_desktop">
+<div class="max-w-[1200px] mx-auto">
+<!-- Page Header & Actions -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+<div>
+<h2 class="font-display text-display text-on-surface">Promptprotokoll</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-1">Dokumentiere verwendete KI-Prompts und Antworten.</p>
+</div>
+<div class="flex items-center gap-3 w-full sm:w-auto">
+<div class="relative w-full sm:w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">search</span>
+<input class="w-full pl-9 pr-3 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Suche in Prompts..." type="text"/>
+</div>
+<button class="flex-shrink-0 bg-primary-container text-on-primary px-4 py-2 rounded-lg font-label-md text-label-md font-medium hover:bg-primary transition-colors flex items-center gap-2 shadow-sm border-t border-white/20">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                            + Prompt erfassen
+                        </button>
+</div>
+</div>
+<!-- Content Grid (Bento style) -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Main List (Takes up 2 cols on lg) -->
+<div class="lg:col-span-2 space-y-4">
+<!-- List Item 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 hover:bg-surface-bright transition-colors cursor-pointer group shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-2">
+<span class="bg-surface-container text-on-surface-variant font-label-sm text-label-sm px-2 py-1 rounded-md">GPT-4</span>
+<span class="bg-secondary-container text-primary font-label-sm text-label-sm px-2 py-1 rounded-md">Code</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">Heute, 14:30</span>
+</div>
+<h3 class="font-headline-md text-[16px] leading-[24px] font-semibold text-on-surface mb-2 group-hover:text-primary transition-colors">Refactoring der Auth-Middleware</h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">"Überarbeite die folgende Express.js Middleware für die JWT-Authentifizierung. Achte auf Best Practices bezüglich Fehlerbehandlung und Token-Erneuerung. Hier ist der aktuelle Code..."</p>
+</div>
+<!-- List Item 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 hover:bg-surface-bright transition-colors cursor-pointer group shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-2">
+<span class="bg-surface-container text-on-surface-variant font-label-sm text-label-sm px-2 py-1 rounded-md">Claude 3 Opus</span>
+<span class="bg-tertiary-container text-on-tertiary-container font-label-sm text-label-sm px-2 py-1 rounded-md">Text</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">Heute, 10:15</span>
+</div>
+<h3 class="font-headline-md text-[16px] leading-[24px] font-semibold text-on-surface mb-2 group-hover:text-primary transition-colors">Entwurf für Marketing-E-Mail</h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">"Erstelle einen freundlichen aber professionellen Text für eine E-Mail-Kampagne, die unser neues Feature 'Advanced Analytics' ankündigt. Zielgruppe sind bestehende Enterprise-Kunden."</p>
+</div>
+<!-- List Item 3 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 hover:bg-surface-bright transition-colors cursor-pointer group shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-2">
+<span class="bg-surface-container text-on-surface-variant font-label-sm text-label-sm px-2 py-1 rounded-md">GPT-4</span>
+<span class="bg-surface-container-highest text-on-surface font-label-sm text-label-sm px-2 py-1 rounded-md">Datenanalyse</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">Gestern, 16:45</span>
+</div>
+<h3 class="font-headline-md text-[16px] leading-[24px] font-semibold text-on-surface mb-2 group-hover:text-primary transition-colors">SQL Query für Kohortenanalyse</h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">"Schreibe eine PostgreSQL-Abfrage, die eine monatliche Kohortenanalyse der User-Retention über die letzten 12 Monate berechnet. Die Tabellenstruktur ist wie folgt..."</p>
+</div>
+</div>
+<!-- Side Panel (Stats / Quick Filters) -->
+<div class="space-y-6">
+<!-- Stats Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+<h4 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-4">Aktivität Diese Woche</h4>
+<div class="flex items-baseline gap-2 mb-4">
+<span class="font-display text-display text-on-surface">24</span>
+<span class="font-body-md text-body-md text-outline">Prompts</span>
+</div>
+<div class="space-y-3">
+<div>
+<div class="flex justify-between font-label-sm text-label-sm mb-1">
+<span class="text-on-surface">GPT-4</span>
+<span class="text-outline">16</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full" style="width: 66%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between font-label-sm text-label-sm mb-1">
+<span class="text-on-surface">Claude 3</span>
+<span class="text-outline">8</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full" style="width: 33%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Filters -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+<h4 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-3">Tags</h4>
+<div class="flex flex-wrap gap-2">
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm px-3 py-1.5 rounded-md transition-colors">Code (12)</button>
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm px-3 py-1.5 rounded-md transition-colors">Text (8)</button>
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm px-3 py-1.5 rounded-md transition-colors">Konzept (4)</button>
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm px-3 py-1.5 rounded-md transition-colors border border-dashed border-outline-variant">+ Neu</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

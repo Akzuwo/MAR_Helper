@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MAR Helper - Prompt Detail</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary": "#575e70",
+                    "surface-container": "#edeeef",
+                    "outline-variant": "#c7c4d8",
+                    "on-secondary-fixed": "#141b2b",
+                    "on-primary-container": "#dad7ff",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "on-tertiary-container": "#ffd2be",
+                    "inverse-primary": "#c3c0ff",
+                    "on-surface": "#191c1d",
+                    "on-primary-fixed": "#0f0069",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-fixed-variant": "#404758",
+                    "primary-container": "#4f46e5",
+                    "tertiary": "#7e3000",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "error-container": "#ffdad6",
+                    "surface-tint": "#4d44e3",
+                    "inverse-on-surface": "#f0f1f2",
+                    "secondary-fixed-dim": "#c0c6db",
+                    "on-tertiary-fixed": "#351000",
+                    "error": "#ba1a1a",
+                    "surface-bright": "#f8f9fa",
+                    "inverse-surface": "#2e3132",
+                    "surface-container-high": "#e7e8e9",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-highest": "#e1e3e4",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#e1e3e4",
+                    "primary": "#3525cd",
+                    "background": "#f8f9fa",
+                    "on-background": "#191c1d",
+                    "on-secondary-container": "#5c6274",
+                    "outline": "#777587",
+                    "tertiary-fixed-dim": "#ffb695",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-container": "#a44100",
+                    "secondary-fixed": "#dce2f7",
+                    "on-error": "#ffffff",
+                    "surface-container-low": "#f3f4f5",
+                    "on-tertiary-fixed-variant": "#7b2f00",
+                    "surface": "#f8f9fa",
+                    "surface-dim": "#d9dadb",
+                    "on-surface-variant": "#464555",
+                    "primary-fixed": "#e2dfff",
+                    "secondary-container": "#d9dff5",
+                    "tertiary-fixed": "#ffdbcc",
+                    "on-error-container": "#93000a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin_desktop": "24px",
+                    "component_padding_y": "8px",
+                    "component_padding_x": "12px",
+                    "unit": "4px",
+                    "gutter": "16px",
+                    "sidebar_width": "240px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "mono": ["JetBrains Mono", "monospace"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0", "fontWeight": "400"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "display": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "label-md": ["13px", {"lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNavBar -->
+<nav class="hidden md:flex bg-surface dark:bg-inverse-surface w-sidebar_width h-screen flex-shrink-0 border-r border-outline-variant dark:border-outline flex-col py-component_padding_y px-component_padding_x">
+<!-- Header -->
+<div class="flex items-center gap-3 px-3 py-4 mb-6">
+<div class="w-8 h-8 rounded-lg bg-primary-container text-on-primary-container flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface dark:text-inverse-on-surface">MAR Helper</h1>
+<p class="font-label-sm text-label-sm text-secondary">Modular Assistant</p>
+</div>
+</div>
+<!-- Main Tabs -->
+<div class="flex flex-col gap-1 flex-grow">
+<!-- Arbeitsjournal (Inactive) -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors cursor-pointer duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">edit_note</span>
+<span class="font-label-md text-label-md">Arbeitsjournal</span>
+</a>
+<!-- Promptprotokoll (Active) -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-secondary-container dark:bg-secondary text-primary dark:text-on-secondary-fixed cursor-pointer transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">history_edu</span>
+<span class="font-label-md text-label-md font-semibold">Promptprotokoll</span>
+</a>
+<!-- Zeitplan (Inactive) -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors cursor-pointer duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">schedule</span>
+<span class="font-label-md text-label-md">Zeitplan</span>
+</a>
+</div>
+<!-- Footer Tabs -->
+<div class="flex flex-col gap-1 mt-auto pt-4 border-t border-outline-variant/30">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors cursor-pointer duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">ios_share</span>
+<span class="font-label-md text-label-md">Export</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors cursor-pointer duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Einstellungen</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col h-screen overflow-hidden bg-background">
+<!-- TopAppBar (Mobile Only for Sidebar Layouts, but adding per instructions if requested, though typically sidebar hides TopAppBar nav. Will create a minimal header for canvas) -->
+<header class="bg-surface-container-lowest dark:bg-surface-dim border-b border-outline-variant dark:border-outline flex justify-between items-center px-margin_desktop w-full h-16 flex-shrink-0">
+<div class="flex items-center gap-4">
+<button class="md:hidden text-secondary hover:text-on-surface">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<!-- Breadcrumbs / Title Context -->
+<div class="flex items-center gap-2 text-secondary font-label-md text-label-md">
+<a class="hover:text-primary transition-colors" href="#">Promptprotokoll</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-on-surface font-semibold">Interaction Detail</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-secondary hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-secondary hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Canvas -->
+<div class="flex-1 overflow-y-auto p-margin_desktop">
+<!-- Context Header -->
+<div class="max-w-[1200px] mx-auto mb-8 flex justify-between items-end">
+<div>
+<h2 class="font-display text-display text-on-surface mb-2">Generate React Component</h2>
+<div class="flex items-center gap-4 font-label-sm text-label-sm text-secondary">
+<span class="flex items-center gap-1.5 bg-surface-container-low px-2 py-1 rounded-md border border-outline-variant/30">
+<span class="material-symbols-outlined text-[14px]">psychology</span>
+                            Model: GPT-5
+                        </span>
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">calendar_today</span>
+                            17.08.2026 · 14:42
+                        </span>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-outline-variant text-on-surface font-label-md text-label-md hover:bg-surface-container-low transition-colors bg-surface-container-lowest shadow-sm">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+                        Copy All
+                    </button>
+<button class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-outline-variant text-error font-label-md text-label-md hover:bg-error-container/30 transition-colors bg-surface-container-lowest shadow-sm">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</div>
+<!-- Bento Grid Layout for Content -->
+<div class="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Prompt Section (Takes up full width or left side) -->
+<div class="lg:col-span-12 flex flex-col gap-4">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+<div class="bg-surface-container-low border-b border-outline-variant/50 px-4 py-2.5 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">person</span>
+<h3 class="font-label-md text-label-md font-semibold text-on-surface">Prompt</h3>
+</div>
+<div class="p-6 font-body-lg text-body-lg text-on-surface-variant leading-relaxed bg-surface-container-lowest">
+<p>I need a responsive React component for a user profile card. It should use Tailwind CSS for styling. The card must include the user's avatar, name, role, and a brief bio. Also, include two buttons: 'Follow' and 'Message'. Ensure the design is modern and minimalist, utilizing a high-utility approach.</p>
+</div>
+</div>
+</div>
+<!-- Response Section -->
+<div class="lg:col-span-12 flex flex-col gap-4">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.04)] relative">
+<!-- Decorative top accent -->
+<div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-container to-primary-fixed"></div>
+<div class="bg-surface-container-low border-b border-outline-variant/50 px-4 py-2.5 flex items-center justify-between mt-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-surface-tint text-[18px]">smart_toy</span>
+<h3 class="font-label-md text-label-md font-semibold text-on-surface">Antwort</h3>
+</div>
+<span class="font-label-sm text-label-sm text-secondary bg-surface-container px-2 py-0.5 rounded">Rendered in 2.4s</span>
+</div>
+<div class="p-6 font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+<p class="mb-4">Here is a modern, responsive React component for a user profile card using Tailwind CSS, following high-utility minimalist design principles.</p>
+<!-- Code Block -->
+<div class="relative group mt-4 mb-6">
+<div class="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="bg-surface-container-low hover:bg-surface-container border border-outline-variant text-secondary p-1.5 rounded-md shadow-sm">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+</button>
+</div>
+<div class="bg-[#1E1E1E] rounded-lg overflow-hidden border border-[#333333]">
+<div class="flex items-center px-4 py-2 bg-[#2D2D2D] border-b border-[#333333]">
+<span class="font-mono text-[12px] text-[#A0A0A0]">UserProfileCard.jsx</span>
+</div>
+<pre class="p-4 overflow-x-auto"><code class="font-mono text-[13px] text-[#D4D4D4] leading-loose"><span class="text-[#569CD6]">import</span> React <span class="text-[#569CD6]">from</span> <span class="text-[#CE9178]">'react'</span>;
+
+<span class="text-[#569CD6]">const</span> <span class="text-[#DCDCAA]">UserProfileCard</span> = ({ user }) <span class="text-[#569CD6]">=&gt;</span> {
+  <span class="text-[#569CD6]">return</span> (
+    <span class="text-[#808080]">&lt;</span><span class="text-[#569CD6]">div</span> <span class="text-[#9CDCFE]">className</span>=<span class="text-[#CE9178]">"bg-white border border-gray-200 rounded-xl p-6 max-w-sm w-full mx-auto shadow-sm"</span><span class="text-[#808080]">&gt;</span>
+      <span class="text-[#808080]">&lt;</span><span class="text-[#569CD6]">div</span> <span class="text-[#9CDCFE]">className</span>=<span class="text-[#CE9178]">"flex items-center gap-4 mb-4"</span><span class="text-[#808080]">&gt;</span>
+        <span class="text-[#808080]">&lt;</span><span class="text-[#569CD6]">img</span> 
+          <span class="text-[#9CDCFE]">src</span>={user.avatar} 
+          <span class="text-[#9CDCFE]">alt</span>={<span class="text-[#CE9178]">\`\${user.name}'s avatar\`</span>} 
+          <span class="text-[#9CDCFE]">className</span>=<span class="text-[#CE9178]">"w-16 h-16 rounded-full object-cover border border-gray-100"</span> 
+        <span class="text-[#808080]">/&gt;</span>
+        <span class="text-[#808080]">&lt;</span><span class="text-[#569CD6]">div</span><span class="text-[#808080]">&gt;</span>
+          <span class="text-[#808080]">&lt;</span><span class="text-[#569CD6]">h2</span> <span class="text-[#9CDCFE]">className</span>=<span class="text-[#CE9178]">"text-lg font-semibold text-gray-900 leading-tight"</span><span class="text-[#808080]">&gt;</span>{user.name}<span class="text-[#808080]">&lt;/</span><span class="text-[#569CD6]">h2</span><span class="text-[#808080]">&gt;</span>
+          <span class="text-[#808080]">&lt;</span><span class="text-[#569CD6]">p</span> <span class="text-[#9CDCFE]">className</span>=<span class="text-[#CE9178]">"text-sm text-gray-500"</span><span class="text-[#808080]">&gt;</span>{user.role}<span class="text-[#808080]">&lt;/</span><span class="text-[#569CD6]">p</span><span class="text-[#808080]">&gt;</span>
+        <span class="text-[#808080]">&lt;/</span><span class="text-[#569CD6]">div</span><span class="text-[#808080]">&gt;</span>
+      <span class="text-[#808080]">&lt;/</span><span class="text-[#569CD6]">div</span><span class="text-[#808080]">&gt;</span>
+      
+      <span class="text-[#808080]">&lt;</span><span class="text-[#569CD6]">p</span> <span class="text-[#9CDCFE]">className</span>=<span class="text-[#CE9178]">"text-gray-600 text-sm mb-6 line-clamp-3"</span><span class="text-[#808080]">&gt;</span>
+        {user.bio}
+      <span class="text-[#808080]">&lt;/</span><span class="text-[#569CD6]">p</span><span class="text-[#808080]">&gt;</span>
+      
+      <span class="text-[#808080]">&lt;</span><span class="text-[#569CD6]">div</span> <span class="text-[#9CDCFE]">className</span>=<span class="text-[#CE9178]">"flex gap-3"</span><span class="text-[#808080]">&gt;</span>
+        <span class="text-[#808080]">&lt;</span><span class="text-[#569CD6]">button</span> <span class="text-[#9CDCFE]">className</span>=<span class="text-[#CE9178]">"flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"</span><span class="text-[#808080]">&gt;</span>
+          Follow
+        <span class="text-[#808080]">&lt;/</span><span class="text-[#569CD6]">button</span><span class="text-[#808080]">&gt;</span>
+        <span class="text-[#808080]">&lt;</span><span class="text-[#569CD6]">button</span> <span class="text-[#9CDCFE]">className</span>=<span class="text-[#CE9178]">"flex-1 bg-white hover:bg-gray-50 text-gray-900 text-sm font-medium py-2 px-4 rounded-lg border border-gray-200 transition-colors"</span><span class="text-[#808080]">&gt;</span>
+          Message
+        <span class="text-[#808080]">&lt;/</span><span class="text-[#569CD6]">button</span><span class="text-[#808080]">&gt;</span>
+      <span class="text-[#808080]">&lt;/</span><span class="text-[#569CD6]">div</span><span class="text-[#808080]">&gt;</span>
+    <span class="text-[#808080]">&lt;/</span><span class="text-[#569CD6]">div</span><span class="text-[#808080]">&gt;</span>
+  );
+};
+
+<span class="text-[#569CD6]">export default</span> UserProfileCard;</code></pre>
+</div>
+</div>
+<p>This implementation uses Tailwind utility classes to create a clean card structure. The button styles follow your requested high-utility aesthetic: a solid primary button and a secondary button with a border.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom padding for scroll -->
+<div class="h-16"></div>
+</div>
+</main>
+</body></html>

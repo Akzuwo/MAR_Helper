@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+
+<html class="light" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MAR Helper - Zeitplan</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary": "#575e70",
+                      "surface-container": "#edeeef",
+                      "outline-variant": "#c7c4d8",
+                      "on-secondary-fixed": "#141b2b",
+                      "on-primary-container": "#dad7ff",
+                      "on-primary-fixed-variant": "#3323cc",
+                      "on-tertiary-container": "#ffd2be",
+                      "inverse-primary": "#c3c0ff",
+                      "on-surface": "#191c1d",
+                      "on-primary-fixed": "#0f0069",
+                      "on-secondary": "#ffffff",
+                      "on-secondary-fixed-variant": "#404758",
+                      "primary-container": "#4f46e5",
+                      "tertiary": "#7e3000",
+                      "primary-fixed-dim": "#c3c0ff",
+                      "error-container": "#ffdad6",
+                      "surface-tint": "#4d44e3",
+                      "inverse-on-surface": "#f0f1f2",
+                      "secondary-fixed-dim": "#c0c6db",
+                      "on-tertiary-fixed": "#351000",
+                      "error": "#ba1a1a",
+                      "surface-bright": "#f8f9fa",
+                      "inverse-surface": "#2e3132",
+                      "surface-container-high": "#e7e8e9",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-highest": "#e1e3e4",
+                      "on-primary": "#ffffff",
+                      "surface-variant": "#e1e3e4",
+                      "primary": "#3525cd",
+                      "background": "#f8f9fa",
+                      "on-background": "#191c1d",
+                      "on-secondary-container": "#5c6274",
+                      "outline": "#777587",
+                      "tertiary-fixed-dim": "#ffb695",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary-container": "#a44100",
+                      "secondary-fixed": "#dce2f7",
+                      "on-error": "#ffffff",
+                      "surface-container-low": "#f3f4f5",
+                      "on-tertiary-fixed-variant": "#7b2f00",
+                      "surface": "#f8f9fa",
+                      "surface-dim": "#d9dadb",
+                      "on-surface-variant": "#464555",
+                      "primary-fixed": "#e2dfff",
+                      "secondary-container": "#d9dff5",
+                      "tertiary-fixed": "#ffdbcc",
+                      "on-error-container": "#93000a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin_desktop": "24px",
+                      "component_padding_y": "8px",
+                      "component_padding_x": "12px",
+                      "unit": "4px",
+                      "gutter": "16px",
+                      "sidebar_width": "240px"
+              },
+              "fontFamily": {
+                      "label-sm": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "display": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display": [
+                              "30px",
+                              {
+                                      "lineHeight": "38px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "letterSpacing": "0",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex antialiased">
+<!-- SideNavBar -->
+<aside class="hidden md:flex bg-surface w-sidebar_width h-screen flex-shrink-0 border-r border-outline-variant flex-col py-component_padding_y px-component_padding_x z-10 sticky top-0">
+<div class="flex items-center gap-3 mb-8 px-2 py-4">
+<div class="w-8 h-8 rounded bg-primary-container text-on-primary-container flex items-center justify-center font-bold">M</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface">MAR Helper</h1>
+<p class="font-label-sm text-label-sm text-secondary">Modular Assistant</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:bg-surface-container-high transition-colors cursor-pointer duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">edit_note</span>
+                Arbeitsjournal
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:bg-surface-container-high transition-colors cursor-pointer duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">history_edu</span>
+                Promptprotokoll
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-secondary-container text-primary rounded-lg font-label-md text-label-md font-medium" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">schedule</span>
+                Zeitplan
+            </a>
+</nav>
+<div class="mt-auto space-y-1 pt-4 border-t border-surface-container">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:bg-surface-container-high transition-colors cursor-pointer duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">ios_share</span>
+                Export
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:bg-surface-container-high transition-colors cursor-pointer duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Einstellungen
+            </a>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<div class="flex-1 flex flex-col min-h-screen relative w-full max-w-[100vw] md:max-w-[calc(100vw-240px)]">
+<!-- TopAppBar (Mobile) -->
+<header class="md:hidden flex justify-between items-center px-4 h-16 bg-surface-container-lowest border-b border-outline-variant w-full sticky top-0 z-20">
+<div class="font-headline-md text-headline-md font-bold text-primary">MAR Helper</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-secondary cursor-pointer hover:text-on-surface">notifications</span>
+<span class="material-symbols-outlined text-secondary cursor-pointer hover:text-on-surface">account_circle</span>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 p-margin_desktop overflow-y-auto">
+<div class="max-w-4xl mx-auto w-full">
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+<div>
+<h2 class="font-display text-display text-on-surface tracking-tight">Zeitplan</h2>
+<p class="font-body-lg text-body-lg text-secondary mt-1">Plane die nächsten Aufgaben deiner Maturaarbeit.</p>
+</div>
+<button class="bg-primary-container text-on-secondary px-4 py-2 rounded-lg font-label-md text-label-md font-medium hover:bg-surface-tint transition-colors flex items-center gap-2 self-start sm:self-auto shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                        Task
+                    </button>
+</div>
+<!-- Bento Grid Layout for Tasks -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<!-- Offen Section -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden flex flex-col h-full">
+<div class="px-5 py-4 border-b border-outline-variant bg-surface-bright flex items-center justify-between">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary block"></span>
+                                Offen
+                            </h3>
+<span class="bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm px-2 py-0.5 rounded-full">3</span>
+</div>
+<div class="p-2 flex-1">
+<ul class="space-y-1">
+<!-- Task Item 1 -->
+<li class="group flex items-start gap-3 p-3 rounded-lg hover:bg-surface transition-colors">
+<input class="mt-0.5 w-4 h-4 rounded border-outline-variant text-primary-container focus:ring-primary-container bg-surface cursor-pointer" type="checkbox"/>
+<div class="flex-1">
+<p class="font-body-md text-body-md text-on-surface font-medium">Recherche Fragestellung</p>
+<p class="font-label-sm text-label-sm text-secondary mt-0.5">Mindestens 5 Quellen sichten und bewerten.</p>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px] opacity-0 group-hover:opacity-100 cursor-pointer hover:text-on-surface transition-opacity">more_vert</span>
+</li>
+<!-- Task Item 2 -->
+<li class="group flex items-start gap-3 p-3 rounded-lg hover:bg-surface transition-colors">
+<input class="mt-0.5 w-4 h-4 rounded border-outline-variant text-primary-container focus:ring-primary-container bg-surface cursor-pointer" type="checkbox"/>
+<div class="flex-1">
+<div class="flex items-center gap-2">
+<p class="font-body-md text-body-md text-on-surface font-medium">Interview Leitfaden entwerfen</p>
+<span class="bg-error-container text-on-error-container font-label-sm text-label-sm px-1.5 py-0.5 rounded text-[10px] leading-tight">Hoch</span>
+</div>
+<p class="font-label-sm text-label-sm text-secondary mt-0.5">Fragen für Experteninterview vorbereiten.</p>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px] opacity-0 group-hover:opacity-100 cursor-pointer hover:text-on-surface transition-opacity">more_vert</span>
+</li>
+<!-- Task Item 3 -->
+<li class="group flex items-start gap-3 p-3 rounded-lg hover:bg-surface transition-colors">
+<input class="mt-0.5 w-4 h-4 rounded border-outline-variant text-primary-container focus:ring-primary-container bg-surface cursor-pointer" type="checkbox"/>
+<div class="flex-1">
+<p class="font-body-md text-body-md text-on-surface font-medium">Gliederung finalisieren</p>
+<p class="font-label-sm text-label-sm text-secondary mt-0.5">Struktur mit Betreuer absprechen.</p>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px] opacity-0 group-hover:opacity-100 cursor-pointer hover:text-on-surface transition-opacity">more_vert</span>
+</li>
+</ul>
+</div>
+</div>
+<!-- Erledigt Section -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden flex flex-col h-full opacity-80">
+<div class="px-5 py-4 border-b border-outline-variant bg-surface-bright flex items-center justify-between">
+<h3 class="font-headline-md text-headline-md text-secondary flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">check_circle</span>
+                                Erledigt
+                            </h3>
+<span class="bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm px-2 py-0.5 rounded-full">2</span>
+</div>
+<div class="p-2 flex-1">
+<ul class="space-y-1">
+<!-- Completed Task Item 1 -->
+<li class="group flex items-start gap-3 p-3 rounded-lg hover:bg-surface transition-colors">
+<input checked="" class="mt-0.5 w-4 h-4 rounded border-outline-variant text-primary-container bg-surface-container-high cursor-not-allowed" disabled="" type="checkbox"/>
+<div class="flex-1">
+<p class="font-body-md text-body-md text-outline line-through">Themenfindung</p>
+</div>
+</li>
+<!-- Completed Task Item 2 -->
+<li class="group flex items-start gap-3 p-3 rounded-lg hover:bg-surface transition-colors">
+<input checked="" class="mt-0.5 w-4 h-4 rounded border-outline-variant text-primary-container bg-surface-container-high cursor-not-allowed" disabled="" type="checkbox"/>
+<div class="flex-1">
+<p class="font-body-md text-body-md text-outline line-through">Erstes Gespräch mit Betreuer</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile) -->
+<nav class="md:hidden bg-surface-container-lowest border-t border-outline-variant fixed bottom-0 w-full z-20 flex justify-around items-center h-16 pb-safe">
+<a class="flex flex-col items-center justify-center w-full h-full text-secondary hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined mb-1">edit_note</span>
+<span class="font-label-sm text-[10px]">Journal</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full text-secondary hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined mb-1">history_edu</span>
+<span class="font-label-sm text-[10px]">Prompts</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full text-primary" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">schedule</span>
+<span class="font-label-sm text-[10px] font-medium">Zeitplan</span>
+</a>
+</nav>
+</div>
+</body></html>

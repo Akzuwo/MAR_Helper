@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MAR Helper - Export &amp; Einstellungen</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#575e70",
+                        "surface-container": "#edeeef",
+                        "outline-variant": "#c7c4d8",
+                        "on-secondary-fixed": "#141b2b",
+                        "on-primary-container": "#dad7ff",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "on-tertiary-container": "#ffd2be",
+                        "inverse-primary": "#c3c0ff",
+                        "on-surface": "#191c1d",
+                        "on-primary-fixed": "#0f0069",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed-variant": "#404758",
+                        "primary-container": "#4f46e5",
+                        "tertiary": "#7e3000",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "error-container": "#ffdad6",
+                        "surface-tint": "#4d44e3",
+                        "inverse-on-surface": "#f0f1f2",
+                        "secondary-fixed-dim": "#c0c6db",
+                        "on-tertiary-fixed": "#351000",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f8f9fa",
+                        "inverse-surface": "#2e3132",
+                        "surface-container-high": "#e7e8e9",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-highest": "#e1e3e4",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#e1e3e4",
+                        "primary": "#3525cd",
+                        "background": "#f8f9fa",
+                        "on-background": "#191c1d",
+                        "on-secondary-container": "#5c6274",
+                        "outline": "#777587",
+                        "tertiary-fixed-dim": "#ffb695",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#a44100",
+                        "secondary-fixed": "#dce2f7",
+                        "on-error": "#ffffff",
+                        "surface-container-low": "#f3f4f5",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "surface": "#f8f9fa",
+                        "surface-dim": "#d9dadb",
+                        "on-surface-variant": "#464555",
+                        "primary-fixed": "#e2dfff",
+                        "secondary-container": "#d9dff5",
+                        "tertiary-fixed": "#ffdbcc",
+                        "on-error-container": "#93000a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin_desktop": "24px",
+                        "component_padding_y": "8px",
+                        "component_padding_x": "12px",
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "sidebar_width": "240px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "display": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "label-md": ["13px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background h-full font-body-md overflow-hidden flex">
+<!-- SideNavBar -->
+<aside class="bg-surface w-sidebar_width h-screen flex-shrink-0 border-r border-outline-variant flex flex-col h-full py-component_padding_y px-component_padding_x z-10">
+<!-- Brand Header -->
+<div class="mb-8 px-2 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined text-[20px]" data-icon="smart_toy">smart_toy</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface">MAR Helper</h1>
+<p class="font-label-sm text-label-sm text-secondary">Modular Assistant</p>
+</div>
+</div>
+<!-- Main Navigation -->
+<nav class="flex-1 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-secondary hover:bg-surface-container-high transition-colors cursor-pointer transition-all duration-200 ease-in-out font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+                Arbeitsjournal
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-secondary hover:bg-surface-container-high transition-colors cursor-pointer transition-all duration-200 ease-in-out font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="history_edu">history_edu</span>
+                Promptprotokoll
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-secondary hover:bg-surface-container-high transition-colors cursor-pointer transition-all duration-200 ease-in-out font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="schedule">schedule</span>
+                Zeitplan
+            </a>
+</nav>
+<!-- Footer Navigation -->
+<div class="mt-auto flex flex-col gap-1 pt-4 border-t border-outline-variant">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-secondary hover:bg-surface-container-high transition-colors cursor-pointer transition-all duration-200 ease-in-out font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="ios_share">ios_share</span>
+                Export
+            </a>
+<!-- Active State -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-secondary-container text-primary cursor-pointer transition-all duration-200 ease-in-out font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="settings" data-weight="fill" style="font-variation-settings: 'FILL' 1;">settings</span>
+                Einstellungen
+            </a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col h-full overflow-hidden bg-background relative">
+<!-- TopAppBar -->
+<header class="bg-surface-container-lowest full-width h-16 border-b border-outline-variant flex justify-between items-center px-margin_desktop w-full z-10">
+<div class="flex items-center gap-4">
+<h2 class="font-headline-md text-headline-md font-bold text-primary">MAR Helper</h2>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-secondary hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-secondary hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Scrollable Content Canvas -->
+<div class="flex-1 overflow-y-auto p-margin_desktop">
+<div class="max-w-[800px] mx-auto space-y-8">
+<!-- Settings Section -->
+<section>
+<div class="mb-6">
+<h2 class="font-display text-display text-on-surface">Einstellungen</h2>
+<p class="font-body-md text-body-md text-secondary mt-2">Konfigurieren Sie Ihre aktiven Module und Systemeinstellungen.</p>
+</div>
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm">
+<div class="px-6 py-4 border-b border-outline-variant bg-surface-bright">
+<h3 class="font-headline-md text-headline-md text-on-surface">Aktive Module</h3>
+<p class="font-body-md text-body-md text-secondary">Aktivieren oder deaktivieren Sie die Module für Ihre Arbeitssitzung.</p>
+</div>
+<div class="divide-y divide-outline-variant">
+<!-- Toggle Item 1 -->
+<div class="px-6 py-4 flex items-center justify-between hover:bg-surface-bright transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">Arbeitsjournal</h4>
+<p class="font-label-sm text-label-sm text-secondary">Tägliche Notizen und Fortschrittsverfolgung</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<!-- Toggle Item 2 -->
+<div class="px-6 py-4 flex items-center justify-between hover:bg-surface-bright transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="history_edu">history_edu</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">Promptprotokoll</h4>
+<p class="font-label-sm text-label-sm text-secondary">Verlauf und Verwaltung von KI-Prompts</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<!-- Toggle Item 3 -->
+<div class="px-6 py-4 flex items-center justify-between hover:bg-surface-bright transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="schedule">schedule</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">Zeitplan</h4>
+<p class="font-label-sm text-label-sm text-secondary">Aufgaben- und Ressourcenplanung</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+</div>
+</div>
+</section>
+<!-- Divider -->
+<hr class="border-outline-variant my-8"/>
+<!-- Export Section -->
+<section>
+<div class="mb-6">
+<h2 class="font-display text-display text-on-surface">Export</h2>
+<p class="font-body-md text-body-md text-secondary mt-2">Exportieren Sie Daten aus einzelnen Modulen oder erstellen Sie ein vollständiges Backup.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+<!-- Export Card 1 -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between hover:border-primary-fixed transition-colors">
+<div class="mb-4">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-secondary" data-icon="edit_note">edit_note</span>
+<h3 class="font-label-md text-label-md text-on-surface">Arbeitsjournal Export</h3>
+</div>
+<p class="font-label-sm text-label-sm text-secondary">Als Markdown (.md) oder PDF exportieren.</p>
+</div>
+<button class="bg-surface-container-lowest border border-outline-variant text-on-surface font-label-md text-label-md px-4 py-2 rounded-lg hover:bg-surface-bright transition-colors flex items-center justify-center gap-2 w-full">
+<span class="material-symbols-outlined text-[18px]" data-icon="download">download</span>
+                                Exportieren
+                            </button>
+</div>
+<!-- Export Card 2 -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between hover:border-primary-fixed transition-colors">
+<div class="mb-4">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-secondary" data-icon="history_edu">history_edu</span>
+<h3 class="font-label-md text-label-md text-on-surface">Promptprotokoll Export</h3>
+</div>
+<p class="font-label-sm text-label-sm text-secondary">Als JSON oder CSV für weitere Analyse.</p>
+</div>
+<button class="bg-surface-container-lowest border border-outline-variant text-on-surface font-label-md text-label-md px-4 py-2 rounded-lg hover:bg-surface-bright transition-colors flex items-center justify-center gap-2 w-full">
+<span class="material-symbols-outlined text-[18px]" data-icon="download">download</span>
+                                Exportieren
+                            </button>
+</div>
+</div>
+<!-- Bulk Export Action -->
+<div class="bg-surface-container rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border border-outline-variant">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Vollständiges Backup</h3>
+<p class="font-body-md text-body-md text-secondary">Exportiert alle Daten aus allen aktiven Modulen in ein ZIP-Archiv.</p>
+</div>
+<button class="bg-primary-container text-on-primary font-label-md text-label-md px-6 py-3 rounded-lg hover:bg-primary transition-colors flex items-center justify-center gap-2 whitespace-nowrap shadow-sm w-full sm:w-auto">
+<span class="material-symbols-outlined text-[20px]" data-icon="archive">archive</span>
+                            Alles exportieren
+                        </button>
+</div>
+</section>
+</div>
+</div>
+</main>
+</body></html>

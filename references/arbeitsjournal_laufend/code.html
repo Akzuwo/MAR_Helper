@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+
+<html class="light" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MAR Helper - Arbeitsjournal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary": "#575e70",
+                      "surface-container": "#edeeef",
+                      "outline-variant": "#c7c4d8",
+                      "on-secondary-fixed": "#141b2b",
+                      "on-primary-container": "#dad7ff",
+                      "on-primary-fixed-variant": "#3323cc",
+                      "on-tertiary-container": "#ffd2be",
+                      "inverse-primary": "#c3c0ff",
+                      "on-surface": "#191c1d",
+                      "on-primary-fixed": "#0f0069",
+                      "on-secondary": "#ffffff",
+                      "on-secondary-fixed-variant": "#404758",
+                      "primary-container": "#4f46e5",
+                      "tertiary": "#7e3000",
+                      "primary-fixed-dim": "#c3c0ff",
+                      "error-container": "#ffdad6",
+                      "surface-tint": "#4d44e3",
+                      "inverse-on-surface": "#f0f1f2",
+                      "secondary-fixed-dim": "#c0c6db",
+                      "on-tertiary-fixed": "#351000",
+                      "error": "#ba1a1a",
+                      "surface-bright": "#f8f9fa",
+                      "inverse-surface": "#2e3132",
+                      "surface-container-high": "#e7e8e9",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-highest": "#e1e3e4",
+                      "on-primary": "#ffffff",
+                      "surface-variant": "#e1e3e4",
+                      "primary": "#3525cd",
+                      "background": "#f8f9fa",
+                      "on-background": "#191c1d",
+                      "on-secondary-container": "#5c6274",
+                      "outline": "#777587",
+                      "tertiary-fixed-dim": "#ffb695",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary-container": "#a44100",
+                      "secondary-fixed": "#dce2f7",
+                      "on-error": "#ffffff",
+                      "surface-container-low": "#f3f4f5",
+                      "on-tertiary-fixed-variant": "#7b2f00",
+                      "surface": "#f8f9fa",
+                      "surface-dim": "#d9dadb",
+                      "on-surface-variant": "#464555",
+                      "primary-fixed": "#e2dfff",
+                      "secondary-container": "#d9dff5",
+                      "tertiary-fixed": "#ffdbcc",
+                      "on-error-container": "#93000a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin_desktop": "24px",
+                      "component_padding_y": "8px",
+                      "component_padding_x": "12px",
+                      "unit": "4px",
+                      "gutter": "16px",
+                      "sidebar_width": "240px"
+              },
+              "fontFamily": {
+                      "label-sm": ["Inter"],
+                      "body-md": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "display": ["Inter"],
+                      "label-md": ["Inter"],
+                      "body-lg": ["Inter"]
+              },
+              "fontSize": {
+                      "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0", "fontWeight": "400"}],
+                      "headline-md": ["20px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "display": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                      "label-md": ["13px", {"lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0", "fontWeight": "400"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="bg-surface dark:bg-inverse-surface text-primary dark:text-inverse-primary font-body-md text-body-md w-sidebar_width h-screen flex-shrink-0 border-r border-outline-variant dark:border-outline flex flex-col py-component_padding_y px-component_padding_x hidden md:flex">
+<!-- Header -->
+<div class="flex items-center gap-3 px-3 py-4 mb-4">
+<div class="w-8 h-8 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold">
+                M
+            </div>
+<div>
+<div class="font-headline-md text-headline-md font-bold text-on-surface dark:text-inverse-on-surface">MAR Helper</div>
+<div class="font-label-sm text-label-sm text-secondary">Modular Assistant</div>
+</div>
+</div>
+<!-- Main Tabs -->
+<div class="flex-1 space-y-1">
+<!-- Active Tab -->
+<a class="flex items-center gap-3 px-3 py-2 bg-secondary-container dark:bg-secondary text-primary dark:text-on-secondary-fixed rounded-lg cursor-pointer transition-all duration-200 ease-in-out hover:bg-surface-container-high dark:hover:bg-surface-variant" href="#">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">edit_note</span>
+<span>Arbeitsjournal</span>
+</a>
+<!-- Inactive Tabs -->
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim cursor-pointer transition-all duration-200 ease-in-out hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-lg" href="#">
+<span class="material-symbols-outlined">history_edu</span>
+<span>Promptprotokoll</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim cursor-pointer transition-all duration-200 ease-in-out hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-lg" href="#">
+<span class="material-symbols-outlined">schedule</span>
+<span>Zeitplan</span>
+</a>
+</div>
+<!-- Footer Tabs -->
+<div class="mt-auto space-y-1 pt-4 border-t border-outline-variant">
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim cursor-pointer transition-all duration-200 ease-in-out hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-lg" href="#">
+<span class="material-symbols-outlined">ios_share</span>
+<span>Export</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim cursor-pointer transition-all duration-200 ease-in-out hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Einstellungen</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col h-screen overflow-hidden">
+<!-- TopAppBar (Mobile Only - following layout pivot logic) -->
+<header class="bg-surface-container-lowest dark:bg-surface-dim text-primary dark:text-inverse-primary font-headline-md text-headline-md w-full h-16 border-b border-outline-variant dark:border-outline flex justify-between items-center px-margin_desktop md:hidden">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-inverse-primary">
+                MAR Helper
+            </div>
+<div class="flex items-center gap-4 text-secondary">
+<button class="hover:bg-surface-container dark:hover:bg-surface-container-high p-2 rounded-full transition-colors flex items-center">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="hover:bg-surface-container dark:hover:bg-surface-container-high p-2 rounded-full transition-colors flex items-center">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- TopAppBar (Desktop Appears as a minimal toolbar area if needed, but per prompt, focusing on main area) -->
+<div class="hidden md:flex justify-end items-center h-16 px-margin_desktop border-b border-outline-variant bg-surface-container-lowest">
+<div class="flex items-center gap-4 text-secondary">
+<button class="hover:bg-surface-container p-2 rounded-full transition-colors flex items-center">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="hover:bg-surface-container p-2 rounded-full transition-colors flex items-center">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</div>
+<!-- Canvas -->
+<main class="flex-1 overflow-y-auto p-margin_desktop max-w-[1200px] w-full mx-auto">
+<div class="mb-8">
+<h1 class="font-display text-display text-on-background mb-2">Arbeitsjournal</h1>
+<p class="font-body-lg text-body-lg text-secondary">Erfasse und verwalte deine Arbeitszeiten.</p>
+</div>
+<!-- Bento Grid Layout for High-End Feel -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+<!-- Active Timer Card (Spans 2 columns on large screens) -->
+<div class="col-span-1 lg:col-span-2 bg-surface-container-lowest border border-outline-variant rounded-xl p-8 flex flex-col items-center justify-center relative overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.02)]">
+<!-- Subtle background pulse indicator -->
+<div class="absolute inset-0 bg-primary/5 animate-pulse rounded-xl"></div>
+<div class="relative z-10 w-full flex flex-col items-center">
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-surface-container-low rounded-full mb-6 border border-outline-variant">
+<span class="w-2 h-2 rounded-full bg-primary animate-ping relative">
+<span class="absolute inset-0 w-2 h-2 rounded-full bg-primary"></span>
+</span>
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Aktuelle Aktivität</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-8 text-center max-w-md">
+                            Gebäudemodell in Blender weiterbearbeiten
+                        </h2>
+<!-- Large Digital Timer -->
+<div class="font-display text-[64px] leading-none tracking-tight text-primary font-bold mb-10 font-mono">
+                            01:23:47
+                        </div>
+<!-- Controls -->
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-2 px-6 py-2 bg-surface-container-lowest border border-outline-variant text-on-surface hover:bg-surface-container-low transition-colors rounded-lg font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">pause</span>
+                                Pausieren
+                            </button>
+<button class="flex items-center gap-2 px-6 py-2 bg-primary text-on-primary hover:bg-primary/90 transition-colors rounded-lg font-label-md text-label-md shadow-sm">
+<span class="material-symbols-outlined text-[18px]">stop</span>
+                                Beenden
+                            </button>
+</div>
+</div>
+</div>
+<!-- Quick Stats / Context Card -->
+<div class="col-span-1 bg-surface-container-lowest border border-outline-variant rounded-xl p-6 flex flex-col justify-between">
+<div>
+<h3 class="font-label-md text-label-md text-secondary uppercase tracking-wider mb-4">Heute</h3>
+<div class="space-y-4">
+<div class="flex justify-between items-end border-b border-outline-variant pb-2">
+<span class="font-body-md text-body-md text-on-surface">Gesamtzeit</span>
+<span class="font-headline-md text-headline-md font-mono text-primary">04:12</span>
+</div>
+<div class="flex justify-between items-end border-b border-outline-variant pb-2">
+<span class="font-body-md text-body-md text-on-surface">Einträge</span>
+<span class="font-headline-md text-headline-md text-on-surface">3</span>
+</div>
+</div>
+</div>
+<div class="mt-6 pt-4 border-t border-outline-variant border-dashed">
+<button class="w-full flex justify-center items-center gap-2 py-2 text-secondary hover:text-primary transition-colors font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                            Neuer Eintrag (Manuell)
+                        </button>
+</div>
+</div>
+</div>
+<!-- History List Section -->
+<div class="mt-8 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
+<div class="px-6 py-4 border-b border-outline-variant bg-surface-bright flex justify-between items-center">
+<h3 class="font-headline-md text-headline-md text-on-surface">Verlauf</h3>
+<button class="text-secondary hover:text-primary transition-colors">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+</div>
+<div class="divide-y divide-outline-variant">
+<!-- History Item 1 -->
+<div class="px-6 py-3 flex items-center justify-between hover:bg-surface-container-low transition-colors group cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-2 h-2 rounded-full bg-outline-variant group-hover:bg-primary transition-colors"></div>
+<div>
+<div class="font-body-md text-body-md text-on-surface font-medium">Recherche Architekturstile</div>
+<div class="font-label-sm text-label-sm text-secondary flex items-center gap-2 mt-1">
+<span class="material-symbols-outlined text-[14px]">sell</span>
+<span>Konzept</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="text-right">
+<div class="font-body-md text-body-md font-mono text-on-surface">01:45:00</div>
+<div class="font-label-sm text-label-sm text-secondary">09:00 - 10:45</div>
+</div>
+<button class="opacity-0 group-hover:opacity-100 text-secondary hover:text-on-surface transition-all">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- History Item 2 -->
+<div class="px-6 py-3 flex items-center justify-between hover:bg-surface-container-low transition-colors group cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-2 h-2 rounded-full bg-outline-variant group-hover:bg-primary transition-colors"></div>
+<div>
+<div class="font-body-md text-body-md text-on-surface font-medium">Team Sync</div>
+<div class="font-label-sm text-label-sm text-secondary flex items-center gap-2 mt-1">
+<span class="material-symbols-outlined text-[14px]">sell</span>
+<span>Meeting</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="text-right">
+<div class="font-body-md text-body-md font-mono text-on-surface">00:30:00</div>
+<div class="font-label-sm text-label-sm text-secondary">11:00 - 11:30</div>
+</div>
+<button class="opacity-0 group-hover:opacity-100 text-secondary hover:text-on-surface transition-all">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- History Item 3 -->
+<div class="px-6 py-3 flex items-center justify-between hover:bg-surface-container-low transition-colors group cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-2 h-2 rounded-full bg-outline-variant group-hover:bg-primary transition-colors"></div>
+<div>
+<div class="font-body-md text-body-md text-on-surface font-medium">E-Mails beantworten</div>
+<div class="font-label-sm text-label-sm text-secondary flex items-center gap-2 mt-1">
+<span class="material-symbols-outlined text-[14px]">sell</span>
+<span>Orga</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="text-right">
+<div class="font-body-md text-body-md font-mono text-on-surface">00:25:00</div>
+<div class="font-label-sm text-label-sm text-secondary">08:30 - 08:55</div>
+</div>
+<button class="opacity-0 group-hover:opacity-100 text-secondary hover:text-on-surface transition-all">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

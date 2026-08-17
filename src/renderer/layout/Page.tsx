@@ -1,0 +1,10 @@
+export function PageHeader({ title, description, actions }: { title: string; description: string; actions?: React.ReactNode }) {
+  return <header className="page-header">
+    <div><h1>{title}</h1><p>{description}</p></div>
+    {actions && <div className="page-header__actions">{actions}</div>}
+  </header>;
+}
+
+export function Page({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <main className={`page ${className}`}>{children}</main>;
+}

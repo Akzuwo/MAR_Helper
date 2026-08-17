@@ -1,0 +1,7 @@
+node_modules/
+dist-main/
+dist-renderer/
+release/
+.smoke-artifacts/
+*.log
+.DS_Store

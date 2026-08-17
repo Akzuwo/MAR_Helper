@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MAR Helper - Arbeitsjournal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#575e70",
+                        "surface-container": "#edeeef",
+                        "outline-variant": "#c7c4d8",
+                        "on-secondary-fixed": "#141b2b",
+                        "on-primary-container": "#dad7ff",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "on-tertiary-container": "#ffd2be",
+                        "inverse-primary": "#c3c0ff",
+                        "on-surface": "#191c1d",
+                        "on-primary-fixed": "#0f0069",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed-variant": "#404758",
+                        "primary-container": "#4f46e5",
+                        "tertiary": "#7e3000",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "error-container": "#ffdad6",
+                        "surface-tint": "#4d44e3",
+                        "inverse-on-surface": "#f0f1f2",
+                        "secondary-fixed-dim": "#c0c6db",
+                        "on-tertiary-fixed": "#351000",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f8f9fa",
+                        "inverse-surface": "#2e3132",
+                        "surface-container-high": "#e7e8e9",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-highest": "#e1e3e4",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#e1e3e4",
+                        "primary": "#3525cd",
+                        "background": "#f8f9fa",
+                        "on-background": "#191c1d",
+                        "on-secondary-container": "#5c6274",
+                        "outline": "#777587",
+                        "tertiary-fixed-dim": "#ffb695",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#a44100",
+                        "secondary-fixed": "#dce2f7",
+                        "on-error": "#ffffff",
+                        "surface-container-low": "#f3f4f5",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "surface": "#f8f9fa",
+                        "surface-dim": "#d9dadb",
+                        "on-surface-variant": "#464555",
+                        "primary-fixed": "#e2dfff",
+                        "secondary-container": "#d9dff5",
+                        "tertiary-fixed": "#ffdbcc",
+                        "on-error-container": "#93000a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin_desktop": "24px",
+                        "component_padding_y": "8px",
+                        "component_padding_x": "12px",
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "sidebar_width": "240px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0", "fontWeight": "400"}],
+                        "headline-md": ["20px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "display": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "label-md": ["13px", {"lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #f8f9fa; /* surface */
+            color: #191c1d; /* on-surface */
+        }
+    </style>
+</head>
+<body class="flex h-full w-full bg-background font-body-md text-on-background overflow-hidden">
+<!-- SideNavBar -->
+<nav class="bg-surface w-sidebar_width h-screen flex-shrink-0 border-r border-outline-variant flex flex-col h-full py-component_padding_y px-component_padding_x hidden md:flex">
+<!-- Header -->
+<div class="flex items-center gap-3 mb-8 px-2 py-4">
+<div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined" data-icon="assistant">assistant</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface">MAR Helper</h1>
+<p class="font-label-sm text-label-sm text-secondary">Modular Assistant</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 bg-secondary-container text-primary rounded-lg cursor-pointer transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="edit_note" data-weight="fill" style="font-variation-settings: 'FILL' 1;">edit_note</span>
+<span class="font-body-md text-body-md">Arbeitsjournal</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary hover:bg-surface-container-high rounded-lg cursor-pointer transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="history_edu">history_edu</span>
+<span class="font-body-md text-body-md">Promptprotokoll</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary hover:bg-surface-container-high rounded-lg cursor-pointer transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="schedule">schedule</span>
+<span class="font-body-md text-body-md">Zeitplan</span>
+</a>
+</div>
+<!-- Footer Links -->
+<div class="mt-auto space-y-1 pt-4 border-t border-outline-variant/50">
+<a class="flex items-center gap-3 px-3 py-2 text-secondary hover:bg-surface-container-high rounded-lg cursor-pointer transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="ios_share">ios_share</span>
+<span class="font-body-md text-body-md">Export</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary hover:bg-surface-container-high rounded-lg cursor-pointer transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">Einstellungen</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col h-full overflow-hidden">
+<!-- TopAppBar (Mobile Only) -->
+<header class="md:hidden bg-surface-container-lowest h-16 border-b border-outline-variant flex justify-between items-center px-margin_desktop w-full">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="menu">menu</span>
+<span class="font-headline-md text-headline-md font-bold text-primary">MAR Helper</span>
+</div>
+<div class="flex items-center gap-4 text-secondary">
+<span class="material-symbols-outlined cursor-pointer" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined cursor-pointer" data-icon="account_circle">account_circle</span>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 overflow-y-auto p-margin_desktop">
+<div class="max-w-[1200px] mx-auto space-y-8">
+<!-- Page Header -->
+<div class="mb-8">
+<h2 class="font-display text-display text-on-surface">Arbeitsjournal</h2>
+<p class="font-body-lg text-body-lg text-secondary mt-1">Dokumentiere deine Arbeitszeit und Aktivitäten.</p>
+</div>
+<!-- Timer Card (Active) -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-8 flex flex-col items-center justify-center max-w-2xl mx-auto shadow-sm">
+<div class="w-full max-w-md space-y-6">
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface-variant block" for="activity">Aktivität</label>
+<input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-secondary-fixed-dim" id="activity" placeholder="z.B. Gebäudemodell in Blender weiterbearbeiten" type="text"/>
+</div>
+<div class="flex justify-center pt-4">
+<button class="bg-primary-container text-on-primary font-label-md text-label-md px-8 py-4 rounded-full flex items-center gap-2 shadow-sm hover:bg-primary transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
+<span class="material-symbols-outlined" data-icon="play_arrow" data-weight="fill" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                                Timer starten
+                            </button>
+</div>
+</div>
+</div>
+<!-- History Section -->
+<div class="mt-12">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-6 border-b border-outline-variant pb-2">History</h3>
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+<!-- Header Row -->
+<div class="grid grid-cols-12 gap-4 p-4 bg-surface-bright border-b border-outline-variant font-label-sm text-label-sm text-secondary uppercase tracking-wider">
+<div class="col-span-2">Datum</div>
+<div class="col-span-5">Aktivität</div>
+<div class="col-span-3">Zeitraum</div>
+<div class="col-span-2 text-right">Dauer</div>
+</div>
+<!-- Data Rows -->
+<div class="divide-y divide-outline-variant/50">
+<!-- Row 1 -->
+<div class="grid grid-cols-12 gap-4 p-4 items-center hover:bg-surface-bright transition-colors font-body-md text-body-md text-on-surface">
+<div class="col-span-2 text-secondary">Heute</div>
+<div class="col-span-5 font-medium">Recherche zu Material Maps</div>
+<div class="col-span-3 text-secondary">09:00 - 10:30</div>
+<div class="col-span-2 text-right font-medium">1h 30m</div>
+</div>
+<!-- Row 2 -->
+<div class="grid grid-cols-12 gap-4 p-4 items-center hover:bg-surface-bright transition-colors font-body-md text-body-md text-on-surface">
+<div class="col-span-2 text-secondary">Gestern</div>
+<div class="col-span-5 font-medium">Setup des initialen Blender-Projekts</div>
+<div class="col-span-3 text-secondary">14:15 - 17:45</div>
+<div class="col-span-2 text-right font-medium">3h 30m</div>
+</div>
+<!-- Row 3 -->
+<div class="grid grid-cols-12 gap-4 p-4 items-center hover:bg-surface-bright transition-colors font-body-md text-body-md text-on-surface">
+<div class="col-span-2 text-secondary">12. Okt</div>
+<div class="col-span-5 font-medium">Meeting: Projektbesprechung</div>
+<div class="col-span-3 text-secondary">10:00 - 11:00</div>
+<div class="col-span-2 text-right font-medium">1h 00m</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
