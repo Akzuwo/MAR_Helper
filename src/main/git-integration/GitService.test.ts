@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, realpath, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -8,6 +8,10 @@ import { checkGit, listCommits, readCommit, resolveRepository } from './GitServi
 
 const run = promisify(execFile);
 let repositoryPath = '';
+const canonicalPath = async (value: string) => {
+  const resolved = path.normalize(await realpath(value));
+  return process.platform === 'win32' ? resolved.toLocaleLowerCase('en-US') : resolved;
+};
 
 beforeEach(async () => {
   repositoryPath = await mkdtemp(path.join(os.tmpdir(), 'mar-helper-git-test-'));
@@ -27,7 +31,7 @@ describe('local Git service', () => {
     const child = path.join(repositoryPath, 'src', 'nested');
     await mkdir(child, { recursive: true });
     const result = await resolveRepository(child);
-    expect(result.ok && path.normalize(result.data.path)).toBe(path.normalize(repositoryPath));
+    expect(result.ok && await canonicalPath(result.data.path)).toBe(await canonicalPath(repositoryPath));
   });
 
   it('lists commits and creates a complete portable snapshot', async () => {
