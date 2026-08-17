@@ -58,6 +58,61 @@ Der Smoke-Test startet die gebaute Electron-App isoliert und prüft Renderer, Pr
 - Prompt- und Antworttexte werden ohne ausführbares Benutzer-HTML durch `react-markdown` und `remark-gfm` gerendert.
 - Exporte verwenden den nativen Speichern-Dialog von Electron.
 
+## Importformat
+
+Im Bereich **Export → Daten importieren** können vollständige MAR-Helper-Backups und JSON-Exporte einzelner Module importiert werden. CSV- und Markdown-Dateien sind Dokumentexporte und nicht für einen verlustfreien Re-Import vorgesehen.
+
+Ein Modulimport verwendet dieses Format:
+
+```json
+{
+  "format": "mar-helper",
+  "version": 1,
+  "module": "journal",
+  "exportedAt": "2026-08-17T14:32:00.000Z",
+  "data": []
+}
+```
+
+Für `module` sind folgende Werte erlaubt:
+
+- `journal`: `data` enthält `JournalEntry[]`
+- `prompts`: `data` enthält `PromptEntry[]`
+- `planner`: `data` enthält `PlannerTask[]`
+
+Ältere Exporte, die direkt aus einem nicht leeren JSON-Array bestehen, werden ebenfalls automatisch erkannt. Bei leeren Arrays ist das Formatobjekt notwendig, damit das Modul eindeutig bestimmt werden kann. Vollständige Backups entsprechen dem von **Alles exportieren** erzeugten Format:
+
+```json
+{
+  "exportedAt": "2026-08-17T14:32:00.000Z",
+  "application": "MAR Helper",
+  "data": {
+    "version": 1,
+    "settings": {},
+    "journalEntries": [],
+    "activeTimer": null,
+    "promptModels": [],
+    "promptEntries": [],
+    "plannerTasks": []
+  }
+}
+```
+
+Vor dem Import werden alle IDs, Pflichtfelder, Zeitstempel, Zahlenwerte und Statuswerte validiert. **Zusammenführen** ergänzt neue IDs und aktualisiert vorhandene IDs; **Ersetzen** überschreibt das betroffene Modul beziehungsweise beim vollständigen Backup den gesamten lokalen Datenbestand.
+
+## Releases und automatische Updates
+
+Ein semantischer Git-Tag startet den GitHub-Workflow `.github/workflows/release.yml`:
+
+```powershell
+git tag v1.1.0
+git push origin v1.1.0
+```
+
+GitHub Actions prüft die Tests und veröffentlicht den NSIS-Installer zusammen mit `latest.yml` und der Blockmap. Installierte Produktionsversionen prüfen beim Start die öffentlichen Releases von `Akzuwo/MAR_Helper`. Bei einer neueren Version erscheint ein Dialog. **Ignorieren** blendet genau diese Version dauerhaft aus; **Jetzt aktualisieren** lädt sie im Hintergrund, installiert sie still und startet MAR Helper neu.
+
+Für signierte Windows-Releases können die Repository-Secrets `WINDOWS_CERTIFICATE` und `WINDOWS_CERTIFICATE_PASSWORD` gesetzt werden. Ohne diese Secrets wird ein funktionsfähiger, aber nicht digital signierter Installer erzeugt.
+
 ## Struktur
 
 ```text

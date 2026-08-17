@@ -3,6 +3,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import type { AppState, SaveFileRequest } from '../shared/models';
 import { JsonStore } from './store';
+import { configureAutoUpdater } from './updater';
 
 let mainWindow: BrowserWindow | null = null;
 let store: JsonStore;
@@ -56,7 +57,21 @@ app.whenReady().then(() => {
     await fs.writeFile(result.filePath, request.content, 'utf8');
     return { canceled: false, filePath: result.filePath };
   });
+  ipcMain.handle('import:open', async () => {
+    if (!mainWindow) return { canceled: true };
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'MAR-Helper-Daten importieren',
+      properties: ['openFile'],
+      filters: [{ name: 'MAR Helper JSON', extensions: ['json'] }]
+    });
+    const filePath = result.filePaths[0];
+    if (result.canceled || !filePath) return { canceled: true };
+    const stats = await fs.stat(filePath);
+    if (stats.size > 50 * 1024 * 1024) throw new Error('Die Importdatei ist grösser als 50 MB.');
+    return { canceled: false, fileName: path.basename(filePath), content: await fs.readFile(filePath, 'utf8') };
+  });
   createWindow();
+  configureAutoUpdater(() => mainWindow);
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

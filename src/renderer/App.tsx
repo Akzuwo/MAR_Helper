@@ -7,6 +7,7 @@ import { PromptsPage } from './modules/prompts/PromptsPage';
 import { PlannerPage } from './modules/planner/PlannerPage';
 import { ExportPage } from './modules/export/ExportPage';
 import { SettingsPage } from './modules/settings/SettingsPage';
+import { UpdateModal } from './components/UpdateModal';
 
 export default function App() {
   const { state, loading, loadError, toasts, dismissToast } = useAppData();
@@ -33,6 +34,7 @@ export default function App() {
       {page === 'export' && <ExportPage/>}
       {page === 'settings' && <SettingsPage/>}
     </div>
+    <UpdateModal/>
     <Toasts toasts={toasts} dismiss={dismissToast}/>
   </div>;
 }

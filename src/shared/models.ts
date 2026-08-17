@@ -79,8 +79,25 @@ export interface SaveFileResult {
   filePath?: string;
 }
 
+export interface ImportFileResult {
+  canceled: boolean;
+  fileName?: string;
+  content?: string;
+}
+
+export type UpdateStatus =
+  | { state: 'checking' }
+  | { state: 'available'; version: string; releaseName?: string; releaseNotes?: string }
+  | { state: 'not-available' }
+  | { state: 'downloading'; version: string; percent: number; transferred: number; total: number }
+  | { state: 'downloaded'; version: string }
+  | { state: 'error'; message: string };
+
 export interface MarHelperApi {
   loadState: () => Promise<AppState>;
   saveState: (state: AppState) => Promise<AppState>;
   saveExport: (request: SaveFileRequest) => Promise<SaveFileResult>;
+  openImport: () => Promise<ImportFileResult>;
+  downloadAndInstallUpdate: () => Promise<void>;
+  onUpdateStatus: (listener: (status: UpdateStatus) => void) => () => void;
 }

@@ -40,3 +40,11 @@ export const exportAllJson = (state: AppState) => JSON.stringify({
   application: 'MAR Helper',
   data: state
 }, null, 2);
+
+export const exportModuleJson = (module: 'journal' | 'prompts' | 'planner', data: JournalEntry[] | PromptEntry[] | PlannerTask[]) => JSON.stringify({
+  format: 'mar-helper',
+  version: 1,
+  module,
+  exportedAt: new Date().toISOString(),
+  data
+}, null, 2);

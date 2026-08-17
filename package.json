@@ -16,6 +16,7 @@
     "dist": "npm run build && electron-builder"
   },
   "dependencies": {
+    "electron-updater": "^6.8.9",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -40,16 +41,31 @@
     "appId": "ch.marhelper.app",
     "productName": "MAR Helper",
     "icon": "references/logo/screen.png",
-    "directories": { "output": "release" },
+    "directories": {
+      "output": "release"
+    },
     "files": [
       "dist-renderer/**/*",
       "dist-main/**/*",
       "references/logo/screen.png",
       "package.json"
     ],
+    "publish": [{
+      "provider": "github",
+      "owner": "Akzuwo",
+      "repo": "MAR_Helper",
+      "releaseType": "release"
+    }],
     "artifactName": "${productName}-Setup-${version}-${arch}.${ext}",
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }]
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -60,7 +76,13 @@
       "uninstallDisplayName": "MAR Helper",
       "deleteAppDataOnUninstall": false
     },
-    "mac": { "target": "dmg", "category": "public.app-category.productivity" },
-    "linux": { "target": "AppImage", "category": "Utility" }
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.productivity"
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Utility"
+    }
   }
 }

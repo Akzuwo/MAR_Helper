@@ -9,7 +9,12 @@ mkdirSync(artifactDir, { recursive: true });
 
 const electronEnv = { ...process.env };
 delete electronEnv.ELECTRON_RUN_AS_NODE;
-const child = spawn(electron, ['.', `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(artifactDir, 'profile')}`], {
+const packaged = process.argv.includes('--packaged');
+const executable = packaged ? path.join(process.cwd(), 'release', 'win-unpacked', 'MAR Helper.exe') : electron;
+const launchArgs = packaged
+  ? [`--remote-debugging-port=${port}`, `--user-data-dir=${path.join(artifactDir, 'packaged-profile')}`]
+  : ['.', `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(artifactDir, 'profile')}`];
+const child = spawn(executable, launchArgs, {
   stdio: ['ignore', 'pipe', 'pipe'],
   windowsHide: true,
   env: electronEnv
