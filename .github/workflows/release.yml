@@ -56,8 +56,25 @@ jobs:
             throw "Der Tag '$env:TAG' existiert bereits. Es wird nichts überschrieben."
           }
 
-          gh release view $env:TAG *> $null
-          if ($LASTEXITCODE -eq 0) {
+          $encodedTag = [Uri]::EscapeDataString($env:TAG)
+          $releaseUri = "https://api.github.com/repos/${{ github.repository }}/releases/tags/$encodedTag"
+          $headers = @{
+            Accept = 'application/vnd.github+json'
+            Authorization = "Bearer $env:GH_TOKEN"
+            'User-Agent' = 'MAR-Helper-Release-Workflow'
+            'X-GitHub-Api-Version' = '2022-11-28'
+          }
+          $releaseExists = $false
+          try {
+            Invoke-RestMethod -Method Get -Uri $releaseUri -Headers $headers | Out-Null
+            $releaseExists = $true
+          } catch {
+            $statusCode = $_.Exception.Response.StatusCode
+            if ($statusCode -ne [System.Net.HttpStatusCode]::NotFound) {
+              throw "Der GitHub Release '$env:TAG' konnte nicht geprüft werden: $($_.Exception.Message)"
+            }
+          }
+          if ($releaseExists) {
             throw "Der GitHub Release '$env:TAG' existiert bereits. Es wird nichts überschrieben."
           }
 
