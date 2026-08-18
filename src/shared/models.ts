@@ -9,6 +9,11 @@ export interface ModuleSettings {
 export interface AppSettings {
   modules: ModuleSettings;
   gitIntegration: GitIntegrationSettings;
+  betaFeatures: BetaFeatureSettings;
+}
+
+export interface BetaFeatureSettings {
+  rawTextImport: boolean;
 }
 
 export interface GitRepository {
@@ -58,6 +63,7 @@ export type GitResult<T> = { ok: true; data: T } | { ok: false; code: string; me
 export interface JournalEntry {
   id: string;
   title: string;
+  notes?: string;
   startedAt: string;
   endedAt: string;
   workingTimeMs: number;
@@ -70,6 +76,7 @@ export type TimerStatus = 'running' | 'paused';
 export interface ActiveTimer {
   id: string;
   title: string;
+  notes?: string;
   startedAt: string;
   status: TimerStatus;
   pausedAt?: string;
@@ -85,6 +92,8 @@ export interface PromptModel {
 
 export interface PromptEntry {
   id: string;
+  number: number;
+  title?: string;
   modelId?: string;
   modelName: string;
   prompt: string;
@@ -111,6 +120,7 @@ export interface AppState {
   activeTimer: ActiveTimer | null;
   promptModels: PromptModel[];
   promptEntries: PromptEntry[];
+  nextPromptNumber: number;
   plannerTasks: PlannerTask[];
 }
 
@@ -128,7 +138,7 @@ export interface SaveFileResult {
 export type ImportKind = 'backup' | 'journal' | 'prompts' | 'planner';
 export type ImportMode = 'merge' | 'replace';
 export interface ImportCounts { journal?: number; prompts?: number; planner?: number; models?: number; repositories?: number; gitSnapshots?: number; activeTimer?: number }
-export interface ImportPreview { sessionId: string; fileName: string; kind: ImportKind; formatVersion: number; legacy: boolean; counts: ImportCounts }
+export interface ImportPreview { sessionId: string; fileName: string; kind: ImportKind; formatVersion: number; legacy: boolean; counts: ImportCounts; source?: 'file'|'rawText'; detectedFormat?: string }
 export type ImportSelectResult = { canceled: true } | { canceled: false; preview: ImportPreview } | { canceled: false; error: { code: 'INVALID_JSON'|'UNSUPPORTED_FILE'|'UNSUPPORTED_VERSION'|'READ_FAILED'; title: string; message: string } };
 export interface ImportSummary { imported: ImportCounts; skipped: number; conflicts: number }
 export type ImportCommitResult = { ok: true; state: AppState; summary: ImportSummary } | { ok: false; message: string };
@@ -146,6 +156,7 @@ export interface MarHelperApi {
   saveState: (state: AppState) => Promise<AppState>;
   saveExport: (request: SaveFileRequest) => Promise<SaveFileResult>;
   openImport: () => Promise<ImportSelectResult>;
+  previewRawImport: (content: string) => Promise<ImportSelectResult>;
   commitImport: (sessionId: string, mode: ImportMode) => Promise<ImportCommitResult>;
   checkGit: () => Promise<GitResult<{ version: string }>>;
   selectGitRepository: () => Promise<GitResult<{ canceled: boolean; path?: string; name?: string }>>;

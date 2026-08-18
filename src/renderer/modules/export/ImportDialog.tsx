@@ -1,14 +1,11 @@
 import { useEffect, useState } from 'react';
-import { FileCheck2, FolderOpen, Import, Replace, Rows3 } from 'lucide-react';
+import { ClipboardPaste, FileCheck2, FileJson, FolderOpen, Import, Replace, Rows3, ScanSearch } from 'lucide-react';
 import type { ImportCounts, ImportPreview, ImportSelectResult } from '../../../shared/models';
 import { useAppData } from '../../state/AppDataContext';
-import { Button, ConfirmDialog, Modal } from '../../components/ui';
+import { Button, ConfirmDialog, Modal, Textarea } from '../../components/ui';
 
 const kindLabel: Record<ImportPreview['kind'], string> = {
-  backup: 'Vollständiger MAR-Helper-Export',
-  journal: 'Arbeitsjournal',
-  prompts: 'Promptprotokoll',
-  planner: 'Zeitplan'
+  backup: 'Vollständiger MAR-Helper-Export', journal: 'Arbeitsjournal', prompts: 'Promptprotokoll', planner: 'Zeitplan'
 };
 
 const countLabels: Array<{ key: keyof ImportCounts; title: string; unit: (count: number) => string }> = [
@@ -21,33 +18,50 @@ const countLabels: Array<{ key: keyof ImportCounts; title: string; unit: (count:
   { key: 'activeTimer', title: 'Timer', unit: () => 'laufender oder pausierter Timer' }
 ];
 
-export function ImportDialog({ open, selection, onClose }: { open: boolean; selection: ImportSelectResult | null; onClose: () => void }) {
+type InputKind = 'file' | 'rawText';
+
+export function ImportDialog({ open, selection, allowRawText, initialSource = 'file', onClose }: {
+  open: boolean; selection: ImportSelectResult | null; allowRawText: boolean; initialSource?: InputKind; onClose: () => void
+}) {
   const { commitImport } = useAppData();
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [mode, setMode] = useState<'merge' | 'replace'>('merge');
   const [error, setError] = useState<{ title: string; message: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmReplace, setConfirmReplace] = useState(false);
+  const [inputKind, setInputKind] = useState<InputKind>('file');
+  const [rawText, setRawText] = useState('');
 
   useEffect(() => {
     if (!open) return;
-    setPreview(selection && !selection.canceled && 'preview' in selection ? selection.preview : null);
+    const selectedPreview = selection && !selection.canceled && 'preview' in selection ? selection.preview : null;
+    setPreview(selectedPreview);
     setError(selection && !selection.canceled && 'error' in selection ? selection.error : null);
-    setMode('merge'); setBusy(false); setConfirmReplace(false);
-  }, [open, selection]);
+    setInputKind(selectedPreview?.source ?? initialSource);
+    setRawText(''); setMode('merge'); setBusy(false); setConfirmReplace(false);
+  }, [open, selection, initialSource]);
 
-  const chooseFile = async () => {
-    setError(null);
-    const result = await window.marHelper.openImport();
+  const consumeResult = (result: ImportSelectResult) => {
     if (result.canceled) return;
     if ('error' in result) { setPreview(null); setError(result.error); return; }
-    setPreview(result.preview); setMode('merge');
+    setPreview(result.preview); setInputKind(result.preview.source ?? inputKind); setMode('merge'); setError(null);
   };
 
-  const apply = async () => {
-    if (!preview) return;
-    if (mode === 'replace') { setConfirmReplace(true); return; }
-    await commit();
+  const chooseFile = async () => {
+    setError(null); setBusy(true);
+    try { consumeResult(await window.marHelper.openImport()); }
+    finally { setBusy(false); }
+  };
+
+  const analyzeRawText = async () => {
+    if (!rawText.trim()) { setError({ title: 'Noch keine Daten', message: 'Füge zuerst den zu importierenden Text ein.' }); return; }
+    setError(null); setBusy(true);
+    try { consumeResult(await window.marHelper.previewRawImport(rawText)); }
+    finally { setBusy(false); }
+  };
+
+  const resetInput = (kind: InputKind = inputKind) => {
+    setPreview(null); setError(null); setMode('merge'); setInputKind(kind);
   };
 
   const commit = async () => {
@@ -58,13 +72,36 @@ export function ImportDialog({ open, selection, onClose }: { open: boolean; sele
     if (success) onClose();
   };
 
+  const apply = async () => {
+    if (!preview) return;
+    if (mode === 'replace') { setConfirmReplace(true); return; }
+    await commit();
+  };
+
+  const inputStage = !preview;
   return <>
-    <Modal open={open && !confirmReplace} title="Daten importieren" description="Importiere einen zuvor exportierten MAR-Helper-Datensatz." onClose={onClose}>
+    <Modal open={open && !confirmReplace} wide={inputStage && allowRawText} title="Daten importieren" description="Prüfe die erkannten Daten in der Vorschau, bevor sie gespeichert werden." onClose={onClose}>
       <div className="import-dialog">
-        {error ? <div className="import-error" role="alert"><strong>{error.title}</strong><span>{error.message}</span><Button variant="secondary" icon={<FolderOpen size={17}/>} onClick={() => void chooseFile()}>Andere Datei auswählen</Button></div> : preview ? <>
+        {inputStage ? <>
+          {allowRawText && <div className="import-source-tabs" role="tablist" aria-label="Importquelle">
+            <button role="tab" aria-selected={inputKind === 'file'} className={inputKind === 'file' ? 'active' : ''} onClick={() => resetInput('file')}><FileJson size={17}/>JSON-Datei</button>
+            <button role="tab" aria-selected={inputKind === 'rawText'} className={inputKind === 'rawText' ? 'active' : ''} onClick={() => resetInput('rawText')}><ClipboardPaste size={17}/>Rohtext <span>Beta</span></button>
+          </div>}
+          {error && <div className="import-inline-error" role="alert"><strong>{error.title}</strong><span>{error.message}</span></div>}
+          {inputKind === 'file' ? <div className="import-file-picker">
+            <span className="import-file-picker__icon"><FileJson size={25}/></span>
+            <h3>MAR-Helper-JSON auswählen</h3>
+            <p>Unterstützt werden vollständige Backups und Exporte eines einzelnen Moduls.</p>
+            <Button variant="secondary" icon={<FolderOpen size={17}/>} disabled={busy} onClick={() => void chooseFile()}>{busy ? 'Öffne …' : 'Datei auswählen'}</Button>
+          </div> : <div className="raw-import-editor">
+            <div><strong>Bestehende Daten einfügen</strong><span>Tabellen, CSV, beschriftete Prompt-Blöcke und Markdown-Aufgaben werden automatisch erkannt.</span></div>
+            <Textarea autoFocus spellCheck={false} value={rawText} onChange={(event) => { setRawText(event.target.value); setError(null); }} placeholder={'Beispiel Zeitplan:\nTitel\tFällig am\tStatus\nRecherche abschliessen\t2026-08-31\tOffen'} />
+            <small>Die Analyse findet vollständig lokal auf diesem Gerät statt.</small>
+          </div>}
+        </> : <>
           <div className="import-summary">
             <span className="import-summary__icon"><FileCheck2 size={22}/></span>
-            <div><strong>{kindLabel[preview.kind]}</strong><span>{preview.fileName}{preview.legacy ? ' · älteres, unterstütztes Exportformat' : ` · Formatversion ${preview.formatVersion}`}</span></div>
+            <div><strong>{kindLabel[preview.kind]}</strong><span>{preview.fileName}{preview.source === 'rawText' ? ` · ${preview.detectedFormat ?? 'automatisch erkannt'}` : preview.legacy ? ' · älteres, unterstütztes Exportformat' : ` · Formatversion ${preview.formatVersion}`}</span></div>
           </div>
           <div><strong className="import-counts__heading">Gefundene Daten</strong><div className="import-counts">
             {countLabels.map(({ key, title, unit }) => {
@@ -81,17 +118,21 @@ export function ImportDialog({ open, selection, onClose }: { open: boolean; sele
             </label>
             <label className={mode === 'replace' ? 'selected' : ''}>
               <input type="radio" name="import-mode" checked={mode === 'replace'} onChange={() => setMode('replace')}/>
-              <Replace size={19}/><span><strong>Bestehende Daten ersetzen</strong><small>Die aktuellen MAR-Helper-Daten werden durch die Daten aus der Datei ersetzt.</small></span>
+              <Replace size={19}/><span><strong>Bestehende Daten ersetzen</strong><small>Die aktuellen Daten dieses Moduls werden durch die erkannten Daten ersetzt.</small></span>
             </label>
           </fieldset>
           <p className="import-module-note">Deaktivierte Module bleiben deaktiviert. Enthaltene Daten werden trotzdem importiert.</p>
-        </> : null}
+        </>}
         <div className="form-actions form-actions--between">
-          <div>{preview && <Button variant="ghost" onClick={() => void chooseFile()}>Andere Datei</Button>}</div>
-          <div className="form-actions"><Button variant="secondary" onClick={onClose}>Abbrechen</Button>{preview && <Button icon={<Import size={17}/>} disabled={busy} onClick={() => void apply()}>{busy ? 'Importiere …' : 'Importieren'}</Button>}</div>
+          <div>{preview && <Button variant="ghost" onClick={() => resetInput(preview.source ?? 'file')}>Andere Eingabe</Button>}</div>
+          <div className="form-actions">
+            <Button variant="secondary" onClick={onClose}>Abbrechen</Button>
+            {inputStage && inputKind === 'rawText' && <Button icon={<ScanSearch size={17}/>} disabled={busy || !rawText.trim()} onClick={() => void analyzeRawText()}>{busy ? 'Analysiere …' : 'Daten erkennen'}</Button>}
+            {preview && <Button icon={<Import size={17}/>} disabled={busy} onClick={() => void apply()}>{busy ? 'Importiere …' : 'Importieren'}</Button>}
+          </div>
         </div>
       </div>
     </Modal>
-    <ConfirmDialog open={confirmReplace} title="Bestehende Daten ersetzen?" description="Deine aktuell gespeicherten MAR-Helper-Daten werden überschrieben. Dieser Vorgang kann nicht automatisch rückgängig gemacht werden." confirmLabel="Daten ersetzen" onCancel={() => setConfirmReplace(false)} onConfirm={() => void commit()}/>
+    <ConfirmDialog open={confirmReplace} title="Bestehende Daten ersetzen?" description="Deine aktuell gespeicherten Daten des erkannten Moduls werden überschrieben. Dieser Vorgang kann nicht automatisch rückgängig gemacht werden." confirmLabel="Daten ersetzen" onCancel={() => setConfirmReplace(false)} onConfirm={() => void commit()}/>
   </>;
 }

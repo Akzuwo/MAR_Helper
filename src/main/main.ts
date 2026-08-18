@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { applyImport, ImportValidationError, parseImport, type ImportBundle } from '../shared/importers';
+import { parseRawTextImport } from '../shared/raw-importer';
 import type { AppState, ImportMode, ImportSummary, SaveFileRequest } from '../shared/models';
 import { JsonStore } from './store';
 import { configureAutoUpdater } from './updater';
@@ -12,6 +13,32 @@ let mainWindow: BrowserWindow | null = null;
 let store: JsonStore;
 const importSessions = new Map<string, { bundle: ImportBundle; createdAt: number }>();
 const IMPORT_SESSION_TTL = 15 * 60 * 1000;
+
+function createImportPreview(bundle: ImportBundle, fileName: string, source: 'file' | 'rawText', detectedFormat?: string) {
+  const now = Date.now();
+  for (const [id, session] of importSessions) if (now - session.createdAt > IMPORT_SESSION_TTL) importSessions.delete(id);
+  const sessionId = randomUUID();
+  importSessions.set(sessionId, { bundle, createdAt: now });
+  return {
+    canceled: false as const,
+    preview: { sessionId, fileName, kind: bundle.kind, formatVersion: bundle.formatVersion, legacy: bundle.legacy, counts: bundle.counts, source, detectedFormat }
+  };
+}
+
+function importError(error: unknown, rawText = false) {
+  if (error instanceof ImportValidationError) return {
+    canceled: false as const,
+    error: {
+      code: error.code,
+      title: rawText ? 'Rohtext nicht erkannt' : error.code === 'INVALID_JSON' ? 'Import nicht möglich' : 'Nicht unterstützte Datei',
+      message: error.message
+    }
+  };
+  return {
+    canceled: false as const,
+    error: { code: 'READ_FAILED' as const, title: 'Import nicht möglich', message: rawText ? 'Der Rohtext konnte nicht analysiert werden.' : 'Die ausgewählte Datei konnte nicht sicher gelesen werden.' }
+  };
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -80,24 +107,20 @@ app.whenReady().then(() => {
         return { canceled: false, error: { code: 'READ_FAILED', title: 'Import nicht möglich', message: 'Die ausgewählte Datei kann nicht importiert werden oder ist grösser als 50 MB.' } };
       }
       const bundle = parseImport(await fs.readFile(filePath, 'utf8'));
-      const now = Date.now();
-      for (const [id, session] of importSessions) if (now - session.createdAt > IMPORT_SESSION_TTL) importSessions.delete(id);
-      const sessionId = randomUUID();
-      importSessions.set(sessionId, { bundle, createdAt: now });
-      return { canceled: false, preview: {
-        sessionId, fileName: path.basename(filePath), kind: bundle.kind,
-        formatVersion: bundle.formatVersion, legacy: bundle.legacy, counts: bundle.counts
-      } };
+      return createImportPreview(bundle, path.basename(filePath), 'file');
     } catch (error) {
-      if (error instanceof ImportValidationError) return {
-        canceled: false,
-        error: {
-          code: error.code,
-          title: error.code === 'INVALID_JSON' ? 'Import nicht möglich' : 'Nicht unterstützte Datei',
-          message: error.message
-        }
-      };
-      return { canceled: false, error: { code: 'READ_FAILED', title: 'Import nicht möglich', message: 'Die ausgewählte Datei konnte nicht sicher gelesen werden.' } };
+      return importError(error);
+    }
+  });
+  ipcMain.handle('import:preview-raw', (_event, content: unknown) => {
+    if (typeof content !== 'string' || content.length > 5 * 1024 * 1024) {
+      return { canceled: false, error: { code: 'READ_FAILED', title: 'Rohtext nicht erkannt', message: 'Der Rohtext ist ungültig oder grösser als 5 MB.' } };
+    }
+    try {
+      const parsed = parseRawTextImport(content);
+      return createImportPreview(parsed.bundle, 'Eingefügter Rohtext', 'rawText', parsed.detectedFormat);
+    } catch (error) {
+      return importError(error, true);
     }
   });
   ipcMain.handle('import:commit', async (_event, sessionId: unknown, mode: unknown) => {

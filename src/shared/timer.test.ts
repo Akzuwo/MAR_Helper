@@ -28,10 +28,11 @@ describe('persistent timer calculations', () => {
   });
 
   it('makes pause and resume idempotent', () => {
-    const timer: ActiveTimer = { id: '1', title: 'Arbeit', startedAt: start.toISOString(), status: 'running', accumulatedPausedMs: 0 };
+    const timer: ActiveTimer = { id: '1', title: 'Arbeit', notes: 'Kapitel 2', startedAt: start.toISOString(), status: 'running', accumulatedPausedMs: 0 };
     const paused = pauseTimer(timer, new Date('2026-08-17T10:20:00.000Z'));
     expect(pauseTimer(paused, new Date('2026-08-17T10:25:00.000Z'))).toBe(paused);
     const resumed = resumeTimer(paused, new Date('2026-08-17T10:30:00.000Z'));
     expect(resumeTimer(resumed, new Date('2026-08-17T10:35:00.000Z'))).toBe(resumed);
+    expect(resumed.notes).toBe('Kapitel 2');
   });
 });

@@ -15,7 +15,10 @@ export class JsonStore {
   async load(): Promise<AppState> {
     try {
       const raw = await fs.readFile(this.filePath, 'utf8');
-      return normalizeState(JSON.parse(raw) as Partial<AppState>);
+      const input = JSON.parse(raw) as Partial<AppState>;
+      const state = normalizeState(input);
+      if (JSON.stringify(input) !== JSON.stringify(state)) await this.writeState(state).catch(() => undefined);
+      return state;
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code;
       if (code !== 'ENOENT') {

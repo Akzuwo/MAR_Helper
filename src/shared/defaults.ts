@@ -1,12 +1,14 @@
 import type { AppState } from './models';
+import { normalizePromptEntries, type PromptEntryInput } from './prompt-entries';
 
 const now = new Date().toISOString();
 
 export const createDefaultState = (): AppState => ({
-  version: 2,
+  version: 4,
   settings: {
     modules: { journal: true, prompts: true, planner: true },
-    gitIntegration: { enabled: false, repositories: [] }
+    gitIntegration: { enabled: false, repositories: [] },
+    betaFeatures: { rawTextImport: false }
   },
   journalEntries: [],
   activeTimer: null,
@@ -17,16 +19,22 @@ export const createDefaultState = (): AppState => ({
     { id: 'model-codex', name: 'Codex', createdAt: now }
   ],
   promptEntries: [],
+  nextPromptNumber: 1,
   plannerTasks: []
 });
 
 export function normalizeState(input: Partial<AppState> | undefined): AppState {
   const defaults = createDefaultState();
   if (!input) return defaults;
+  const prompts = normalizePromptEntries(
+    (Array.isArray(input.promptEntries) ? input.promptEntries : []) as PromptEntryInput[],
+    [],
+    input.nextPromptNumber ?? 1
+  );
   return {
     ...defaults,
     ...input,
-    version: 2,
+    version: 4,
     settings: {
       ...defaults.settings,
       ...input.settings,
@@ -35,12 +43,14 @@ export function normalizeState(input: Partial<AppState> | undefined): AppState {
         ...defaults.settings.gitIntegration,
         ...input.settings?.gitIntegration,
         repositories: Array.isArray(input.settings?.gitIntegration?.repositories) ? input.settings.gitIntegration.repositories : []
-      }
+      },
+      betaFeatures: { ...defaults.settings.betaFeatures, ...input.settings?.betaFeatures }
     },
     journalEntries: Array.isArray(input.journalEntries) ? input.journalEntries : [],
     activeTimer: input.activeTimer ?? null,
     promptModels: Array.isArray(input.promptModels) ? input.promptModels : defaults.promptModels,
-    promptEntries: Array.isArray(input.promptEntries) ? input.promptEntries : [],
+    promptEntries: prompts.entries,
+    nextPromptNumber: prompts.nextPromptNumber,
     plannerTasks: Array.isArray(input.plannerTasks) ? input.plannerTasks : []
   };
 }

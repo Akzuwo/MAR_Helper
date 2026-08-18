@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FileText, Plus, Search, WandSparkles } from 'lucide-react';
 import type { PromptEntry } from '../../../shared/models';
+import { matchesPromptSearch, upsertPromptEntry } from '../../../shared/prompt-entries';
 import { useAppData } from '../../state/AppDataContext';
 import { Button, ConfirmDialog, EmptyState, Input, Select } from '../../components/ui';
 import { Page, PageHeader } from '../../layout/Page';
@@ -9,7 +10,7 @@ import { PromptEditor } from './PromptEditor';
 
 const dateTime = (iso: string) => new Intl.DateTimeFormat('de-CH', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso));
 const preview = (value: string) => value.replace(/```[\s\S]*?```/g, '[Codeblock]').replace(/[#*_>`|]/g, '').replace(/\s+/g, ' ').trim();
-const title = (value: string) => preview(value).slice(0, 68) || 'Unbenannter Prompt';
+const promptHeading = (value: string) => preview(value).slice(0, 68) || 'Unbenannter Prompt';
 
 export function PromptsPage() {
   const { state, updateState, toast } = useAppData();
@@ -22,10 +23,9 @@ export function PromptsPage() {
 
   const selected = state.promptEntries.find((entry) => entry.id === selectedId) ?? null;
   const filtered = useMemo(() => {
-    const query = search.toLocaleLowerCase('de');
     return [...state.promptEntries]
       .filter((entry) => !modelFilter || entry.modelName === modelFilter)
-      .filter((entry) => !query || `${entry.modelName} ${entry.prompt} ${entry.response}`.toLocaleLowerCase('de').includes(query))
+      .filter((entry) => matchesPromptSearch(entry, search))
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }, [state.promptEntries, modelFilter, search]);
 
@@ -41,12 +41,7 @@ export function PromptsPage() {
   }, []);
 
   const save = (entry: PromptEntry) => {
-    void updateState((current) => ({
-      ...current,
-      promptEntries: current.promptEntries.some((item) => item.id === entry.id)
-        ? current.promptEntries.map((item) => item.id === entry.id ? entry : item)
-        : [...current.promptEntries, entry]
-    }), editing ? 'Prompt aktualisiert' : 'Prompt gespeichert');
+    void updateState((current) => upsertPromptEntry(current, entry), editing ? 'Prompt aktualisiert' : 'Prompt gespeichert');
     setEditorOpen(false); setEditing(null); setSelectedId(entry.id);
   };
 
@@ -71,9 +66,10 @@ export function PromptsPage() {
     {state.promptEntries.length === 0 ? <EmptyState icon={<WandSparkles/>} title="Noch keine Prompts" description="Erfasse deinen ersten KI-Prompt samt Antwort für eine lückenlose Dokumentation." action={<Button icon={<Plus size={17}/>} onClick={() => setEditorOpen(true)}>Prompt erfassen</Button>}/> : filtered.length === 0 ? <EmptyState icon={<Search/>} title="Keine Treffer" description="Passe Suche oder Modellfilter an."/> :
       <div className="prompt-grid" role="list">
         {filtered.map((entry) => <button className="prompt-card" key={entry.id} role="listitem" onClick={() => setSelectedId(entry.id)}>
+          <span className="prompt-card__number">#{entry.number}</span>
+          <div className="prompt-card__title"><FileText size={18}/><h2>{entry.title?.trim() || promptHeading(entry.prompt)}</h2></div>
           <div className="prompt-card__meta"><span className="chip"><WandSparkles size={13}/>{entry.modelName}</span><time>{dateTime(entry.createdAt)}</time></div>
-          <div className="prompt-card__title"><FileText size={18}/><h2>{title(entry.prompt)}</h2></div>
-          <p>{preview(entry.prompt).slice(0, 220)}{preview(entry.prompt).length > 220 ? ' …' : ''}</p>
+          {entry.title?.trim() && <p>{preview(entry.prompt).slice(0, 220)}{preview(entry.prompt).length > 220 ? ' …' : ''}</p>}
         </button>)}
       </div>}
     <PromptEditor open={editorOpen} entry={editing} models={state.promptModels} onClose={() => { setEditorOpen(false); setEditing(null); }} onSave={save} onManageModels={() => toast('Modelle verwaltest du in den Einstellungen.', 'info')}/>

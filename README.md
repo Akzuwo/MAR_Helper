@@ -60,7 +60,9 @@ Der Smoke-Test startet die gebaute Electron-App isoliert und prüft Renderer, Pr
 
 ## Importformat
 
-Im Bereich **Export → Daten importieren** können vollständige MAR-Helper-Backups und JSON-Exporte einzelner Module importiert werden. CSV- und Markdown-Dateien sind Dokumentexporte und nicht für einen verlustfreien Re-Import vorgesehen.
+Im Bereich **Import & Export → Daten importieren** können vollständige MAR-Helper-Backups und JSON-Exporte einzelner Module importiert werden. Eine genaue, direkt in der App verfügbare Format-Anleitung enthält Pflichtfelder und Beispiele für jedes Modul.
+
+Unter **Einstellungen → Beta-Funktionen** kann zusätzlich der automatische Rohtext-Import aktiviert werden. Er erkennt lokal eingefügte CSV-/TSV-Tabellen, beschriftete Prompt-/Antwort-Blöcke, exportierte Prompt-Markdown-Dokumente und Markdown-Aufgabenlisten. Vor jeder Übernahme zeigt die App das erkannte Modul und die Anzahl der Einträge an. JSON bleibt das empfohlene verlustfreie Austauschformat.
 
 Ein Modulimport verwendet dieses Format:
 

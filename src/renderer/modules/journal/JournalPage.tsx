@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, CirclePause, CirclePlay, Clock3, Link2, Plus, Square } from 'lucide-react';
+import { CalendarDays, CirclePause, CirclePlay, Clock3, Link2, Plus, Square, StickyNote } from 'lucide-react';
 import type { ActiveTimer, JournalEntry } from '../../../shared/models';
 import { formatDuration, getPausedTimeMs, getWorkingTimeMs, pauseTimer, resumeTimer } from '../../../shared/timer';
 import { useAppData } from '../../state/AppDataContext';
-import { Button, ConfirmDialog, EmptyState, Field, Input, Select } from '../../components/ui';
+import { Button, ConfirmDialog, EmptyState, Field, Input, Modal, Select, Textarea } from '../../components/ui';
 import { Page, PageHeader } from '../../layout/Page';
 import { JournalEntryDialog } from './JournalEntryDialog';
 
@@ -14,12 +14,15 @@ const isToday = (iso: string) => new Date(iso).toDateString() === new Date().toD
 export function JournalPage() {
   const { state, updateState } = useAppData();
   const [activity, setActivity] = useState('');
+  const [notes, setNotes] = useState('');
   const [taskId, setTaskId] = useState('');
   const [validation, setValidation] = useState('');
   const [now, setNow] = useState(Date.now());
   const [editEntry, setEditEntry] = useState<JournalEntry | null>(null);
   const [entryDialogOpen, setEntryDialogOpen] = useState(false);
   const [deleteEntry, setDeleteEntry] = useState<JournalEntry | null>(null);
+  const [timerNotesOpen, setTimerNotesOpen] = useState(false);
+  const [timerNotesDraft, setTimerNotesDraft] = useState('');
 
   const timer = state.activeTimer;
   const plannerIntegration = state.settings.modules.planner;
@@ -56,13 +59,14 @@ export function JournalPage() {
     const activeTimer: ActiveTimer = {
       id: crypto.randomUUID(),
       title: activity.trim(),
+      notes: notes.trim() || undefined,
       startedAt: new Date().toISOString(),
       status: 'running',
       accumulatedPausedMs: 0,
       linkedTaskId: taskId || undefined
     };
     await updateState((current) => ({ ...current, activeTimer }), 'Timer gestartet');
-    setActivity(''); setTaskId(''); setValidation(''); setNow(Date.now());
+    setActivity(''); setNotes(''); setTaskId(''); setValidation(''); setNow(Date.now());
   };
 
   const togglePause = () => {
@@ -78,6 +82,7 @@ export function JournalPage() {
     const entry: JournalEntry = {
       id: timer.id,
       title: timer.title,
+      notes: timer.notes,
       startedAt: timer.startedAt,
       endedAt: endedAt.toISOString(),
       workingTimeMs: getWorkingTimeMs(timer, endedAt.getTime()),
@@ -85,6 +90,19 @@ export function JournalPage() {
       linkedTaskId: timer.linkedTaskId
     };
     void updateState((current) => ({ ...current, activeTimer: null, journalEntries: [...current.journalEntries, entry] }), 'Journaleintrag gespeichert');
+  };
+
+  const openTimerNotes = () => {
+    setTimerNotesDraft(timer?.notes ?? '');
+    setTimerNotesOpen(true);
+  };
+
+  const saveTimerNotes = () => {
+    const nextNotes = timerNotesDraft.trim() || undefined;
+    void updateState((current) => current.activeTimer ? {
+      ...current, activeTimer: { ...current.activeTimer, notes: nextNotes }
+    } : current, nextNotes ? 'Notizen gespeichert' : 'Notizen entfernt');
+    setTimerNotesOpen(false);
   };
 
   const saveEntry = (entry: JournalEntry) => {
@@ -107,15 +125,17 @@ export function JournalPage() {
   const todayMs = todayEntries.reduce((sum, entry) => sum + entry.workingTimeMs, 0) + (timer && isToday(timer.startedAt) ? getWorkingTimeMs(timer, now) : 0);
 
   return <Page>
-    <PageHeader title="Arbeitsjournal" description="Erfasse und verwalte deine Arbeitszeiten."/>
+    <PageHeader title="Arbeitsjournal" description="Erfasse und verwalte deine Arbeitszeiten und Notizen."/>
     <section className={`journal-hero ${timer ? 'journal-hero--active' : ''}`}>
       {timer ? <>
         <div className="timer-card">
           <div className={`status-pill ${timer.status === 'paused' ? 'status-pill--paused' : ''}`}><span/>{timer.status === 'paused' ? 'Pausiert' : 'Aktuelle Aktivität'}</div>
           <h2>{timer.title}</h2>
           {timer.linkedTaskId && <div className="timer-link"><Link2 size={14}/>{state.plannerTasks.find((task) => task.id === timer.linkedTaskId)?.title ?? 'Verknüpfter Task'}</div>}
+          {timer.notes && <p className="timer-notes"><StickyNote size={14}/><span>{timer.notes}</span></p>}
           <div className="timer-value" aria-label={`Arbeitszeit ${formatDuration(getWorkingTimeMs(timer, now))}`}>{formatDuration(getWorkingTimeMs(timer, now))}</div>
           <div className="timer-actions">
+            <Button variant="secondary" icon={<StickyNote size={17}/>} onClick={openTimerNotes}>Notizen</Button>
             <Button variant="secondary" icon={timer.status === 'running' ? <CirclePause size={18}/> : <CirclePlay size={18}/>} onClick={togglePause}>{timer.status === 'running' ? 'Pausieren' : 'Fortsetzen'}</Button>
             <Button icon={<Square size={16}/>} onClick={stop}>Beenden</Button>
           </div>
@@ -130,6 +150,7 @@ export function JournalPage() {
       </> : <form className="start-timer-card" onSubmit={start}>
         <div className="start-timer-card__fields">
           <Field label="Aktivität" error={validation}><Input id="activity-input" autoFocus placeholder="z. B. Innenräume in Blender modellieren" value={activity} onChange={(event) => { setActivity(event.target.value); setValidation(''); }}/></Field>
+          <Field label="Notizen" optional><Textarea className="journal-notes-input" placeholder="Was möchtest du zu diesem Arbeitsblock festhalten?" value={notes} onChange={(event) => setNotes(event.target.value)}/></Field>
           {plannerIntegration && openTasks.length > 0 && <Field label="Aus Zeitplan übernehmen" optional><Select value={taskId} onChange={(event) => selectTask(event.target.value)}><option value="">Ohne Task starten</option>{openTasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</Select></Field>}
         </div>
         <Button type="submit" icon={<CirclePlay size={18}/>}>Timer starten</Button>
@@ -142,13 +163,19 @@ export function JournalPage() {
           <div className="journal-row journal-row--head" aria-hidden="true"><span>Datum</span><span>Aktivität</span><span>Zeitraum</span><span>Dauer</span></div>
           {entries.map((entry) => <button className="journal-row" role="listitem" key={entry.id} onClick={() => { setEditEntry(entry); setEntryDialogOpen(true); }}>
             <span><CalendarDays size={15}/>{deDate(entry.startedAt)}</span>
-            <span><strong>{entry.title}</strong>{entry.linkedTaskId && <small><Link2 size={12}/>{state.plannerTasks.find((task) => task.id === entry.linkedTaskId)?.title ?? 'Zeitplan-Task'}</small>}</span>
+            <span><strong>{entry.title}</strong>{entry.notes && <small title={entry.notes}><StickyNote size={12}/><span>{entry.notes}</span></small>}{entry.linkedTaskId && <small><Link2 size={12}/><span>{state.plannerTasks.find((task) => task.id === entry.linkedTaskId)?.title ?? 'Zeitplan-Task'}</span></small>}</span>
             <span>{time(entry.startedAt)} – {time(entry.endedAt)}</span>
             <span className="duration">{formatDuration(entry.workingTimeMs)}</span>
           </button>)}
         </div>}
     </section>
     <JournalEntryDialog open={entryDialogOpen} entry={editEntry} tasks={plannerIntegration ? state.plannerTasks : []} onClose={() => { setEntryDialogOpen(false); setEditEntry(null); }} onSave={saveEntry} onDelete={(entry) => setDeleteEntry(entry)}/>
+    <Modal open={timerNotesOpen} title="Notizen zum Arbeitsblock" description={timer?.title ?? 'Aktueller Arbeitsblock'} onClose={() => setTimerNotesOpen(false)}>
+      <div className="form-stack">
+        <Field label="Notizen" optional><Textarea autoFocus placeholder="Ergebnisse, Fortschritt oder nächste Schritte …" value={timerNotesDraft} onChange={(event) => setTimerNotesDraft(event.target.value)}/></Field>
+        <div className="form-actions"><Button variant="secondary" onClick={() => setTimerNotesOpen(false)}>Abbrechen</Button><Button onClick={saveTimerNotes}>Speichern</Button></div>
+      </div>
+    </Modal>
     <ConfirmDialog open={!!deleteEntry} title="Eintrag löschen?" description="Dieser Journaleintrag wird dauerhaft entfernt. Der verknüpfte Zeitplan-Task bleibt bestehen." onCancel={() => setDeleteEntry(null)} onConfirm={confirmDelete}/>
   </Page>;
 }

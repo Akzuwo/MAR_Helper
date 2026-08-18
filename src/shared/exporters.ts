@@ -7,8 +7,8 @@ const csvCell = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""'
 const csv = (rows: unknown[][]) => rows.map((row) => row.map(csvCell).join(',')).join('\r\n');
 
 export const exportJournalCsv = (entries: JournalEntry[]) => csv([
-  ['ID', 'Aktivität', 'Start', 'Ende', 'Arbeitszeit (ms)', 'Pausenzeit (ms)', 'Task-ID'],
-  ...entries.map((entry) => [entry.id, entry.title, entry.startedAt, entry.endedAt, entry.workingTimeMs, entry.pausedTimeMs, entry.linkedTaskId])
+  ['ID', 'Aktivität', 'Notizen', 'Start', 'Ende', 'Arbeitszeit (ms)', 'Pausenzeit (ms)', 'Task-ID'],
+  ...entries.map((entry) => [entry.id, entry.title, entry.notes, entry.startedAt, entry.endedAt, entry.workingTimeMs, entry.pausedTimeMs, entry.linkedTaskId])
 ]);
 
 export const exportPlannerCsv = (tasks: PlannerTask[]) => csv([
@@ -49,20 +49,25 @@ const gitMarkdown = (entry: PromptEntry): string[] => {
 export const exportPromptsMarkdown = (entries: PromptEntry[]) => [
   '# Promptprotokoll',
   '',
-  ...[...entries].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).flatMap((entry) => [
-    `## ${deDateTime(entry.createdAt)}`,
-    `**Modell:** ${entry.modelName}`,
-    '',
-    '### Prompt',
-    entry.prompt,
-    '',
-    '### Antwort',
-    entry.response,
-    '',
-    ...gitMarkdown(entry),
-    '---',
-    ''
-  ])
+  ...[...entries].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).flatMap((entry) => {
+    const title = entry.title?.trim().replace(/\s+/g, ' ');
+    return [
+      `## #${entry.number}${title ? ` – ${title}` : ''}`,
+      '',
+      `**Modell:** ${entry.modelName}  `,
+      `**Zeitpunkt:** ${deDateTime(entry.createdAt)}`,
+      '',
+      '### Prompt',
+      entry.prompt,
+      '',
+      '### Antwort',
+      entry.response,
+      '',
+      ...gitMarkdown(entry),
+      '---',
+      ''
+    ];
+  })
 ].join('\n');
 
 export const exportAllJson = (state: AppState) => JSON.stringify({

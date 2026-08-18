@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CalendarClock, Clock3, Pencil, Plus, Save, Trash2, WandSparkles } from 'lucide-react';
+import { CalendarClock, ClipboardPaste, Clock3, FlaskConical, Pencil, Plus, Save, Trash2, WandSparkles } from 'lucide-react';
 import type { ModuleId, PromptModel } from '../../../shared/models';
 import { useAppData } from '../../state/AppDataContext';
 import { Button, ConfirmDialog, Field, IconButton, Input } from '../../components/ui';
@@ -22,6 +22,14 @@ export function SettingsPage() {
 
   const toggleModule = (id: ModuleId) => {
     void updateState((current) => ({ ...current, settings: { ...current.settings, modules: { ...current.settings.modules, [id]: !current.settings.modules[id] } } }), `${modules.find((module) => module.id === id)?.title} ${state.settings.modules[id] ? 'deaktiviert' : 'aktiviert'}`);
+  };
+
+  const toggleRawTextImport = () => {
+    const enabled = state.settings.betaFeatures.rawTextImport;
+    void updateState((current) => ({
+      ...current,
+      settings: { ...current.settings, betaFeatures: { ...current.settings.betaFeatures, rawTextImport: !enabled } }
+    }), `Rohtext-Import ${enabled ? 'deaktiviert' : 'aktiviert'}`);
   };
 
   const addModel = (event: React.FormEvent) => {
@@ -48,7 +56,7 @@ export function SettingsPage() {
   };
 
   return <Page>
-    <PageHeader title="Einstellungen" description="Konfiguriere aktive Module, Git-Integration und deine Modellliste."/>
+    <PageHeader title="Einstellungen" description="Konfiguriere aktive Module, Beta-Funktionen, Git-Integration und deine Modellliste."/>
     <section className="settings-card">
       <header><h2>Aktive Module</h2><p>Nur aktive Module erscheinen in der Navigation. Gespeicherte Daten bleiben beim Deaktivieren erhalten.</p></header>
       <div>
@@ -57,6 +65,15 @@ export function SettingsPage() {
           <div><strong>{module.title}</strong><span>{module.description}</span></div>
           <button className={`switch ${state.settings.modules[module.id] ? 'on' : ''}`} role="switch" aria-checked={state.settings.modules[module.id]} aria-label={`${module.title} ${state.settings.modules[module.id] ? 'deaktivieren' : 'aktivieren'}`} onClick={() => toggleModule(module.id)}><span/></button>
         </div>)}
+      </div>
+    </section>
+    <section className="settings-card beta-settings">
+      <header><div className="settings-heading"><span><FlaskConical size={20}/></span><div><h2>Beta-Funktionen</h2><p>Teste neue Funktionen vor ihrer finalen Veröffentlichung. Sie können sich noch verändern.</p></div></div></header>
+      <div className="setting-row">
+        <span className="setting-row__icon"><ClipboardPaste size={21}/></span>
+        <div><strong>Automatischer Rohtext-Import</strong><span>Erkennt eingefügte Tabellen, Prompt-Blöcke und Aufgabenlisten automatisch.</span></div>
+        <span className="beta-badge">Beta</span>
+        <button className={`switch ${state.settings.betaFeatures.rawTextImport ? 'on' : ''}`} role="switch" aria-checked={state.settings.betaFeatures.rawTextImport} aria-label={`Automatischen Rohtext-Import ${state.settings.betaFeatures.rawTextImport ? 'deaktivieren' : 'aktivieren'}`} onClick={toggleRawTextImport}><span/></button>
       </div>
     </section>
     <GitIntegrationSettings/>

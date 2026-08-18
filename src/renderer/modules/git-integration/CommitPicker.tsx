@@ -41,11 +41,13 @@ export function CommitPicker({ open, repositories, promptTimestamp, onClose, onS
   };
   const group = (title: string, items: GitCommitSummary[]) => items.length > 0 && <section className="commit-group"><h3>{title}</h3>{items.map((commit) => <button className="commit-row" key={commit.commitHash} onClick={() => void choose(commit)} disabled={!!loadingHash}><span className="commit-row__hash"><GitCommitHorizontal size={16}/>{commit.shortCommitHash}</span><span className="commit-row__copy"><strong>{commit.commitMessage || 'Commit ohne Nachricht'}</strong><small>{dateTime(commit.committedAt)} · {commit.author}</small></span>{loadingHash === commit.commitHash ? <LoaderCircle className="spin" size={18}/> : <span className="commit-row__select">Auswählen</span>}</button>)}</section>;
 
-  return <Modal open={open} title="Commit verknüpfen" description="Wähle den Commit, der zu diesem Prompt gehört. Die Vorauswahl ist nur eine zeitliche Hilfe." onClose={onClose} wide>
+  return <Modal open={open} title="Commit verknüpfen" description="Wähle den Commit, der zu diesem Prompt gehört. Die Vorauswahl ist nur eine zeitliche Hilfe." onClose={onClose} bodyClassName="modal__body--commit-picker" wide>
     <div className="commit-picker">
       {repositories.length > 1 && <Field label="Repository"><Select value={repositoryId} onChange={(event) => setRepositoryId(event.target.value)}>{repositories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</Select></Field>}
       {error && <div className="inline-error"><strong>Commit konnte nicht geladen werden</strong><span>{error}</span></div>}
-      {loading && commits.length === 0 ? <div className="commit-loading"><LoaderCircle className="spin"/><span>Commits werden lokal gelesen …</span></div> : commits.length === 0 && !error ? <div className="commit-loading"><GitCommitHorizontal/><span>In diesem Repository wurden keine Commits gefunden.</span></div> : <>{group('Passende Commits', matching)}{group(matching.length ? 'Weitere Commits' : 'Neueste Commits', other)}{commits.length >= 30 && <Button variant="secondary" onClick={() => void load(true)} disabled={loading}>{loading ? 'Wird geladen …' : 'Weitere laden'}</Button>}</>}
+      <div className="commit-picker__list">
+        {loading && commits.length === 0 ? <div className="commit-loading"><LoaderCircle className="spin"/><span>Commits werden lokal gelesen …</span></div> : commits.length === 0 && !error ? <div className="commit-loading"><GitCommitHorizontal/><span>In diesem Repository wurden keine Commits gefunden.</span></div> : <>{group('Passende Commits', matching)}{group(matching.length ? 'Weitere Commits' : 'Neueste Commits', other)}{commits.length >= 30 && <Button variant="secondary" onClick={() => void load(true)} disabled={loading}>{loading ? 'Wird geladen …' : 'Weitere laden'}</Button>}</>}
+      </div>
       <p className="local-footnote"><Check size={15}/>Commit und Diff werden ausschliesslich lokal gelesen.</p>
     </div>
   </Modal>;

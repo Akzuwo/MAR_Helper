@@ -19,7 +19,7 @@ describe('Git snapshot persistence and export', () => {
 
   it('exports metadata, files and a fence safe diff', () => {
     const markdown = exportPromptsMarkdown([{
-      id: 'prompt-1', modelName: 'Codex', prompt: 'Ändere den Code', response: 'Erledigt', createdAt: '2026-08-17T15:20:00.000Z',
+      id: 'prompt-1', number: 1, modelName: 'Codex', prompt: 'Ändere den Code', response: 'Erledigt', createdAt: '2026-08-17T15:20:00.000Z',
       gitSnapshot: {
         repositoryName: 'MAR Helper', commitHash: 'a'.repeat(40), shortCommitHash: 'aaaaaaa', commitMessage: 'Git integration',
         committedAt: '2026-08-17T15:25:00.000Z', filesChanged: 1, additions: 1, deletions: 0,
@@ -30,7 +30,7 @@ describe('Git snapshot persistence and export', () => {
     expect(markdown).toContain('`src/example.ts` +1 -0');
     expect(markdown).toContain('````diff');
     const state = normalizeState(undefined);
-    state.promptEntries = [{ id: 'prompt-1', modelName: 'Codex', prompt: 'P', response: 'A', createdAt: '2026-08-17T15:20:00.000Z', gitSnapshot: {
+    state.promptEntries = [{ id: 'prompt-1', number: 1, modelName: 'Codex', prompt: 'P', response: 'A', createdAt: '2026-08-17T15:20:00.000Z', gitSnapshot: {
       repositoryName: 'Deleted repository', commitHash: 'b'.repeat(40), shortCommitHash: 'bbbbbbb', commitMessage: 'Portable', committedAt: '2026-08-17T15:25:00.000Z', filesChanged: 0, additions: 0, deletions: 0, files: [], diff: 'offline diff'
     } }];
     state.settings.gitIntegration.repositories = [];

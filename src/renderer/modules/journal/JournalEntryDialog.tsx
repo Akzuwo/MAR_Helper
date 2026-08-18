@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { JournalEntry, PlannerTask } from '../../../shared/models';
 import { formatDuration } from '../../../shared/timer';
-import { Button, Field, Input, Modal, Select } from '../../components/ui';
+import { Button, Field, Input, Modal, Select, Textarea } from '../../components/ui';
 
 const toLocalInput = (iso: string) => {
   const date = new Date(iso);
@@ -18,6 +18,7 @@ export function JournalEntryDialog({ open, entry, tasks, onClose, onSave, onDele
   onDelete?: (entry: JournalEntry) => void;
 }) {
   const [title, setTitle] = useState('');
+  const [notes, setNotes] = useState('');
   const [startedAt, setStartedAt] = useState('');
   const [endedAt, setEndedAt] = useState('');
   const [linkedTaskId, setLinkedTaskId] = useState('');
@@ -28,6 +29,7 @@ export function JournalEntryDialog({ open, entry, tasks, onClose, onSave, onDele
     const now = new Date();
     const defaultStart = new Date(now.getTime() - 30 * 60_000).toISOString();
     setTitle(entry?.title ?? '');
+    setNotes(entry?.notes ?? '');
     setStartedAt(toLocalInput(entry?.startedAt ?? defaultStart));
     setEndedAt(toLocalInput(entry?.endedAt ?? now.toISOString()));
     setLinkedTaskId(entry?.linkedTaskId ?? '');
@@ -46,6 +48,7 @@ export function JournalEntryDialog({ open, entry, tasks, onClose, onSave, onDele
     onSave({
       id: entry?.id ?? crypto.randomUUID(),
       title: title.trim(),
+      notes: notes.trim() || undefined,
       startedAt: start.toISOString(),
       endedAt: end.toISOString(),
       workingTimeMs: total - paused,
@@ -54,9 +57,10 @@ export function JournalEntryDialog({ open, entry, tasks, onClose, onSave, onDele
     });
   };
 
-  return <Modal open={open} title={entry ? 'Journaleintrag bearbeiten' : 'Eintrag hinzufügen'} description="Arbeitszeit und Aktivität erfassen." onClose={onClose}>
+  return <Modal open={open} title={entry ? 'Journaleintrag bearbeiten' : 'Eintrag hinzufügen'} description="Arbeitszeit, Aktivität und Notizen erfassen." onClose={onClose}>
     <form onSubmit={submit} className="form-stack">
       <Field label="Aktivität" error={error && !title.trim() ? error : undefined}><Input autoFocus value={title} onChange={(e) => { setTitle(e.target.value); setError(''); }}/></Field>
+      <Field label="Notizen" optional><Textarea placeholder="Ergebnisse, Fortschritt oder nächste Schritte …" value={notes} onChange={(e) => setNotes(e.target.value)}/></Field>
       <div className="form-grid">
         <Field label="Start"><Input type="datetime-local" value={startedAt} onChange={(e) => { setStartedAt(e.target.value); setError(''); }}/></Field>
         <Field label="Ende"><Input type="datetime-local" value={endedAt} onChange={(e) => { setEndedAt(e.target.value); setError(''); }}/></Field>

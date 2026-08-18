@@ -6,6 +6,7 @@ const api: MarHelperApi = {
   saveState: (state) => ipcRenderer.invoke('state:save', state) as Promise<AppState>,
   saveExport: (request: SaveFileRequest) => ipcRenderer.invoke('export:save', request),
   openImport: () => ipcRenderer.invoke('import:open'),
+  previewRawImport: (content) => ipcRenderer.invoke('import:preview-raw', content),
   commitImport: (sessionId, mode) => ipcRenderer.invoke('import:commit', sessionId, mode),
   checkGit: () => ipcRenderer.invoke('git:check'),
   selectGitRepository: () => ipcRenderer.invoke('git:select-repository'),

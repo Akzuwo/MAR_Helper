@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { GitCommitHorizontal, Link2Off } from 'lucide-react';
 import type { PromptEntry, PromptGitSnapshot, PromptModel } from '../../../shared/models';
-import { Button, Field, Modal, Select, Textarea } from '../../components/ui';
+import { Button, Field, Input, Modal, Select, Textarea } from '../../components/ui';
 import { useAppData } from '../../state/AppDataContext';
 import { CommitPicker } from '../git-integration/CommitPicker';
 
@@ -10,6 +10,7 @@ export function PromptEditor({ open, entry, models, onClose, onSave, onManageMod
   onSave: (entry: PromptEntry) => void; onManageModels: () => void
 }) {
   const { state } = useAppData();
+  const [title, setTitle] = useState('');
   const [modelId, setModelId] = useState('');
   const [prompt, setPrompt] = useState('');
   const [response, setResponse] = useState('');
@@ -19,6 +20,7 @@ export function PromptEditor({ open, entry, models, onClose, onSave, onManageMod
 
   useEffect(() => {
     if (!open) return;
+    setTitle(entry?.title ?? '');
     setModelId(entry?.modelId && models.some((model) => model.id === entry.modelId) ? entry.modelId : models[0]?.id ?? '');
     setPrompt(entry?.prompt ?? '');
     setResponse(entry?.response ?? '');
@@ -37,6 +39,8 @@ export function PromptEditor({ open, entry, models, onClose, onSave, onManageMod
     const model = models.find((item) => item.id === modelId)!;
     onSave({
       id: entry?.id ?? crypto.randomUUID(),
+      number: entry?.number ?? state.nextPromptNumber,
+      title: title.trim() || undefined,
       modelId: model.id,
       modelName: model.name,
       prompt: prompt.trim(),
@@ -49,6 +53,7 @@ export function PromptEditor({ open, entry, models, onClose, onSave, onManageMod
 
   return <Modal open={open} title={entry ? 'Prompt bearbeiten' : 'Prompt erfassen'} description="Prompt und Antwort werden sicher als Markdown dargestellt." onClose={onClose} wide>
     <form onSubmit={submit} className="form-stack">
+      <Field label="Titel" optional><Input placeholder="z. B. Git-Integration für Promptprotokoll" value={title} onChange={(event) => setTitle(event.target.value)}/></Field>
       <Field label="Modell" error={errors.model}>
         <div className="field-row"><Select value={modelId} onChange={(event) => { setModelId(event.target.value); setErrors((e) => ({ ...e, model: '' })); }} disabled={models.length === 0}><option value="">Modell auswählen</option>{models.map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}</Select><Button type="button" variant="secondary" onClick={onManageModels}>Modelle verwalten</Button></div>
       </Field>

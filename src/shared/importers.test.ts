@@ -53,4 +53,42 @@ describe('MAR Helper imports', () => {
     expect(merged.plannerTasks).toEqual([task]);
     expect(merged.settings.modules.prompts).toBe(false);
   });
+
+  it('numbers legacy prompt imports chronologically without colliding with existing entries', () => {
+    const state = createDefaultState();
+    state.promptEntries = [{
+      id: 'existing', number: 1, modelName: 'Codex', prompt: 'Bestehend', response: 'Antwort', createdAt: '2026-08-15T10:00:00.000Z'
+    }];
+    state.nextPromptNumber = 2;
+    const bundle = parseImport(JSON.stringify({ module: 'prompts', data: [
+      { id: 'legacy-new', modelName: 'Codex', prompt: 'Neuer', response: 'Antwort', createdAt: '2026-08-18T10:00:00.000Z' },
+      { id: 'legacy-old', modelName: 'Codex', prompt: 'Älter', response: 'Antwort', createdAt: '2026-08-17T10:00:00.000Z' }
+    ] }));
+
+    const imported = applyImport(state, bundle, 'merge');
+    expect(imported.promptEntries.map((entry) => [entry.id, entry.number])).toEqual([
+      ['existing', 1], ['legacy-new', 3], ['legacy-old', 2]
+    ]);
+    expect(imported.nextPromptNumber).toBe(4);
+  });
+
+  it('preserves free imported numbers and reassigns collisions during merge', () => {
+    const state = createDefaultState();
+    state.promptEntries = [{
+      id: 'existing', number: 2, title: 'Bestehend', modelName: 'Codex', prompt: 'P', response: 'A', createdAt: '2026-08-15T10:00:00.000Z'
+    }];
+    state.nextPromptNumber = 3;
+    const bundle = parseImport(JSON.stringify({ format: 'mar-helper-export', formatVersion: 2, module: 'prompts', data: [
+      { id: 'collision', number: 2, title: 'Kollision', modelName: 'Codex', prompt: 'P2', response: 'A2', createdAt: '2026-08-16T10:00:00.000Z' },
+      { id: 'free', number: 7, title: 'Freie Nummer', modelName: 'Codex', prompt: 'P7', response: 'A7', createdAt: '2026-08-17T10:00:00.000Z' },
+      { id: 'unnumbered', modelName: 'Codex', prompt: 'P8', response: 'A8', createdAt: '2026-08-18T10:00:00.000Z' }
+    ] }));
+
+    const imported = applyImport(state, bundle, 'merge');
+    expect(imported.promptEntries.map((entry) => [entry.id, entry.number])).toEqual([
+      ['existing', 2], ['collision', 8], ['free', 7], ['unnumbered', 9]
+    ]);
+    expect(imported.promptEntries.find((entry) => entry.id === 'free')?.title).toBe('Freie Nummer');
+    expect(imported.nextPromptNumber).toBe(10);
+  });
 });

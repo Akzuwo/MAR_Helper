@@ -1,4 +1,4 @@
-import { CalendarClock, Clock3, Download, Import, PackageOpen, WandSparkles } from 'lucide-react';
+import { BookOpenText, CalendarClock, ClipboardPaste, Clock3, Download, Import, PackageOpen, WandSparkles } from 'lucide-react';
 import { useState } from 'react';
 import { exportAllJson, exportJournalCsv, exportModuleJson, exportPlannerCsv, exportPromptsMarkdown } from '../../../shared/exporters';
 import type { ImportSelectResult } from '../../../shared/models';
@@ -6,6 +6,7 @@ import { useAppData } from '../../state/AppDataContext';
 import { Button, EmptyState } from '../../components/ui';
 import { Page, PageHeader } from '../../layout/Page';
 import { ImportDialog } from './ImportDialog';
+import { ImportGuideModal } from './ImportGuideModal';
 
 const dateSuffix = () => new Date().toISOString().slice(0, 10);
 
@@ -13,6 +14,8 @@ export function ExportPage() {
   const { state, toast } = useAppData();
   const [importOpen, setImportOpen] = useState(false);
   const [importSelection, setImportSelection] = useState<ImportSelectResult | null>(null);
+  const [importSource, setImportSource] = useState<'file' | 'rawText'>('file');
+  const [guideOpen, setGuideOpen] = useState(false);
   const active = state.settings.modules;
   const activeCount = Object.values(active).filter(Boolean).length;
 
@@ -29,22 +32,33 @@ export function ExportPage() {
     const result = await window.marHelper.openImport();
     if (result.canceled) return;
     setImportSelection(result);
+    setImportSource('file');
+    setImportOpen(true);
+  };
+
+  const startRawImport = () => {
+    setImportSelection(null);
+    setImportSource('rawText');
     setImportOpen(true);
   };
 
   return <Page>
-    <PageHeader title="Import & Export" description="Sichere deine MAR-Helper-Daten oder stelle einen früheren JSON-Export wieder her."/>
+    <PageHeader title="Import & Export" description="Übernimm bestehende Daten oder sichere deinen vollständigen MAR-Helper-Datensatz."/>
     <section className="import-card">
       <div className="import-card__icon"><Import size={22}/></div>
-      <div><h2>Daten importieren</h2><p>Importiere einen zuvor exportierten MAR-Helper-Datensatz.</p></div>
-      <Button variant="secondary" icon={<Import size={17}/>} onClick={() => void startImport()}>JSON importieren</Button>
+      <div><h2>Daten importieren</h2><p>Sieh dir das genaue Datenformat an oder starte direkt mit deinem Import.</p></div>
+      <div className="import-card__actions">
+        <Button variant="ghost" icon={<BookOpenText size={17}/>} onClick={() => setGuideOpen(true)}>Format-Anleitung</Button>
+        {state.settings.betaFeatures.rawTextImport && <Button variant="secondary" icon={<ClipboardPaste size={17}/>} onClick={startRawImport}>Rohtext <span className="beta-badge">Beta</span></Button>}
+        <Button variant="secondary" icon={<Import size={17}/>} onClick={() => void startImport()}>JSON auswählen</Button>
+      </div>
     </section>
     {activeCount === 0 ? <EmptyState icon={<PackageOpen/>} title="Keine Module aktiv" description="Aktiviere in den Einstellungen mindestens ein Modul, um dessen Daten zu exportieren."/> : <>
       <div className="export-grid">
         {active.journal && <ExportCard
           icon={<Clock3/>}
           title="Arbeitsjournal"
-          description={`${state.journalEntries.length} Einträge · inklusive Arbeits- und Pausenzeiten`}
+          description={`${state.journalEntries.length} Einträge · inklusive Zeiten und Notizen`}
           actions={<><Button variant="secondary" icon={<Download size={16}/>} onClick={() => save(`arbeitsjournal-${dateSuffix()}.csv`, 'csv', 'CSV', exportJournalCsv(state.journalEntries))}>CSV</Button><Button variant="secondary" icon={<Download size={16}/>} onClick={() => save(`arbeitsjournal-${dateSuffix()}.json`, 'json', 'JSON', exportModuleJson('journal', state.journalEntries))}>JSON</Button></>}
         />}
         {active.prompts && <ExportCard
@@ -62,7 +76,8 @@ export function ExportPage() {
       </div>
     </>}
     <section className="backup-card"><div className="backup-card__icon"><PackageOpen size={24}/></div><div><h2>Vollständiges Backup</h2><p>Alle Daten, Einstellungen und gespeicherten Git-Diffs in einer einzigen JSON-Datei sichern.</p></div><Button icon={<Download size={17}/>} onClick={() => save(`mar-helper-backup-${dateSuffix()}.json`, 'json', 'JSON', exportAllJson(state))}>Alles exportieren</Button></section>
-    <ImportDialog open={importOpen} selection={importSelection} onClose={() => setImportOpen(false)}/>
+    <ImportDialog open={importOpen} selection={importSelection} allowRawText={state.settings.betaFeatures.rawTextImport} initialSource={importSource} onClose={() => setImportOpen(false)}/>
+    <ImportGuideModal open={guideOpen} betaEnabled={state.settings.betaFeatures.rawTextImport} onClose={() => setGuideOpen(false)}/>
   </Page>;
 }
 

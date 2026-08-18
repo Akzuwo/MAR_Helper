@@ -1,5 +1,6 @@
 import { AlertCircle, Check, Info, LoaderCircle, X } from 'lucide-react';
-import { forwardRef, useEffect, useId, useRef } from 'react';
+import { forwardRef, useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export function Button({ variant = 'primary', size = 'md', icon, children, className = '', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; size?: 'sm' | 'md'; icon?: React.ReactNode
@@ -40,29 +41,50 @@ export const Select = forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<H
 );
 Select.displayName = 'Select';
 
-export function Modal({ open, title, description, children, onClose, wide = false }: {
-  open: boolean; title: string; description?: string; children: React.ReactNode; onClose: () => void; wide?: boolean
+export function Modal({ open, title, description, children, onClose, wide = false, bodyClassName = '' }: {
+  open: boolean; title: string; description?: string; children: React.ReactNode; onClose: () => void; wide?: boolean; bodyClassName?: string
 }) {
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  const [mounted, setMounted] = useState(open);
+
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
   useEffect(() => {
-    if (!open) return;
+    if (open) { setMounted(true); return; }
+    if (!mounted) return;
+    const fallback = window.setTimeout(() => setMounted(false), 260);
+    return () => window.clearTimeout(fallback);
+  }, [open, mounted]);
+  useEffect(() => {
+    if (!open || !mounted) return;
     const previous = document.activeElement as HTMLElement | null;
     closeRef.current?.focus();
-    const handler = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
+    const handler = (event: KeyboardEvent) => {
+      const overlays = document.querySelectorAll('.overlay');
+      if (event.key === 'Escape' && overlays[overlays.length - 1] === overlayRef.current) onCloseRef.current();
+    };
     window.addEventListener('keydown', handler);
     return () => { window.removeEventListener('keydown', handler); previous?.focus(); };
-  }, [open, onClose]);
-  if (!open) return null;
-  return <div className="overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+  }, [open, mounted]);
+  if (!mounted) return null;
+
+  return createPortal(<div ref={overlayRef} className={`overlay overlay--${open ? 'open' : 'closing'}`} role="presentation">
+    <div
+      className="overlay__backdrop"
+      aria-hidden="true"
+      onAnimationEnd={(event) => { if (!open && event.animationName === 'backdrop-in') setMounted(false); }}
+      onMouseDown={() => { if (open) onCloseRef.current(); }}
+    />
     <section className={`modal ${wide ? 'modal--wide' : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <header className="modal__header">
         <div><h2 id={titleId}>{title}</h2>{description && <p>{description}</p>}</div>
-        <IconButton ref={closeRef} label="Dialog schliessen" variant="ghost" onClick={onClose}><X size={20}/></IconButton>
+        <IconButton ref={closeRef} label="Dialog schliessen" variant="ghost" onClick={() => onCloseRef.current()}><X size={20}/></IconButton>
       </header>
-      <div className="modal__body">{children}</div>
+      <div className={`modal__body ${bodyClassName}`}>{children}</div>
     </section>
-  </div>;
+  </div>, document.body);
 }
 
 export function EmptyState({ icon, title, description, action }: { icon: React.ReactNode; title: string; description: string; action?: React.ReactNode }) {
