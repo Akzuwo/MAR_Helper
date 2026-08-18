@@ -67,4 +67,56 @@ describe('raw text import recognition', () => {
     const parsed = parseRawTextImport(markdown);
     expect(parsed.bundle.promptEntries?.[0]).toMatchObject({ title: 'Quellencheck', modelName: 'Codex', prompt: 'Prüfe die Quellen.', response: 'Zwei Angaben fehlen.' });
   });
+
+  it('recognizes escaped Markdown journal entries grouped by ISO date headings', () => {
+    const parsed = parseRawTextImport(`# Arbeitsjournal MAR Joseph Stücklin
+
+Datum im Format yyyy-mm-dd
+&#x20;
+\\## 2026-02-17:
+
+\\*\\*Handlung:\\*\\* Erste Recherche, Little's Law aufgefunden.
+&#x20;
+\\## 2026-04-04:
+
+\\*\\*Handlung:\\*\\* Brainstorming Projektanforderungen.
+&#x20;
+\\*\\*Erkenntnisse:\\*\\*
+
+\\- Warnung bei nicht 100%-Effizienz in die Soll-Kategorie.
+
+\\- In-Game-Modeler ist kompliziert, aber möglich.
+&#x20;
+\\## 2026-05-12:
+
+Schreiben an der MAR: Vorwort, Einleitung.
+&#x20;
+\\## 2026-06-05
+
+\\*\\*Handlung:\\*\\*&#x20;
+
+\\- Abbildung zur Referenz hinzugefügt
+
+\\- Grober Plan für Indikatoren erstellt`);
+
+    expect(parsed.detectedFormat).toBe('Markdown-Datumsblöcke · Arbeitsjournal');
+    expect(parsed.bundle.kind).toBe('journal');
+    expect(parsed.bundle.counts.journal).toBe(4);
+    expect(parsed.bundle.journalEntries?.map((entry) => entry.title)).toEqual([
+      "Erste Recherche, Little's Law aufgefunden.",
+      'Brainstorming Projektanforderungen.',
+      'Schreiben an der MAR: Vorwort, Einleitung.',
+      'Abbildung zur Referenz hinzugefügt'
+    ]);
+    expect(parsed.bundle.journalEntries?.[1].notes).toBe('**Erkenntnisse:**\n\n- Warnung bei nicht 100%-Effizienz in die Soll-Kategorie.\n\n- In-Game-Modeler ist kompliziert, aber möglich.');
+    expect(parsed.bundle.journalEntries?.[2].notes).toBeUndefined();
+    expect(parsed.bundle.journalEntries?.[3]).toMatchObject({
+      notes: '- Grober Plan für Indikatoren erstellt', workingTimeMs: 0, pausedTimeMs: 0
+    });
+    for (const [index, date] of ['2026-02-17', '2026-04-04', '2026-05-12', '2026-06-05'].entries()) {
+      const startedAt = new Date(parsed.bundle.journalEntries?.[index].startedAt ?? '');
+      expect([startedAt.getFullYear(), startedAt.getMonth() + 1, startedAt.getDate()].join('-')).toBe(date.replace(/-0/g, '-'));
+      expect(parsed.bundle.journalEntries?.[index].endedAt).toBe(parsed.bundle.journalEntries?.[index].startedAt);
+    }
+  });
 });

@@ -228,6 +228,99 @@ function recognizePromptBlocks(content: string): RawImportResult | null {
   return { detectedFormat: 'Beschrifteter Text · Promptprotokoll', bundle: { kind: 'prompts', promptEntries: entries, counts: { prompts: entries.length }, formatVersion: 0, legacy: true } };
 }
 
+const normalizeJournalMarkdown = (content: string) => content
+  .replace(/(?:&#x20;|&#32;|&nbsp;)/gi, ' ')
+  .replace(/\\([#*_.-])/g, '$1')
+  .split(/\r?\n/)
+  .map((line) => line.trimEnd())
+  .join('\n');
+
+function journalDateTimestamp(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) throw new ImportValidationError('UNSUPPORTED_FILE', `Das Journaldatum „${value}“ ist ungültig.`);
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    throw new ImportValidationError('UNSUPPORTED_FILE', `Das Journaldatum „${value}“ ist ungültig.`);
+  }
+  return date.toISOString();
+}
+
+const journalLabel = (line: string) => /^\s*(?:\*\*)?\s*([^*:]+?)\s*:\s*(?:\*\*)?\s*(.*)$/.exec(line.trim());
+const isJournalSectionLabel = (line: string) => {
+  const label = journalLabel(line);
+  return !!label && /^(?:handlung|erkenntnisse|merke|ziel|naechsteschritte)/.test(normalize(label[1]));
+};
+const cleanJournalTitle = (line: string) => line.trim()
+  .replace(/^[-*+]\s+/, '')
+  .replace(/^\d+\.\s+/, '')
+  .replace(/\*\*/g, '')
+  .trim();
+
+function recognizeJournalDateBlocks(content: string): RawImportResult | null {
+  const lines = normalizeJournalMarkdown(content).split('\n');
+  const sections: Array<{ date: string; lines: string[] }> = [];
+  let current: { date: string; lines: string[] } | null = null;
+
+  for (const line of lines) {
+    const heading = /^\s*#{1,6}\s+(\d{4}-\d{2}-\d{2})\s*:?\s*$/.exec(line);
+    if (heading) {
+      if (current) sections.push(current);
+      current = { date: heading[1], lines: [] };
+    } else if (current) current.lines.push(line);
+  }
+  if (current) sections.push(current);
+  if (sections.length === 0) return null;
+
+  const entries = sections.map((section): JournalEntry => {
+    const contentLines = [...section.lines];
+    let title = '';
+    let titleLine = -1;
+    const actionLine = contentLines.findIndex((line) => {
+      const label = journalLabel(line);
+      return !!label && normalize(label[1]).startsWith('handlung');
+    });
+
+    if (actionLine >= 0) {
+      const inlineAction = journalLabel(contentLines[actionLine])?.[2] ?? '';
+      title = cleanJournalTitle(inlineAction);
+      titleLine = actionLine;
+      if (!title) {
+        titleLine = contentLines.findIndex((line, index) => index > actionLine && !!cleanJournalTitle(line) && !isJournalSectionLabel(line));
+        if (titleLine >= 0) title = cleanJournalTitle(contentLines[titleLine]);
+      }
+    }
+    if (!title) {
+      titleLine = contentLines.findIndex((line) => !!cleanJournalTitle(line) && !isJournalSectionLabel(line));
+      if (titleLine >= 0) title = cleanJournalTitle(contentLines[titleLine]);
+    }
+    if (!title) title = `Arbeitsjournal ${section.date}`;
+
+    const notes = contentLines
+      .filter((_line, index) => index !== titleLine && index !== actionLine)
+      .join('\n')
+      .replace(/^\s+|\s+$/g, '')
+      .replace(/\n{3,}/g, '\n\n');
+    const timestamp = journalDateTimestamp(section.date);
+    return {
+      id: crypto.randomUUID(),
+      title,
+      notes: notes || undefined,
+      startedAt: timestamp,
+      endedAt: timestamp,
+      workingTimeMs: 0,
+      pausedTimeMs: 0
+    };
+  });
+
+  return {
+    detectedFormat: 'Markdown-Datumsblöcke · Arbeitsjournal',
+    bundle: { kind: 'journal', journalEntries: entries, counts: { journal: entries.length }, formatVersion: 0, legacy: true }
+  };
+}
+
 function recognizeTaskList(content: string): RawImportResult | null {
   const matches = [...content.matchAll(/^\s*[-*]\s+\[([ xX])\]\s+(.+?)\s*$/gm)];
   if (matches.length === 0) return null;
@@ -250,7 +343,7 @@ export function parseRawTextImport(content: string): RawImportResult {
       if (error instanceof ImportValidationError && error.code !== 'INVALID_JSON') throw error;
     }
   }
-  const result = recognizeTable(text) ?? recognizePromptBlocks(text) ?? recognizeTaskList(text);
+  const result = recognizeTable(text) ?? recognizeJournalDateBlocks(text) ?? recognizePromptBlocks(text) ?? recognizeTaskList(text);
   if (result) return result;
-  throw new ImportValidationError('UNSUPPORTED_FILE', 'Die Daten konnten nicht eindeutig erkannt werden. Nutze eine Tabelle mit Überschriften, beschriftete Prompt-/Antwort-Blöcke oder eine Markdown-Aufgabenliste.');
+  throw new ImportValidationError('UNSUPPORTED_FILE', 'Die Daten konnten nicht eindeutig erkannt werden. Nutze eine Tabelle mit Überschriften, datierte Journal-Blöcke, beschriftete Prompt-/Antwort-Blöcke oder eine Markdown-Aufgabenliste.');
 }

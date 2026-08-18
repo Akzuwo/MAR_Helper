@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CalendarClock, ClipboardPaste, Clock3, FlaskConical, Pencil, Plus, Save, Trash2, WandSparkles } from 'lucide-react';
+import { APP_VERSION } from '../../../shared/app-version';
 import type { ModuleId, PromptModel } from '../../../shared/models';
 import { useAppData } from '../../state/AppDataContext';
 import { Button, ConfirmDialog, Field, IconButton, Input } from '../../components/ui';
@@ -71,7 +72,7 @@ export function SettingsPage() {
       <header><div className="settings-heading"><span><FlaskConical size={20}/></span><div><h2>Beta-Funktionen</h2><p>Teste neue Funktionen vor ihrer finalen Veröffentlichung. Sie können sich noch verändern.</p></div></div></header>
       <div className="setting-row">
         <span className="setting-row__icon"><ClipboardPaste size={21}/></span>
-        <div><strong>Automatischer Rohtext-Import</strong><span>Erkennt eingefügte Tabellen, Prompt-Blöcke und Aufgabenlisten automatisch.</span></div>
+        <div><strong>Automatischer Rohtext-Import</strong><span>Erkennt eingefügte Tabellen, datierte Journal-Blöcke, Prompt-Blöcke und Aufgabenlisten automatisch.</span></div>
         <span className="beta-badge">Beta</span>
         <button className={`switch ${state.settings.betaFeatures.rawTextImport ? 'on' : ''}`} role="switch" aria-checked={state.settings.betaFeatures.rawTextImport} aria-label={`Automatischen Rohtext-Import ${state.settings.betaFeatures.rawTextImport ? 'deaktivieren' : 'aktivieren'}`} onClick={toggleRawTextImport}><span/></button>
       </div>
@@ -92,7 +93,7 @@ export function SettingsPage() {
       </div>
     </section>
     <section className="about-card">
-      <div><h2>MAR Helper</h2><p>Deine Daten bleiben lokal auf diesem Gerät. Die drei Module funktionieren unabhängig voneinander.</p><span>Version 1.2.0</span></div>
+      <div><h2>MAR Helper</h2><p>Deine Daten bleiben lokal auf diesem Gerät. Die drei Module funktionieren unabhängig voneinander.</p><span>Version {APP_VERSION}</span></div>
     </section>
     <ConfirmDialog open={!!deletingModel} title="Modell löschen?" description={`„${deletingModel?.name ?? ''}“ wird aus der Auswahl entfernt. Bestehende Prompt-Einträge behalten ihren gespeicherten Modellnamen.`} onCancel={() => setDeletingModel(null)} onConfirm={confirmDelete}/>
   </Page>;

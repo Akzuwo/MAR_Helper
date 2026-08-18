@@ -56,7 +56,7 @@
       "repo": "MAR_Helper",
       "releaseType": "release"
     }],
-    "artifactName": "${productName}-Setup-${version}-${arch}.${ext}",
+    "artifactName": "MAR-Helper-Setup-${version}-${arch}.${ext}",
     "win": {
       "target": [
         {

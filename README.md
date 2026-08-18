@@ -62,7 +62,7 @@ Der Smoke-Test startet die gebaute Electron-App isoliert und prüft Renderer, Pr
 
 Im Bereich **Import & Export → Daten importieren** können vollständige MAR-Helper-Backups und JSON-Exporte einzelner Module importiert werden. Eine genaue, direkt in der App verfügbare Format-Anleitung enthält Pflichtfelder und Beispiele für jedes Modul.
 
-Unter **Einstellungen → Beta-Funktionen** kann zusätzlich der automatische Rohtext-Import aktiviert werden. Er erkennt lokal eingefügte CSV-/TSV-Tabellen, beschriftete Prompt-/Antwort-Blöcke, exportierte Prompt-Markdown-Dokumente und Markdown-Aufgabenlisten. Vor jeder Übernahme zeigt die App das erkannte Modul und die Anzahl der Einträge an. JSON bleibt das empfohlene verlustfreie Austauschformat.
+Unter **Einstellungen → Beta-Funktionen** kann zusätzlich der automatische Rohtext-Import aktiviert werden. Er erkennt lokal eingefügte CSV-/TSV-Tabellen, datierte Arbeitsjournal-Blöcke in Markdown, beschriftete Prompt-/Antwort-Blöcke, exportierte Prompt-Markdown-Dokumente und Markdown-Aufgabenlisten. Vor jeder Übernahme zeigt die App das erkannte Modul und die Anzahl der Einträge an. JSON bleibt das empfohlene verlustfreie Austauschformat.
 
 Ein Modulimport verwendet dieses Format:
 
@@ -104,14 +104,13 @@ Vor dem Import werden alle IDs, Pflichtfelder, Zeitstempel, Zahlenwerte und Stat
 
 ## Releases und automatische Updates
 
-Ein semantischer Git-Tag startet den GitHub-Workflow `.github/workflows/release.yml`:
+Ein Release wird direkt in GitHub unter **Actions → Release Workflow → Run workflow** gestartet. Im Pflichtfeld **Version** wird eine semantische Version ohne `v` eingetragen, zum Beispiel `1.3.0` oder `2.0.0-beta.1`.
 
-```powershell
-git tag v1.2.0
-git push origin v1.2.0
-```
+Der Workflow validiert die Version und prüft, dass Tag und Release noch nicht existieren. Anschliessend synchronisiert er `package.json`, `package-lock.json`, die in der App angezeigte Version und die WinGet-Manifeste, erstellt Tests, Build und NSIS-Installer, pusht den Release-Commit und den Tag, veröffentlicht den GitHub Release und reicht den WinGet-PR ein. Ein manuelles Erstellen oder Pushen des Tags ist nicht mehr notwendig.
 
-GitHub Actions prüft die Tests und veröffentlicht den NSIS-Installer zusammen mit `latest.yml` und der Blockmap. Installierte Produktionsversionen prüfen beim Start die öffentlichen Releases von `Akzuwo/MAR_Helper`. Bei einer neueren Version erscheint ein Dialog. **Ignorieren** blendet genau diese Version dauerhaft aus; **Jetzt aktualisieren** lädt sie im Hintergrund, installiert sie still und startet MAR Helper neu.
+Für die WinGet-Einreichung muss einmalig ein Repository-Secret namens `WINGET_TOKEN` hinterlegt werden. Benötigt wird ein klassischer GitHub Personal Access Token mit dem Scope `public_repo`, damit `wingetcreate` einen Fork und Pull Request für `microsoft/winget-pkgs` erstellen darf. Ohne dieses Secret bricht der Workflow vor jeglicher Release-Änderung mit einer verständlichen Meldung ab.
+
+Installierte Produktionsversionen prüfen beim Start die öffentlichen Releases von `Akzuwo/MAR_Helper`. Bei einer neueren Version erscheint ein Dialog. **Ignorieren** blendet genau diese Version dauerhaft aus; **Jetzt aktualisieren** lädt sie im Hintergrund, installiert sie still und startet MAR Helper neu.
 
 Für signierte Windows-Releases können die Repository-Secrets `WINDOWS_CERTIFICATE` und `WINDOWS_CERTIFICATE_PASSWORD` gesetzt werden. Ohne diese Secrets wird ein funktionsfähiger, aber nicht digital signierter Installer erzeugt.
 

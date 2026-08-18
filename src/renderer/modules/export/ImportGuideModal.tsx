@@ -82,7 +82,7 @@ export function ImportGuideModal({ open, betaEnabled, onClose }: { open: boolean
           <div><strong>Promptprotokoll</strong><code>Titel, Modell, Prompt, Antwort, Zeitpunkt</code></div>
           <div><strong>Zeitplan</strong><code>Titel, Beschreibung, Fällig am, Status</code></div>
         </div>
-        <p>Akzeptiert werden Komma, Semikolon oder Tabulator als Trennzeichen. Alternativ erkennt die Beta-Funktion beschriftete Blöcke mit <code>Prompt:</code> und <code>Antwort:</code> sowie Markdown-Aufgaben wie <code>- [ ] Aufgabe | 2026-08-31</code>.</p>
+        <p>Akzeptiert werden Komma, Semikolon oder Tabulator als Trennzeichen. Alternativ erkennt die Beta-Funktion Journal-Blöcke mit Überschriften wie <code>## 2026-08-18</code>, beschriftete Blöcke mit <code>Prompt:</code> und <code>Antwort:</code> sowie Markdown-Aufgaben wie <code>- [ ] Aufgabe | 2026-08-31</code>.</p>
       </section>
     </div>
   </Modal>;
