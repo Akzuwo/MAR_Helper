@@ -21,11 +21,10 @@ env:
   TAG: v${{ inputs.version }}
   INSTALLER_NAME: MAR-Helper-Setup-${{ inputs.version }}-x64.exe
   INSTALLER_URL: https://github.com/${{ github.repository }}/releases/download/v${{ inputs.version }}/MAR-Helper-Setup-${{ inputs.version }}-x64.exe
-  WINGET_PACKAGE_ID: Akzuwo.MARHelper
 
 jobs:
   windows-release:
-    name: Windows Release und WinGet
+    name: Windows GitHub Release
     runs-on: windows-latest
     timeout-minutes: 45
     defaults:
@@ -41,7 +40,6 @@ jobs:
       - name: Validate release request
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
         run: |
           $semverPattern = '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$'
           if ($env:VERSION -notmatch $semverPattern) {
@@ -61,10 +59,6 @@ jobs:
           gh release view $env:TAG *> $null
           if ($LASTEXITCODE -eq 0) {
             throw "Der GitHub Release '$env:TAG' existiert bereits. Es wird nichts überschrieben."
-          }
-
-          if ([string]::IsNullOrWhiteSpace($env:WINGET_TOKEN)) {
-            throw "Das Repository-Secret WINGET_TOKEN fehlt. Hinterlege einen GitHub-PAT für WinGet-PRs, bevor du einen Release startest."
           }
 
           if ($env:VERSION.Contains('-')) {
@@ -95,9 +89,9 @@ jobs:
           }
           Set-Content -LiteralPath $versionFile -Value $updatedSource -Encoding utf8 -NoNewline
 
-          $packageVersion = node -p "require('./package.json').version"
-          if ($packageVersion -ne $env:VERSION) {
-            throw "package.json enthält '$packageVersion' statt '$env:VERSION'."
+          $actualVersion = node -p "require('./package.json').version"
+          if ($actualVersion -ne $env:VERSION) {
+            throw "package.json enthält '$actualVersion' statt '$env:VERSION'."
           }
 
       - name: Install dependencies
@@ -129,72 +123,11 @@ jobs:
             }
           }
 
-          $installerHash = (Get-FileHash -LiteralPath $installerPath -Algorithm SHA256).Hash
-          "INSTALLER_SHA256=$installerHash" >> $env:GITHUB_ENV
-
-      - name: Generate WinGet manifests
-        run: |
-          $manifestDirectory = 'winget/manifests'
-          New-Item -ItemType Directory -Force -Path $manifestDirectory | Out-Null
-          $releaseDate = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
-
-          @"
-          # yaml-language-server: `$schema=https://aka.ms/winget-manifest.version.1.12.0.schema.json
-
-          PackageIdentifier: $env:WINGET_PACKAGE_ID
-          PackageVersion: $env:VERSION
-          DefaultLocale: de-CH
-          ManifestType: version
-          ManifestVersion: 1.12.0
-          "@ | Set-Content -LiteralPath "$manifestDirectory/Akzuwo.MARHelper.yaml" -Encoding utf8
-
-          @"
-          # yaml-language-server: `$schema=https://aka.ms/winget-manifest.installer.1.12.0.schema.json
-
-          PackageIdentifier: $env:WINGET_PACKAGE_ID
-          PackageVersion: $env:VERSION
-          InstallerType: nullsoft
-          Scope: user
-          UpgradeBehavior: install
-          ReleaseDate: $releaseDate
-          Installers:
-            - Architecture: x64
-              InstallerUrl: $env:INSTALLER_URL
-              InstallerSha256: $env:INSTALLER_SHA256
-          ManifestType: installer
-          ManifestVersion: 1.12.0
-          "@ | Set-Content -LiteralPath "$manifestDirectory/Akzuwo.MARHelper.installer.yaml" -Encoding utf8
-
-          @"
-          # yaml-language-server: `$schema=https://aka.ms/winget-manifest.defaultLocale.1.12.0.schema.json
-
-          PackageIdentifier: $env:WINGET_PACKAGE_ID
-          PackageVersion: $env:VERSION
-          PackageLocale: de-CH
-          Publisher: MAR Helper
-          PublisherUrl: https://github.com/Akzuwo
-          PublisherSupportUrl: https://github.com/${{ github.repository }}/issues
-          PackageName: MAR Helper
-          PackageUrl: https://github.com/${{ github.repository }}
-          License: MIT
-          ShortDescription: Lokale Desktop-App für die Organisation und Dokumentation von Maturaarbeiten.
-          Description: MAR Helper verbindet Arbeitsjournal, Promptprotokoll und Zeitplan in einer lokalen Desktop-App für Maturaarbeiten.
-          ReleaseNotesUrl: https://github.com/${{ github.repository }}/releases/tag/$env:TAG
-          Tags:
-            - arbeitsjournal
-            - maturaarbeit
-            - produktivitaet
-            - promptprotokoll
-            - zeitplan
-          ManifestType: defaultLocale
-          ManifestVersion: 1.12.0
-          "@ | Set-Content -LiteralPath "$manifestDirectory/Akzuwo.MARHelper.locale.de-CH.yaml" -Encoding utf8
-
       - name: Commit synchronized version
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- package.json package-lock.json src/shared/app-version.ts winget/manifests
+          git add -- package.json package-lock.json src/shared/app-version.ts
           git diff --cached --quiet
           if ($LASTEXITCODE -ne 0) {
             git commit -m "Release $env:VERSION"
@@ -239,16 +172,6 @@ jobs:
             throw "Der Installer ist unter '$env:INSTALLER_URL' nicht erreichbar. HTTP $($response.StatusCode)."
           }
 
-      - name: Submit WinGet pull request
-        env:
-          WINGET_CREATE_GITHUB_TOKEN: ${{ secrets.WINGET_TOKEN }}
-        run: |
-          Invoke-WebRequest 'https://aka.ms/wingetcreate/latest' -OutFile 'wingetcreate.exe'
-          & .\wingetcreate.exe submit winget/manifests `
-            --prtitle "New version: $env:WINGET_PACKAGE_ID version $env:VERSION" `
-            --no-open
-          if ($LASTEXITCODE -ne 0) { throw 'Der WinGet Pull Request konnte nicht erstellt werden.' }
-
       - name: Write release summary
         if: always()
         run: |
@@ -258,5 +181,4 @@ jobs:
           - Tag: ``$env:TAG``
           - Release: https://github.com/${{ github.repository }}/releases/tag/$env:TAG
           - Installer: $env:INSTALLER_URL
-          - WinGet Package: ``$env:WINGET_PACKAGE_ID``
           "@ >> $env:GITHUB_STEP_SUMMARY

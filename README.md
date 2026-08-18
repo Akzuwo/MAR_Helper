@@ -102,13 +102,17 @@ Für `module` sind folgende Werte erlaubt:
 
 Vor dem Import werden alle IDs, Pflichtfelder, Zeitstempel, Zahlenwerte und Statuswerte validiert. **Zusammenführen** ergänzt neue IDs und aktualisiert vorhandene IDs; **Ersetzen** überschreibt das betroffene Modul beziehungsweise beim vollständigen Backup den gesamten lokalen Datenbestand.
 
+## Installation
+
+Lade den aktuellen Windows-Installer unter [GitHub Releases](https://github.com/Akzuwo/MAR_Helper/releases/latest) herunter und führe ihn aus.
+
 ## Releases und automatische Updates
 
 Ein Release wird direkt in GitHub unter **Actions → Release Workflow → Run workflow** gestartet. Im Pflichtfeld **Version** wird eine semantische Version ohne `v` eingetragen, zum Beispiel `1.3.0` oder `2.0.0-beta.1`.
 
-Der Workflow validiert die Version und prüft, dass Tag und Release noch nicht existieren. Anschliessend synchronisiert er `package.json`, `package-lock.json`, die in der App angezeigte Version und die WinGet-Manifeste, erstellt Tests, Build und NSIS-Installer, pusht den Release-Commit und den Tag, veröffentlicht den GitHub Release und reicht den WinGet-PR ein. Ein manuelles Erstellen oder Pushen des Tags ist nicht mehr notwendig.
+Der Workflow validiert die Version und prüft, dass Tag und Release noch nicht existieren. Anschliessend synchronisiert er `package.json`, `package-lock.json` und die in der App angezeigte Version, führt Tests und Build aus, erzeugt den NSIS-Installer, pusht den Release-Commit und den Tag und veröffentlicht den GitHub Release samt Installer und Update-Dateien. Ein manuelles Erstellen oder Pushen des Tags ist nicht notwendig.
 
-Für die WinGet-Einreichung muss einmalig ein Repository-Secret namens `WINGET_TOKEN` hinterlegt werden. Benötigt wird ein klassischer GitHub Personal Access Token mit dem Scope `public_repo`, damit `wingetcreate` einen Fork und Pull Request für `microsoft/winget-pkgs` erstellen darf. Ohne dieses Secret bricht der Workflow vor jeglicher Release-Änderung mit einer verständlichen Meldung ab.
+Für einen normalen Release müssen keine eigenen Repository-Secrets eingerichtet werden. Der Workflow verwendet das von GitHub Actions automatisch bereitgestellte `GITHUB_TOKEN`.
 
 Installierte Produktionsversionen prüfen beim Start die öffentlichen Releases von `Akzuwo/MAR_Helper`. Bei einer neueren Version erscheint ein Dialog. **Ignorieren** blendet genau diese Version dauerhaft aus; **Jetzt aktualisieren** lädt sie im Hintergrund, installiert sie still und startet MAR Helper neu.
 
