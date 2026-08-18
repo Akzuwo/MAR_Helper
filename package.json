@@ -1,6 +1,6 @@
 {
   "name": "mar-helper",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Modulare Desktop-App für Maturaarbeiten",
   "main": "dist-main/main/main.js",
   "author": "MAR Helper",
@@ -50,12 +50,14 @@
       "references/logo/screen.png",
       "package.json"
     ],
-    "publish": [{
-      "provider": "github",
-      "owner": "Akzuwo",
-      "repo": "MAR_Helper",
-      "releaseType": "release"
-    }],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Akzuwo",
+        "repo": "MAR_Helper",
+        "releaseType": "release"
+      }
+    ],
     "artifactName": "MAR-Helper-Setup-${version}-${arch}.${ext}",
     "win": {
       "target": [
