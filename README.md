@@ -107,8 +107,8 @@ Vor dem Import werden alle IDs, Pflichtfelder, Zeitstempel, Zahlenwerte und Stat
 Ein semantischer Git-Tag startet den GitHub-Workflow `.github/workflows/release.yml`:
 
 ```powershell
-git tag v1.1.0
-git push origin v1.1.0
+git tag v1.2.0
+git push origin v1.2.0
 ```
 
 GitHub Actions prüft die Tests und veröffentlicht den NSIS-Installer zusammen mit `latest.yml` und der Blockmap. Installierte Produktionsversionen prüfen beim Start die öffentlichen Releases von `Akzuwo/MAR_Helper`. Bei einer neueren Version erscheint ein Dialog. **Ignorieren** blendet genau diese Version dauerhaft aus; **Jetzt aktualisieren** lädt sie im Hintergrund, installiert sie still und startet MAR Helper neu.
