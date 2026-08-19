@@ -4,13 +4,15 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { applyImport, ImportValidationError, parseImport, type ImportBundle } from '../shared/importers';
 import { parseRawTextImport } from '../shared/raw-importer';
-import type { AppState, ImportMode, ImportSummary, SaveFileRequest } from '../shared/models';
+import type { AppState, AutoExportStatus, ImportMode, ImportSummary, SaveFileRequest } from '../shared/models';
+import { AutoExportService } from './auto-export';
 import { JsonStore } from './store';
 import { configureAutoUpdater } from './updater';
 import { checkGit, listCommits, readCommit, resolveRepository } from './git-integration/GitService';
 
 let mainWindow: BrowserWindow | null = null;
 let store: JsonStore;
+let autoExporter: AutoExportService;
 const importSessions = new Map<string, { bundle: ImportBundle; createdAt: number }>();
 const IMPORT_SESSION_TTL = 15 * 60 * 1000;
 
@@ -76,8 +78,13 @@ function createWindow() {
 
 app.whenReady().then(() => {
   store = new JsonStore();
+  autoExporter = new AutoExportService((status: AutoExportStatus) => mainWindow?.webContents.send('auto-export:status', status));
   ipcMain.handle('state:load', () => store.load());
-  ipcMain.handle('state:save', (_event, state: AppState) => store.save(state));
+  ipcMain.handle('state:save', async (_event, state: AppState) => {
+    const persisted = await store.save(state);
+    autoExporter.schedule(persisted);
+    return persisted;
+  });
   ipcMain.handle('export:save', async (_event, request: SaveFileRequest) => {
     if (!mainWindow) return { canceled: true };
     const result = await dialog.showSaveDialog(mainWindow, {
@@ -89,6 +96,17 @@ app.whenReady().then(() => {
     await fs.writeFile(result.filePath, request.content, 'utf8');
     return { canceled: false, filePath: result.filePath };
   });
+  ipcMain.handle('auto-export:select-folder', async () => {
+    if (!mainWindow) return { canceled: true };
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Auto-Export-Ordner auswählen',
+      buttonLabel: 'Diesen Ordner verwenden',
+      properties: ['openDirectory', 'createDirectory']
+    });
+    const directory = result.filePaths[0];
+    return result.canceled || !directory ? { canceled: true } : { canceled: false, directory };
+  });
+  ipcMain.handle('auto-export:run', async () => autoExporter.runNow(await store.load()));
   ipcMain.handle('import:open', async () => {
     if (!mainWindow) return { canceled: true };
     const result = await dialog.showOpenDialog(mainWindow, {
@@ -139,6 +157,7 @@ app.whenReady().then(() => {
         summary = { imported: session.bundle.counts, skipped: 0, conflicts: 0 };
         return applied;
       });
+      autoExporter.schedule(state);
       importSessions.delete(sessionId);
       return { ok: true, state, summary };
     } catch {

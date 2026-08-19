@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createDefaultState } from '../../shared/defaults';
-import type { AppState, ImportMode } from '../../shared/models';
+import type { AppState, AutoExportStatus, ImportMode } from '../../shared/models';
 
 type ToastKind = 'success' | 'error' | 'info';
 export interface ToastMessage { id: string; message: string; kind: ToastKind }
@@ -10,6 +10,7 @@ interface AppDataContextValue {
   loading: boolean;
   loadError: string | null;
   saving: boolean;
+  autoExportStatus: AutoExportStatus;
   updateState: (updater: (current: AppState) => AppState, successMessage?: string) => Promise<boolean>;
   commitImport: (sessionId: string, mode: ImportMode) => Promise<boolean>;
   toast: (message: string, kind?: ToastKind) => void;
@@ -24,6 +25,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const stateRef = useRef(state);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [autoExportStatus, setAutoExportStatus] = useState<AutoExportStatus>({ state: 'idle' });
   const [loadError, setLoadError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const saveQueue = useRef(Promise.resolve(true));
@@ -39,6 +41,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     setToasts((current) => [...current.slice(-2), { id, message, kind }]);
     window.setTimeout(() => dismissToast(id), 3500);
   }, [dismissToast]);
+
+  useEffect(() => window.marHelper.onAutoExportStatus((status) => {
+    setAutoExportStatus(status);
+    if (status.state === 'error') toast(status.message, 'error');
+  }), [toast]);
 
   useEffect(() => {
     window.marHelper.loadState()
@@ -99,8 +106,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     }
   }, [toast]);
 
-  const value = useMemo(() => ({ state, loading, loadError, saving, updateState, commitImport, toast, toasts, dismissToast }),
-    [state, loading, loadError, saving, updateState, commitImport, toast, toasts, dismissToast]);
+  const value = useMemo(() => ({ state, loading, loadError, saving, autoExportStatus, updateState, commitImport, toast, toasts, dismissToast }),
+    [state, loading, loadError, saving, autoExportStatus, updateState, commitImport, toast, toasts, dismissToast]);
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 }

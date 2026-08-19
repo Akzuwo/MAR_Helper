@@ -1,10 +1,17 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { AppState, MarHelperApi, SaveFileRequest, UpdateStatus } from '../shared/models';
+import type { AppState, AutoExportStatus, MarHelperApi, SaveFileRequest, UpdateStatus } from '../shared/models';
 
 const api: MarHelperApi = {
   loadState: () => ipcRenderer.invoke('state:load') as Promise<AppState>,
   saveState: (state) => ipcRenderer.invoke('state:save', state) as Promise<AppState>,
   saveExport: (request: SaveFileRequest) => ipcRenderer.invoke('export:save', request),
+  selectAutoExportFolder: () => ipcRenderer.invoke('auto-export:select-folder'),
+  runAutoExport: () => ipcRenderer.invoke('auto-export:run'),
+  onAutoExportStatus: (listener: (status: AutoExportStatus) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, status: AutoExportStatus) => listener(status);
+    ipcRenderer.on('auto-export:status', handler);
+    return () => ipcRenderer.removeListener('auto-export:status', handler);
+  },
   openImport: () => ipcRenderer.invoke('import:open'),
   previewRawImport: (content) => ipcRenderer.invoke('import:preview-raw', content),
   commitImport: (sessionId, mode) => ipcRenderer.invoke('import:commit', sessionId, mode),

@@ -10,10 +10,17 @@ export interface AppSettings {
   modules: ModuleSettings;
   gitIntegration: GitIntegrationSettings;
   betaFeatures: BetaFeatureSettings;
+  autoExport: AutoExportSettings;
 }
 
 export interface BetaFeatureSettings {
   rawTextImport: boolean;
+  autoExport: boolean;
+}
+
+export interface AutoExportSettings {
+  enabled: boolean;
+  directory?: string;
 }
 
 export interface GitRepository {
@@ -135,6 +142,14 @@ export interface SaveFileResult {
   filePath?: string;
 }
 
+export type AutoExportFolderResult = { canceled: true } | { canceled: false; directory: string };
+export type AutoExportStatus =
+  | { state: 'idle' }
+  | { state: 'exporting' }
+  | { state: 'success'; filePath: string; exportedAt: string }
+  | { state: 'error'; message: string };
+export type AutoExportResult = Extract<AutoExportStatus, { state: 'success' | 'error' }>;
+
 export type ImportKind = 'backup' | 'journal' | 'prompts' | 'planner';
 export type ImportMode = 'merge' | 'replace';
 export interface ImportCounts { journal?: number; prompts?: number; planner?: number; models?: number; repositories?: number; gitSnapshots?: number; activeTimer?: number }
@@ -155,6 +170,9 @@ export interface MarHelperApi {
   loadState: () => Promise<AppState>;
   saveState: (state: AppState) => Promise<AppState>;
   saveExport: (request: SaveFileRequest) => Promise<SaveFileResult>;
+  selectAutoExportFolder: () => Promise<AutoExportFolderResult>;
+  runAutoExport: () => Promise<AutoExportResult>;
+  onAutoExportStatus: (listener: (status: AutoExportStatus) => void) => () => void;
   openImport: () => Promise<ImportSelectResult>;
   previewRawImport: (content: string) => Promise<ImportSelectResult>;
   commitImport: (sessionId: string, mode: ImportMode) => Promise<ImportCommitResult>;

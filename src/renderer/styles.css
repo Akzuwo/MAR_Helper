@@ -314,6 +314,27 @@ button, a, input, select, textarea { outline: none; }
 .import-card p { margin: 2px 0 0; color: var(--text-muted); }
 .import-card__actions { display: flex; align-items: center; gap: 8px; }
 .import-card__actions .button .beta-badge { margin-left: 1px; padding: 1px 5px; color: inherit !important; background: var(--primary-tint); }
+.auto-export-card { margin-bottom: 24px; overflow: hidden; border: 1px solid #bbb5f2; border-radius: var(--radius-md); background: white; box-shadow: var(--shadow-card); }
+.auto-export-card > header { min-height: 96px; display: flex; align-items: center; gap: 14px; padding: 18px 22px; border-bottom: 1px solid var(--outline-soft); background: linear-gradient(135deg,#faf9ff,#f4f3ff); }
+.auto-export-card__icon { width: 44px; height: 44px; flex: 0 0 44px; display: grid; place-items: center; border-radius: 10px; color: var(--primary); background: white; box-shadow: 0 1px 5px rgba(25,28,29,.06); }
+.auto-export-card > header > div { min-width: 0; flex: 1; }
+.auto-export-card__title { display: flex; align-items: center; gap: 8px; }
+.auto-export-card h2 { margin: 0; font-size: 18px; line-height: 25px; }
+.auto-export-card p { margin: 2px 0 0; color: var(--text-muted); }
+.auto-export-config { display: flex; align-items: center; gap: 18px; padding: 18px 22px; }
+.auto-export-folder { min-width: 0; flex: 1; display: flex; align-items: center; gap: 11px; }
+.auto-export-folder > svg { flex: 0 0 auto; color: var(--primary); }
+.auto-export-folder > div { min-width: 0; }
+.auto-export-folder strong, .auto-export-folder span, .auto-export-folder small { display: block; }
+.auto-export-folder strong { font-size: 12px; font-weight: 500; }
+.auto-export-folder span { max-width: 620px; overflow: hidden; color: var(--text-variant); text-overflow: ellipsis; white-space: nowrap; }
+.auto-export-folder small { margin-top: 1px; color: var(--outline); font-size: 11px; }
+.auto-export-actions { display: flex; gap: 8px; }
+.auto-export-status { min-height: 39px; display: flex; align-items: center; gap: 7px; padding: 9px 22px; border-top: 1px solid #e2e0ec; color: var(--text-muted); background: var(--surface-low); font-size: 12px; }
+.auto-export-status > svg { flex: 0 0 auto; }
+.auto-export-status--success { color: #226342; background: #edf8f2; }
+.auto-export-status--error { color: var(--error); background: var(--error-soft); }
+.status-dot { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: var(--outline); }
 .import-dialog { display: flex; flex-direction: column; gap: 18px; }
 .import-source-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 4px; border-radius: 10px; background: var(--surface-container); }
 .import-source-tabs button { min-height: 40px; display: flex; align-items: center; justify-content: center; gap: 7px; border: 0; border-radius: 7px; color: var(--text-muted); background: transparent; cursor: pointer; font-weight: 500; }
@@ -408,6 +429,11 @@ button, a, input, select, textarea { outline: none; }
 .git-settings .setting-row { border-bottom: 1px solid var(--outline-soft); }
 .repository-manager { padding: 18px 24px 24px; }
 .repository-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
+.repository-empty { display: flex; align-items: center; gap: 13px; margin: 18px 24px 24px; padding: 15px 16px; border: 1px dashed var(--outline-soft); border-radius: var(--radius); background: var(--surface-low); }
+.repository-empty > span { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; border-radius: 9px; color: var(--primary); background: var(--primary-tint); }
+.repository-empty > div { min-width: 0; flex: 1; }
+.repository-empty strong { display: block; font-weight: 500; }
+.repository-empty p { margin: 2px 0 0; color: var(--text-muted); font-size: 12px; }
 .repository-row { min-height: 76px; display: flex; align-items: center; gap: 12px; padding: 11px 10px 11px 14px; border: 1px solid var(--outline-soft); border-bottom: 0; background: var(--surface-lowest); }
 .repository-row:first-of-type { border-radius: var(--radius) var(--radius) 0 0; }
 .repository-row:last-child { border-bottom: 1px solid var(--outline-soft); border-radius: 0 0 var(--radius) var(--radius); }

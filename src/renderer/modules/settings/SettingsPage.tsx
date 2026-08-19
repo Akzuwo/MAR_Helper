@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CalendarClock, ClipboardPaste, Clock3, FlaskConical, Pencil, Plus, Save, Trash2, WandSparkles } from 'lucide-react';
+import { CalendarClock, ClipboardPaste, Clock3, FileOutput, FlaskConical, Pencil, Plus, Save, Trash2, WandSparkles } from 'lucide-react';
 import { APP_VERSION } from '../../../shared/app-version';
 import type { ModuleId, PromptModel } from '../../../shared/models';
 import { useAppData } from '../../state/AppDataContext';
@@ -14,7 +14,7 @@ const modules: Array<{ id: ModuleId; title: string; description: string; icon: R
 ];
 
 export function SettingsPage() {
-  const { state, updateState } = useAppData();
+  const { state, updateState, toast } = useAppData();
   const [newModel, setNewModel] = useState('');
   const [modelError, setModelError] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -31,6 +31,35 @@ export function SettingsPage() {
       ...current,
       settings: { ...current.settings, betaFeatures: { ...current.settings.betaFeatures, rawTextImport: !enabled } }
     }), `Rohtext-Import ${enabled ? 'deaktiviert' : 'aktiviert'}`);
+  };
+
+  const toggleAutoExportBeta = async () => {
+    const enabled = state.settings.betaFeatures.autoExport;
+    if (!enabled) {
+      try {
+        const result = await window.marHelper.selectAutoExportFolder();
+        if (result.canceled) return;
+        await updateState((current) => ({
+          ...current,
+          settings: {
+            ...current.settings,
+            betaFeatures: { ...current.settings.betaFeatures, autoExport: true },
+            autoExport: { enabled: true, directory: result.directory }
+          }
+        }), 'Auto-Export eingerichtet');
+      } catch {
+        toast('Der Zielordner konnte nicht ausgewählt werden.', 'error');
+      }
+      return;
+    }
+    await updateState((current) => ({
+      ...current,
+      settings: {
+        ...current.settings,
+        betaFeatures: { ...current.settings.betaFeatures, autoExport: false },
+        autoExport: { ...current.settings.autoExport, enabled: false }
+      }
+    }), 'Auto-Export deaktiviert');
   };
 
   const addModel = (event: React.FormEvent) => {
@@ -75,6 +104,12 @@ export function SettingsPage() {
         <div><strong>Automatischer Rohtext-Import</strong><span>Erkennt eingefügte Tabellen, datierte Journal-Blöcke, Prompt-Blöcke und Aufgabenlisten automatisch.</span></div>
         <span className="beta-badge">Beta</span>
         <button className={`switch ${state.settings.betaFeatures.rawTextImport ? 'on' : ''}`} role="switch" aria-checked={state.settings.betaFeatures.rawTextImport} aria-label={`Automatischen Rohtext-Import ${state.settings.betaFeatures.rawTextImport ? 'deaktivieren' : 'aktivieren'}`} onClick={toggleRawTextImport}><span/></button>
+      </div>
+      <div className="setting-row">
+        <span className="setting-row__icon"><FileOutput size={21}/></span>
+        <div><strong>Automatischer PDF-Export</strong><span>Aktualisiert nach jeder Bearbeitung automatisch ein formatiertes PDF in deinem gewählten Ordner.</span></div>
+        <span className="beta-badge">Beta</span>
+        <button className={`switch ${state.settings.betaFeatures.autoExport ? 'on' : ''}`} role="switch" aria-checked={state.settings.betaFeatures.autoExport} aria-label={`Automatischen PDF-Export ${state.settings.betaFeatures.autoExport ? 'deaktivieren' : 'aktivieren'}`} onClick={() => void toggleAutoExportBeta()}><span/></button>
       </div>
     </section>
     <GitIntegrationSettings/>
