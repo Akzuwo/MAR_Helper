@@ -2,6 +2,8 @@ import type { AppState, JournalEntry, PlannerTask, PromptEntry } from './models'
 import { formatDuration } from './timer';
 
 export const AUTO_EXPORT_FILE_NAME = 'MAR-Helper-Protokolle.pdf';
+export const createPdfHeaderTemplate = (appIconDataUrl: string) => `<div style="box-sizing:border-box;width:100%;padding:0 15mm;font-size:0;text-align:left"><span style="position:relative;display:inline-block;width:24px;height:24px;overflow:hidden;border-radius:5px;background:white"><img src="${escapeHtml(appIconDataUrl)}" alt="" style="position:absolute;width:69px;height:69px;max-width:none;left:-22px;top:-18px"></span></div>`;
+export const PDF_FOOTER_TEMPLATE = '<div style="box-sizing:border-box;width:100%;padding:0 15mm;color:#777587;font:9px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;text-align:right"><span class="pageNumber"></span> / <span class="totalPages"></span></div>';
 
 const escapeHtml = (value: unknown) => String(value ?? '')
   .replaceAll('&', '&amp;')
@@ -21,7 +23,7 @@ const emptyState = (copy: string) => `<div class="empty">${escapeHtml(copy)}</di
 const journalEntry = (entry: JournalEntry) => `<article class="entry journal-entry">
   <div class="entry-marker"></div>
   <div class="entry-main">
-    <div class="entry-topline"><h3>${escapeHtml(entry.title)}</h3><time>${escapeHtml(dateTime(entry.startedAt))}</time></div>
+    <div class="entry-topline">${entry.title.trim() ? `<h3>${escapeHtml(entry.title)}</h3>` : '<span></span>'}<time>${escapeHtml(dateTime(entry.startedAt))}</time></div>
     <div class="metrics">
       <span><b>${escapeHtml(formatDuration(entry.workingTimeMs, true))}</b> Arbeitszeit</span>
       <span><b>${escapeHtml(formatDuration(entry.pausedTimeMs, true))}</b> Pause</span>
@@ -63,8 +65,6 @@ export function createAutoExportHtml(state: AppState, exportedAt = new Date()): 
   @page { size: A4; margin: 17mm 15mm 19mm; }
   body { margin: 0; color: #191c1d; background: white; }
   .cover { min-height: 245mm; display: flex; flex-direction: column; justify-content: space-between; break-after: page; }
-  .brand { display: flex; align-items: center; gap: 10px; color: #3525cd; font-size: 10pt; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-  .brand-mark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; color: white; background: linear-gradient(145deg,#5d52f0,#3525cd); font-size: 16px; letter-spacing: 0; }
   .cover-main { padding: 35mm 0 20mm; }
   .kicker, .section-kicker { color: #4f46e5; font-size: 9pt; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
   h1 { max-width: 150mm; margin: 5mm 0 4mm; font-size: 35pt; line-height: 1.04; letter-spacing: -.035em; }
@@ -109,8 +109,7 @@ export function createAutoExportHtml(state: AppState, exportedAt = new Date()): 
   .empty { padding: 15mm; border: .35mm dashed #c7c4d8; border-radius: 3mm; color: #777587; text-align: center; background: #f8f9fa; }
 </style></head><body>
   <section class="cover">
-    <div><div class="brand"><span class="brand-mark">M</span> MAR Helper</div>
-      <div class="cover-main"><span class="kicker">Automatischer Export · Beta</span><h1>Protokolle und Projektfortschritt</h1><p>Eine aktuelle, druckfertige Übersicht aus Arbeitsjournal, Promptprotokoll und Zeitplan.</p>
+    <div><div class="cover-main"><span class="kicker">MAR Helper · Automatischer Export · Beta</span><h1>Protokolle und Projektfortschritt</h1><p>Eine aktuelle, druckfertige Übersicht aus Arbeitsjournal, Promptprotokoll und Zeitplan.</p>
         <div class="summary"><div><strong>${journals.length}</strong><span>Journaleinträge · ${escapeHtml(formatDuration(totalWorkingTime, true))}</span></div><div><strong>${prompts.length}</strong><span>Dokumentierte Prompts</span></div><div><strong>${completedTasks}/${tasks.length}</strong><span>Aufgaben erledigt</span></div></div>
       </div></div>
     <footer class="cover-footer"><span>Lokal mit MAR Helper erstellt</span><span>Stand ${escapeHtml(exportedLabel)}</span></footer>

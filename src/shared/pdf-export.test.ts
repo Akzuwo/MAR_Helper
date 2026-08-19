@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createDefaultState, normalizeState } from './defaults';
-import { AUTO_EXPORT_FILE_NAME, createAutoExportHtml } from './pdf-export';
+import { AUTO_EXPORT_FILE_NAME, createAutoExportHtml, createPdfHeaderTemplate, PDF_FOOTER_TEMPLATE } from './pdf-export';
 
 describe('automatic PDF export document', () => {
   it('migrates the beta and export settings disabled by default', () => {
@@ -44,6 +44,9 @@ describe('automatic PDF export document', () => {
 
     const html = createAutoExportHtml(state, new Date('2026-08-19T12:00:00.000Z'));
     expect(html).toContain('@page { size: A4');
+    expect(createPdfHeaderTemplate('data:image/png;base64,bWFy')).toContain('src="data:image/png;base64,bWFy"');
+    expect(PDF_FOOTER_TEMPLATE).toContain('class="pageNumber"');
+    expect(PDF_FOOTER_TEMPLATE).toContain('class="totalPages"');
     expect(html).toContain('<h2>Arbeitsjournal</h2>');
     expect(html).toContain('<h2>Promptprotokoll</h2>');
     expect(html).toContain('<h2>Zeitplan</h2>');
@@ -52,5 +55,16 @@ describe('automatic PDF export document', () => {
     expect(html).toContain('Recherche &amp; Auswertung');
     expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
     expect(html).not.toContain('<script>alert(1)</script>');
+  });
+
+  it('renders imported journal notes without inventing a title', () => {
+    const state = createDefaultState();
+    state.journalEntries = [{
+      id: 'journal-untitled', title: '', notes: 'Nur tatsächlicher Inhalt',
+      startedAt: '2026-08-18T08:00:00.000Z', endedAt: '2026-08-18T09:00:00.000Z', workingTimeMs: 3_600_000, pausedTimeMs: 0
+    }];
+    const html = createAutoExportHtml(state);
+    expect(html).toContain('Nur tatsächlicher Inhalt');
+    expect(html).not.toContain('<h3>Nur tatsächlicher Inhalt</h3>');
   });
 });

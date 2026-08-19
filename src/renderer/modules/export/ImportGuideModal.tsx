@@ -70,19 +70,19 @@ export function ImportGuideModal({ open, betaEnabled, onClose }: { open: boolean
         </ol>
       </div>
       <div className="format-list">
-        <FormatDetails open title="Arbeitsjournal" summary="Aktivität, Notizen, Start, Ende und erfasste Zeiten" required="id, title, startedAt, endedAt, workingTimeMs, pausedTimeMs" optional="notes und linkedTaskId" example={journalExample}/>
+        <FormatDetails open title="Arbeitsjournal" summary="Aktivität, Notizen, Start, Ende und erfasste Zeiten" required="id, startedAt, endedAt, workingTimeMs, pausedTimeMs" optional="title, notes und linkedTaskId" example={journalExample}/>
         <FormatDetails title="Promptprotokoll" summary="Prompt, Antwort, Modell und Zeitpunkt" required="id, modelName, prompt, response, createdAt" optional="number, title, modelId, updatedAt und gitSnapshot" example={promptExample}/>
         <FormatDetails title="Zeitplan" summary="Aufgabe, Status und Erstellungsdatum" required="id, title, completed, createdAt" optional="description, dueDate und updatedAt" example={plannerExample}/>
       </div>
       <section className={`raw-guide ${betaEnabled ? '' : 'raw-guide--disabled'}`}>
         <header><FlaskConical size={19}/><div><strong>Rohtext-Import (Beta)</strong><span>{betaEnabled ? 'In deinen Einstellungen aktiviert' : 'Kann in den Einstellungen unter Beta-Funktionen aktiviert werden'}</span></div></header>
-        <p>Du kannst Tabellen direkt aus Excel oder Google Sheets einfügen. Die erste Zeile muss Überschriften enthalten; Reihenfolge und Gross-/Kleinschreibung sind egal.</p>
+        <p>Du kannst Daten aus anderen Apps als JSON oder direkt aus Excel und Google Sheets einfügen. Häufige deutsche und englische Feldnamen, unterschiedliche Reihenfolgen sowie eingebettete Sitzungslisten werden automatisch zugeordnet.</p>
         <div className="raw-guide__examples">
           <div><strong>Arbeitsjournal</strong><code>Aktivität, Notizen, Start, Ende, Dauer, Pause</code></div>
           <div><strong>Promptprotokoll</strong><code>Titel, Modell, Prompt, Antwort, Zeitpunkt</code></div>
           <div><strong>Zeitplan</strong><code>Titel, Beschreibung, Fällig am, Status</code></div>
         </div>
-        <p>Akzeptiert werden Komma, Semikolon oder Tabulator als Trennzeichen. Alternativ erkennt die Beta-Funktion Journal-Blöcke mit Überschriften wie <code>## 2026-08-18</code>, beschriftete Blöcke mit <code>Prompt:</code> und <code>Antwort:</code> sowie Markdown-Aufgaben wie <code>- [ ] Aufgabe | 2026-08-31</code>.</p>
+        <p>Erkannt werden CSV-, TSV- und Markdown-Tabellen, Journal-Blöcke wie <code>## 2026-08-18</code>, Zeitzeilen wie <code>18.08.2026 08:00–09:30 | Recherche</code>, Prompt- und Chatverläufe mit Rollen wie <code>User:</code> und <code>Codex:</code> sowie Aufgaben mit <code>- [ ]</code>, <code>☐</code> oder <code>☑</code>.</p>
       </section>
     </div>
   </Modal>;

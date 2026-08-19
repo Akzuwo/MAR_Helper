@@ -42,7 +42,7 @@ const isPromptGitSnapshot = (value: unknown): value is PromptGitSnapshot => isRe
 
 const isJournalEntry = (value: unknown): value is JournalEntry => isRecord(value)
   && isString(value.id)
-  && isString(value.title)
+  && typeof value.title === 'string'
   && isOptionalString(value.notes)
   && isDate(value.startedAt)
   && isDate(value.endedAt)
