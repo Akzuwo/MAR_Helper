@@ -94,9 +94,9 @@ export function ImportDialog({ open, selection, allowRawText, initialSource = 'f
             <p>Unterstützt werden vollständige Backups und Exporte eines einzelnen Moduls.</p>
             <Button variant="secondary" icon={<FolderOpen size={17}/>} disabled={busy} onClick={() => void chooseFile()}>{busy ? 'Öffne …' : 'Datei auswählen'}</Button>
           </div> : <div className="raw-import-editor">
-            <div><strong>Bestehende Daten einfügen</strong><span>Tabellen, datierte Journal-Blöcke, beschriftete Prompt-Blöcke und Markdown-Aufgaben werden automatisch erkannt.</span></div>
+            <div><strong>Bestehende Daten einfügen</strong><span>Erkennt auch fremde JSON-Strukturen, Tabellen, Zeitspannen, Chatverläufe sowie Aufgabenlisten automatisch.</span></div>
             <Textarea autoFocus spellCheck={false} value={rawText} onChange={(event) => { setRawText(event.target.value); setError(null); }} placeholder={'Beispiel Zeitplan:\nTitel\tFällig am\tStatus\nRecherche abschliessen\t2026-08-31\tOffen'} />
-            <small>Die Analyse findet vollständig lokal auf diesem Gerät statt.</small>
+            <small>Feldnamen und Reihenfolge dürfen abweichen. Die Analyse findet vollständig lokal auf diesem Gerät statt.</small>
           </div>}
         </> : <>
           <div className="import-summary">

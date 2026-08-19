@@ -163,7 +163,7 @@ export function JournalPage() {
           <div className="journal-row journal-row--head" aria-hidden="true"><span>Datum</span><span>Aktivität</span><span>Zeitraum</span><span>Dauer</span></div>
           {entries.map((entry) => <button className="journal-row" role="listitem" key={entry.id} onClick={() => { setEditEntry(entry); setEntryDialogOpen(true); }}>
             <span><CalendarDays size={15}/>{deDate(entry.startedAt)}</span>
-            <span><strong>{entry.title}</strong>{entry.notes && <small title={entry.notes}><StickyNote size={12}/><span>{entry.notes}</span></small>}{entry.linkedTaskId && <small><Link2 size={12}/><span>{state.plannerTasks.find((task) => task.id === entry.linkedTaskId)?.title ?? 'Zeitplan-Task'}</span></small>}</span>
+            <span><strong>{entry.title || 'Ohne Titel'}</strong>{entry.notes && <small title={entry.notes}><StickyNote size={12}/><span>{entry.notes}</span></small>}{entry.linkedTaskId && <small><Link2 size={12}/><span>{state.plannerTasks.find((task) => task.id === entry.linkedTaskId)?.title ?? 'Zeitplan-Task'}</span></small>}</span>
             <span>{time(entry.startedAt)} – {time(entry.endedAt)}</span>
             <span className="duration">{formatDuration(entry.workingTimeMs)}</span>
           </button>)}

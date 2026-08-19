@@ -40,9 +40,8 @@ export function JournalEntryDialog({ open, entry, tasks, onClose, onSave, onDele
     event.preventDefault();
     const start = new Date(startedAt);
     const end = new Date(endedAt);
-    if (!title.trim()) return setError('Bitte gib eine Aktivität ein.');
     if (!startedAt || !endedAt || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return setError('Bitte gib gültige Zeitpunkte ein.');
-    if (end <= start) return setError('Die Endzeit muss nach der Startzeit liegen.');
+    if (end < start) return setError('Die Endzeit darf nicht vor der Startzeit liegen.');
     const total = end.getTime() - start.getTime();
     const paused = Math.min(entry?.pausedTimeMs ?? 0, total);
     onSave({
@@ -57,9 +56,9 @@ export function JournalEntryDialog({ open, entry, tasks, onClose, onSave, onDele
     });
   };
 
-  return <Modal open={open} title={entry ? 'Journaleintrag bearbeiten' : 'Eintrag hinzufügen'} description="Arbeitszeit, Aktivität und Notizen erfassen." onClose={onClose}>
+  return <Modal open={open} title={entry ? 'Journaleintrag bearbeiten' : 'Eintrag hinzufügen'} description="Arbeitszeit und Notizen erfassen; eine Aktivität kannst du optional benennen." onClose={onClose}>
     <form onSubmit={submit} className="form-stack">
-      <Field label="Aktivität" error={error && !title.trim() ? error : undefined}><Input autoFocus value={title} onChange={(e) => { setTitle(e.target.value); setError(''); }}/></Field>
+      <Field label="Aktivität" optional><Input autoFocus placeholder="Optionaler Titel für diesen Arbeitsblock" value={title} onChange={(e) => { setTitle(e.target.value); setError(''); }}/></Field>
       <Field label="Notizen" optional><Textarea placeholder="Ergebnisse, Fortschritt oder nächste Schritte …" value={notes} onChange={(e) => setNotes(e.target.value)}/></Field>
       <div className="form-grid">
         <Field label="Start"><Input type="datetime-local" value={startedAt} onChange={(e) => { setStartedAt(e.target.value); setError(''); }}/></Field>
@@ -67,7 +66,7 @@ export function JournalEntryDialog({ open, entry, tasks, onClose, onSave, onDele
       </div>
       {tasks.length > 0 && <Field label="Zeitplan-Task" optional><Select value={linkedTaskId} onChange={(e) => setLinkedTaskId(e.target.value)}><option value="">Nicht verknüpft</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</Select></Field>}
       {entry && <p className="form-note">Gespeicherte Pause: {formatDuration(entry.pausedTimeMs, true)}</p>}
-      {error && title.trim() && <div className="inline-error" role="alert">{error}</div>}
+      {error && <div className="inline-error" role="alert">{error}</div>}
       <div className="form-actions form-actions--between">
         <div>{entry && onDelete && <Button type="button" variant="danger" onClick={() => onDelete(entry)}>Löschen</Button>}</div>
         <div className="form-actions"><Button type="button" variant="secondary" onClick={onClose}>Abbrechen</Button><Button type="submit">Speichern</Button></div>

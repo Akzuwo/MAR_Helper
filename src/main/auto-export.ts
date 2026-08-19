@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import type { AppState, AutoExportResult, AutoExportStatus } from '../shared/models';
-import { AUTO_EXPORT_FILE_NAME, createAutoExportHtml } from '../shared/pdf-export';
+import { AUTO_EXPORT_FILE_NAME, createAutoExportHtml, createPdfHeaderTemplate, PDF_FOOTER_TEMPLATE } from '../shared/pdf-export';
 
 type StatusListener = (status: AutoExportStatus) => void;
 
@@ -56,6 +56,8 @@ export class AutoExportService {
 
       tempDirectory = await fs.mkdtemp(path.join(app.getPath('temp'), 'mar-helper-pdf-'));
       const htmlPath = path.join(tempDirectory, 'protokolle.html');
+      const icon = await fs.readFile(path.join(app.getAppPath(), 'references', 'logo', 'screen.png'));
+      const iconDataUrl = `data:image/png;base64,${icon.toString('base64')}`;
       await fs.writeFile(htmlPath, createAutoExportHtml(state), 'utf8');
 
       renderWindow = new BrowserWindow({
@@ -66,7 +68,10 @@ export class AutoExportService {
       const pdf = await renderWindow.webContents.printToPDF({
         printBackground: true,
         preferCSSPageSize: true,
-        generateTaggedPDF: true
+        generateTaggedPDF: true,
+        displayHeaderFooter: true,
+        headerTemplate: createPdfHeaderTemplate(iconDataUrl),
+        footerTemplate: PDF_FOOTER_TEMPLATE
       });
 
       const filePath = path.join(directory, AUTO_EXPORT_FILE_NAME);

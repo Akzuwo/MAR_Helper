@@ -101,7 +101,7 @@ export function SettingsPage() {
       <header><div className="settings-heading"><span><FlaskConical size={20}/></span><div><h2>Beta-Funktionen</h2><p>Teste neue Funktionen vor ihrer finalen Veröffentlichung. Sie können sich noch verändern.</p></div></div></header>
       <div className="setting-row">
         <span className="setting-row__icon"><ClipboardPaste size={21}/></span>
-        <div><strong>Automatischer Rohtext-Import</strong><span>Erkennt eingefügte Tabellen, datierte Journal-Blöcke, Prompt-Blöcke und Aufgabenlisten automatisch.</span></div>
+        <div><strong>Automatischer Rohtext-Import</strong><span>Erkennt fremde JSON-Daten, Tabellen, Journal-Zeitspannen, Chatverläufe und Aufgabenlisten automatisch.</span></div>
         <span className="beta-badge">Beta</span>
         <button className={`switch ${state.settings.betaFeatures.rawTextImport ? 'on' : ''}`} role="switch" aria-checked={state.settings.betaFeatures.rawTextImport} aria-label={`Automatischen Rohtext-Import ${state.settings.betaFeatures.rawTextImport ? 'deaktivieren' : 'aktivieren'}`} onClick={toggleRawTextImport}><span/></button>
       </div>
