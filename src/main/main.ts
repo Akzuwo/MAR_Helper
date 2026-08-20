@@ -52,7 +52,7 @@ function createWindow() {
     minHeight: 640,
     show: false,
     backgroundColor: '#f8f9fa',
-    icon: path.join(app.getAppPath(), 'references', 'logo', 'screen.png'),
+    icon: path.join(app.getAppPath(), 'references', 'logo', 'taskbar-icon.png'),
     title: 'MAR Helper',
     autoHideMenuBar: true,
     webPreferences: {

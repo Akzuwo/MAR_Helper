@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAppData } from './state/AppDataContext';
 import { Button, ErrorScreen, LoadingScreen, Modal, Toasts } from './components/ui';
 import { Sidebar, type PageId } from './layout/Sidebar';
@@ -8,6 +8,39 @@ import { PlannerPage } from './modules/planner/PlannerPage';
 import { ExportPage } from './modules/export/ExportPage';
 import { SettingsPage } from './modules/settings/SettingsPage';
 import { UpdateModal } from './components/UpdateModal';
+
+function PageContent({ page }: { page: PageId }) {
+  if (page === 'journal') return <JournalPage/>;
+  if (page === 'prompts') return <PromptsPage/>;
+  if (page === 'planner') return <PlannerPage/>;
+  if (page === 'export') return <ExportPage/>;
+  return <SettingsPage/>;
+}
+
+function PageTransition({ page }: { page: PageId }) {
+  const [visiblePage, setVisiblePage] = useState(page);
+  const [phase, setPhase] = useState<'idle' | 'enter' | 'exit'>('enter');
+  const targetPage = useRef(page);
+
+  useEffect(() => {
+    targetPage.current = page;
+    if (page !== visiblePage) setPhase('exit');
+  }, [page, visiblePage]);
+
+  const finishTransition = (event: React.AnimationEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return;
+    if (phase === 'exit') {
+      setVisiblePage(targetPage.current);
+      setPhase('enter');
+    } else if (phase === 'enter') {
+      setPhase('idle');
+    }
+  };
+
+  return <div className={`page-stage page-stage--${phase}`} onAnimationEnd={finishTransition}>
+    <PageContent page={visiblePage}/>
+  </div>;
+}
 
 export default function App() {
   const { state, loading, loadError, historyStatus, cloudSaveStatus, undo, redo, toasts, dismissToast } = useAppData();
@@ -25,14 +58,12 @@ export default function App() {
   if (loading) return <LoadingScreen/>;
   if (loadError) return <ErrorScreen message={loadError} retry={() => window.location.reload()}/>;
 
-  return <div className="app-shell">
+  const pausedEmphasis = state.settings.visualEffects.scrollEffects && state.activeTimer?.status === 'paused';
+
+  return <div className={`app-shell ${pausedEmphasis ? 'app-shell--paused-emphasis' : ''}`}>
     <Sidebar page={page} modules={state.settings.modules} onNavigate={navigate} canUndo={historyStatus.canUndo} canRedo={historyStatus.canRedo} onUndo={() => void undo()} onRedo={() => void redo()}/>
     <div className="app-canvas">
-      {page === 'journal' && <JournalPage/>}
-      {page === 'prompts' && <PromptsPage/>}
-      {page === 'planner' && <PlannerPage/>}
-      {page === 'export' && <ExportPage/>}
-      {page === 'settings' && <SettingsPage/>}
+      <PageTransition page={page}/>
     </div>
     <UpdateModal/>
     <Modal open={cloudSaveStatus.state === 'conflict'} title="Grosse Cloud-Änderung erkannt" description="Der Cloud-Stand unterscheidet sich stark von deinen lokalen Daten." onClose={() => undefined} dismissible={false}>

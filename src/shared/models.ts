@@ -8,10 +8,15 @@ export interface ModuleSettings {
 
 export interface AppSettings {
   modules: ModuleSettings;
+  visualEffects: VisualEffectSettings;
   gitIntegration: GitIntegrationSettings;
   betaFeatures: BetaFeatureSettings;
   autoExport: AutoExportSettings;
   cloudSave: CloudSaveSettings;
+}
+
+export interface VisualEffectSettings {
+  scrollEffects: boolean;
 }
 
 export interface BetaFeatureSettings {
@@ -183,9 +188,15 @@ export type UpdateStatus =
   | { state: 'checking' }
   | { state: 'available'; version: string; releaseName?: string; releaseNotes?: string }
   | { state: 'not-available' }
-  | { state: 'downloading'; version: string; percent: number; transferred: number; total: number }
-  | { state: 'downloaded'; version: string }
-  | { state: 'error'; message: string };
+  | { state: 'downloading'; version: string; percent: number; transferred: number; total: number; background?: boolean }
+  | { state: 'downloaded'; version: string; installOnQuit?: boolean }
+  | { state: 'error'; message: string; operation?: 'check' | 'download' | 'install' };
+
+export type UpdatePostponeRequest =
+  | { action: 'remind'; version: string; days: number }
+  | { action: 'install-on-quit'; version: string };
+export type UpdateActionResult = { ok: true } | { ok: false; message: string };
+export type UpdateInstallationResult = { state: 'success' | 'error'; version: string; message?: string };
 
 export interface MarHelperApi {
   loadState: () => Promise<AppState>;
@@ -212,5 +223,7 @@ export interface MarHelperApi {
   readGitCommit: (repositoryPath: string, commitHash: string) => Promise<GitResult<PromptGitSnapshot>>;
   openGitDownload: () => Promise<void>;
   downloadAndInstallUpdate: () => Promise<void>;
+  postponeUpdate: (request: UpdatePostponeRequest) => Promise<UpdateActionResult>;
+  consumeUpdateInstallationResult: () => Promise<UpdateInstallationResult | null>;
   onUpdateStatus: (listener: (status: UpdateStatus) => void) => () => void;
 }

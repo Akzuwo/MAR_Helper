@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { AppState, AutoExportStatus, CloudSaveStatus, MarHelperApi, SaveFileRequest, UpdateStatus } from '../shared/models';
+import type { AppState, AutoExportStatus, CloudSaveStatus, MarHelperApi, SaveFileRequest, UpdatePostponeRequest, UpdateStatus } from '../shared/models';
 
 const api: MarHelperApi = {
   loadState: () => ipcRenderer.invoke('state:load') as Promise<AppState>,
@@ -38,6 +38,8 @@ const api: MarHelperApi = {
   readGitCommit: (repositoryPath, commitHash) => ipcRenderer.invoke('git:read-commit', repositoryPath, commitHash),
   openGitDownload: () => ipcRenderer.invoke('git:open-download'),
   downloadAndInstallUpdate: () => ipcRenderer.invoke('update:download-and-install'),
+  postponeUpdate: (request: UpdatePostponeRequest) => ipcRenderer.invoke('update:postpone', request),
+  consumeUpdateInstallationResult: () => ipcRenderer.invoke('update:consume-installation-result'),
   onUpdateStatus: (listener: (status: UpdateStatus) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, status: UpdateStatus) => listener(status);
     ipcRenderer.on('update:status', handler);

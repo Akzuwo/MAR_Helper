@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, CirclePause, CirclePlay, Clock3, Link2, Plus, Square, StickyNote, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { CalendarDays, CirclePause, CirclePlay, Clock3, Link2, ListChecks, Plus, Square, StickyNote, Trash2 } from 'lucide-react';
 import type { ActiveTimer, JournalEntry } from '../../../shared/models';
 import { formatDuration, getPausedTimeMs, getWorkingTimeMs, pauseTimer, resumeTimer } from '../../../shared/timer';
 import { useAppData } from '../../state/AppDataContext';
@@ -9,8 +9,6 @@ import { JournalEntryDialog } from './JournalEntryDialog';
 
 const deDate = (iso: string) => new Intl.DateTimeFormat('de-CH', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(iso));
 const time = (iso: string) => new Intl.DateTimeFormat('de-CH', { hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
-const isToday = (iso: string) => new Date(iso).toDateString() === new Date().toDateString();
-
 export function JournalPage() {
   const { state, updateState } = useAppData();
   const [activity, setActivity] = useState('');
@@ -24,6 +22,8 @@ export function JournalPage() {
   const [timerNotesOpen, setTimerNotesOpen] = useState(false);
   const [timerNotesDraft, setTimerNotesDraft] = useState('');
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
+  const [completedTimer, setCompletedTimer] = useState<{ title: string } | null>(null);
+  const completionTimeout = useRef<number>();
 
   const timer = state.activeTimer;
   const plannerIntegration = state.settings.modules.planner;
@@ -35,6 +35,10 @@ export function JournalPage() {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, [timer]);
+
+  useEffect(() => () => {
+    if (completionTimeout.current) window.clearTimeout(completionTimeout.current);
+  }, []);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -90,7 +94,18 @@ export function JournalPage() {
       pausedTimeMs: getPausedTimeMs(timer, endedAt.getTime()),
       linkedTaskId: timer.linkedTaskId
     };
-    void updateState((current) => ({ ...current, activeTimer: null, journalEntries: [...current.journalEntries, entry] }), 'Journaleintrag gespeichert');
+    const showCompletion = state.settings.visualEffects.scrollEffects;
+    if (showCompletion) {
+      setCompletedTimer({ title: timer.title });
+      if (completionTimeout.current) window.clearTimeout(completionTimeout.current);
+      completionTimeout.current = window.setTimeout(() => setCompletedTimer(null), 1350);
+    }
+    void updateState((current) => ({ ...current, activeTimer: null, journalEntries: [...current.journalEntries, entry] }), 'Journaleintrag gespeichert').then((saved) => {
+      if (!saved && showCompletion) {
+        if (completionTimeout.current) window.clearTimeout(completionTimeout.current);
+        setCompletedTimer(null);
+      }
+    });
   };
 
   const openTimerNotes = () => {
@@ -122,13 +137,19 @@ export function JournalPage() {
     setDeleteEntry(null); setEntryDialogOpen(false); setEditEntry(null);
   };
 
-  const todayEntries = entries.filter((entry) => isToday(entry.startedAt));
-  const todayMs = todayEntries.reduce((sum, entry) => sum + entry.workingTimeMs, 0) + (timer && isToday(timer.startedAt) ? getWorkingTimeMs(timer, now) : 0);
+  const totalWorkingTime = entries.reduce((sum, entry) => sum + entry.workingTimeMs, 0);
 
   return <Page>
     <PageHeader title="Arbeitsjournal" description="Erfasse und verwalte deine Arbeitszeiten und Notizen." actions={entries.length > 0 && <Button variant="ghost" icon={<Trash2 size={17}/>} onClick={() => setDeleteAllOpen(true)}>Alle löschen</Button>}/>
-    <section className={`journal-hero ${timer ? 'journal-hero--active' : ''}`}>
-      {timer ? <>
+    <section className={`journal-hero ${timer || completedTimer ? 'journal-hero--active' : 'journal-hero--idle'}`}>
+      {completedTimer ? <div className="timer-card timer-card--complete" role="status" aria-live="polite">
+        <svg className="timer-completion" viewBox="0 0 80 80" aria-hidden="true">
+          <circle className="timer-completion__circle" cx="40" cy="40" r="32"/>
+          <path className="timer-completion__check" d="M24 41.5 35 52 57 28"/>
+        </svg>
+        <h2>Arbeitszeit gespeichert</h2>
+        <p>{completedTimer.title}</p>
+      </div> : timer ?
         <div className="timer-card">
           <div className={`status-pill ${timer.status === 'paused' ? 'status-pill--paused' : ''}`}><span/>{timer.status === 'paused' ? 'Pausiert' : 'Aktuelle Aktivität'}</div>
           <h2>{timer.title}</h2>
@@ -137,25 +158,33 @@ export function JournalPage() {
           <div className="timer-value" aria-label={`Arbeitszeit ${formatDuration(getWorkingTimeMs(timer, now))}`}>{formatDuration(getWorkingTimeMs(timer, now))}</div>
           <div className="timer-actions">
             <Button variant="secondary" icon={<StickyNote size={17}/>} onClick={openTimerNotes}>Notizen</Button>
-            <Button variant="secondary" icon={timer.status === 'running' ? <CirclePause size={18}/> : <CirclePlay size={18}/>} onClick={togglePause}>{timer.status === 'running' ? 'Pausieren' : 'Fortsetzen'}</Button>
-            <Button icon={<Square size={16}/>} onClick={stop}>Beenden</Button>
+            <Button className="timer-action timer-action--pause" icon={timer.status === 'running' ? <CirclePause size={18}/> : <CirclePlay size={18}/>} onClick={togglePause}>{timer.status === 'running' ? 'Pausieren' : 'Fortsetzen'}</Button>
+            <Button className="timer-action timer-action--stop" icon={<Square size={16}/>} onClick={stop}>Beenden</Button>
           </div>
           <span className="timer-paused">Pausenzeit: {formatDuration(getPausedTimeMs(timer, now), true)}</span>
-        </div>
-        <aside className="today-card">
-          <span className="eyebrow">Heute</span>
-          <div><span>Gesamtzeit</span><strong>{formatDuration(todayMs).slice(0, 5)}</strong></div>
-          <div><span>Einträge</span><strong>{todayEntries.length}</strong></div>
-          <Button variant="ghost" icon={<Plus size={17}/>} onClick={() => { setEditEntry(null); setEntryDialogOpen(true); }}>Neuer Eintrag</Button>
+        </div> : <>
+        <form className="start-timer-card" onSubmit={start}>
+          <div className="start-timer-card__fields">
+            <Field label="Aktivität" error={validation}><Input id="activity-input" autoFocus placeholder="z. B. Innenräume in Blender modellieren" value={activity} onChange={(event) => { setActivity(event.target.value); setValidation(''); }}/></Field>
+            <Field label="Notizen" optional><Textarea className="journal-notes-input" placeholder="Was möchtest du zu diesem Arbeitsblock festhalten?" value={notes} onChange={(event) => setNotes(event.target.value)}/></Field>
+            {plannerIntegration && openTasks.length > 0 && <Field label="Aus Zeitplan übernehmen" optional><Select value={taskId} onChange={(event) => selectTask(event.target.value)}><option value="">Ohne Task starten</option>{openTasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</Select></Field>}
+          </div>
+          <Button type="submit" icon={<CirclePlay size={18}/>}>Timer starten</Button>
+        </form>
+        <aside className="journal-summary-card" aria-label="Zusammenfassung aller aufgezeichneten Sessions">
+          <span className="eyebrow">Gesamtübersicht</span>
+          <h2>Dein Arbeitsaufwand</h2>
+          <div className="journal-summary-card__metric">
+            <span><Clock3 size={20}/></span>
+            <div><small>Gesamtaufwand</small><strong>{formatDuration(totalWorkingTime, true)}</strong></div>
+          </div>
+          <div className="journal-summary-card__metric">
+            <span><ListChecks size={20}/></span>
+            <div><small>Sessions</small><strong>{entries.length}</strong></div>
+          </div>
+          <p>Zusammenfassung aller gespeicherten Sessions.</p>
         </aside>
-      </> : <form className="start-timer-card" onSubmit={start}>
-        <div className="start-timer-card__fields">
-          <Field label="Aktivität" error={validation}><Input id="activity-input" autoFocus placeholder="z. B. Innenräume in Blender modellieren" value={activity} onChange={(event) => { setActivity(event.target.value); setValidation(''); }}/></Field>
-          <Field label="Notizen" optional><Textarea className="journal-notes-input" placeholder="Was möchtest du zu diesem Arbeitsblock festhalten?" value={notes} onChange={(event) => setNotes(event.target.value)}/></Field>
-          {plannerIntegration && openTasks.length > 0 && <Field label="Aus Zeitplan übernehmen" optional><Select value={taskId} onChange={(event) => selectTask(event.target.value)}><option value="">Ohne Task starten</option>{openTasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</Select></Field>}
-        </div>
-        <Button type="submit" icon={<CirclePlay size={18}/>}>Timer starten</Button>
-      </form>}
+      </>}
     </section>
     <section className="content-section">
       <div className="section-heading"><div><h2>Verlauf</h2><p>{entries.length ? `${entries.length} gespeicherte ${entries.length === 1 ? 'Aktivität' : 'Aktivitäten'}` : 'Deine erfassten Arbeitszeiten'}</p></div>{!timer && <Button variant="secondary" size="sm" icon={<Plus size={16}/>} onClick={() => { setEditEntry(null); setEntryDialogOpen(true); }}>Eintrag</Button>}</div>

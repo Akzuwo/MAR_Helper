@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CalendarClock, ClipboardPaste, Clock3, Cloud, FileOutput, FlaskConical, LoaderCircle, Pencil, Plus, RefreshCw, Save, Settings2, Trash2, WandSparkles } from 'lucide-react';
+import { CalendarClock, ClipboardPaste, Clock3, Cloud, FileOutput, FlaskConical, LoaderCircle, Pencil, Plus, RefreshCw, Save, Settings2, Sparkles, Trash2, WandSparkles } from 'lucide-react';
 import { APP_VERSION } from '../../../shared/app-version';
 import type { ModuleId, PromptModel } from '../../../shared/models';
 import { useAppData } from '../../state/AppDataContext';
@@ -35,6 +35,14 @@ export function SettingsPage() {
       ...current,
       settings: { ...current.settings, betaFeatures: { ...current.settings.betaFeatures, rawTextImport: !enabled } }
     }), `Rohtext-Import ${enabled ? 'deaktiviert' : 'aktiviert'}`);
+  };
+
+  const toggleScrollEffects = () => {
+    const enabled = state.settings.visualEffects.scrollEffects;
+    void updateState((current) => ({
+      ...current,
+      settings: { ...current.settings, visualEffects: { ...current.settings.visualEffects, scrollEffects: !enabled } }
+    }), `Zusätzliche visuelle Effekte ${enabled ? 'deaktiviert' : 'aktiviert'}`);
   };
 
   const toggleAutoExport = () => {
@@ -91,6 +99,14 @@ export function SettingsPage() {
           <div><strong>{module.title}</strong><span>{module.description}</span></div>
           <button className={`switch ${state.settings.modules[module.id] ? 'on' : ''}`} role="switch" aria-checked={state.settings.modules[module.id]} aria-label={`${module.title} ${state.settings.modules[module.id] ? 'deaktivieren' : 'aktivieren'}`} onClick={() => toggleModule(module.id)}><span/></button>
         </div>)}
+      </div>
+    </section>
+    <section className="settings-card">
+      <header><h2>Zusätzliche visuelle Effekte</h2><p>Optionale Bewegungseffekte für Inhalte beim Scrollen.</p></header>
+      <div className="setting-row">
+        <span className="setting-row__icon"><Sparkles size={21}/></span>
+        <div><strong>Dynamische Scroll-Effekte</strong><span>Blendet Inhalte abhängig von der Scrollrichtung sanft von oben oder unten ein und aus.</span></div>
+        <button className={`switch ${state.settings.visualEffects.scrollEffects ? 'on' : ''}`} role="switch" aria-checked={state.settings.visualEffects.scrollEffects} aria-label={`Dynamische Scroll-Effekte ${state.settings.visualEffects.scrollEffects ? 'deaktivieren' : 'aktivieren'}`} onClick={toggleScrollEffects}><span/></button>
       </div>
     </section>
     <section className="settings-card">

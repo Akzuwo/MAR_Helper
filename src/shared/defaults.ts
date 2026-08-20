@@ -4,9 +4,10 @@ import { normalizePromptEntries, type PromptEntryInput } from './prompt-entries'
 const now = new Date().toISOString();
 
 export const createDefaultState = (): AppState => ({
-  version: 6,
+  version: 7,
   settings: {
     modules: { journal: true, prompts: true, planner: true },
+    visualEffects: { scrollEffects: false },
     gitIntegration: { enabled: false, repositories: [] },
     betaFeatures: { rawTextImport: false, cloudSave: false },
     autoExport: {
@@ -51,11 +52,16 @@ export function normalizeState(input: Partial<AppState> | undefined): AppState {
   return {
     ...defaults,
     ...input,
-    version: 6,
+    version: 7,
     settings: {
       ...defaults.settings,
       ...input.settings,
       modules: { ...defaults.settings.modules, ...input.settings?.modules },
+      visualEffects: {
+        ...defaults.settings.visualEffects,
+        ...input.settings?.visualEffects,
+        scrollEffects: input.settings?.visualEffects?.scrollEffects === true
+      },
       gitIntegration: {
         ...defaults.settings.gitIntegration,
         ...input.settings?.gitIntegration,

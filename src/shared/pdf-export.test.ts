@@ -5,7 +5,7 @@ import { AUTO_EXPORT_FILE_NAME, createAutoExportHtml, createPdfHeaderTemplate, P
 describe('automatic PDF export document', () => {
   it('migrates the beta and export settings disabled by default', () => {
     const migrated = normalizeState({ version: 4, settings: { modules: { journal: true, prompts: true, planner: true } } } as never);
-    expect(migrated.version).toBe(6);
+    expect(migrated.version).toBe(7);
     expect(migrated.settings.betaFeatures.cloudSave).toBe(false);
     expect(migrated.settings.autoExport).toEqual({
       enabled: false, fileName: 'MAR-Helper-Protokolle.pdf', separateDocuments: false,

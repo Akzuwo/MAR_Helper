@@ -48,6 +48,7 @@
       "dist-renderer/**/*",
       "dist-main/**/*",
       "references/logo/screen.png",
+      "references/logo/taskbar-icon.png",
       "package.json"
     ],
     "publish": [
