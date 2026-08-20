@@ -330,7 +330,7 @@ button, a, input, select, textarea { outline: none; }
 .import-card > div:nth-child(2) { flex: 1; }
 .import-card h2 { margin: 0; font-size: 17px; line-height: 24px; }
 .import-card p { margin: 2px 0 0; color: var(--text-muted); }
-.import-card__actions { display: flex; align-items: center; gap: 8px; }
+.import-card__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
 .import-card__actions .button .beta-badge { margin-left: 1px; padding: 1px 5px; color: inherit !important; background: var(--primary-tint); }
 .auto-export-card { margin-bottom: 24px; overflow: hidden; border: 1px solid #bbb5f2; border-radius: var(--radius-md); background: white; box-shadow: var(--shadow-card); }
 .auto-export-card > header { min-height: 96px; display: flex; align-items: center; gap: 14px; padding: 18px 22px; border-bottom: 1px solid var(--outline-soft); background: linear-gradient(135deg,#faf9ff,#f4f3ff); }

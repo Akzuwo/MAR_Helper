@@ -1,6 +1,7 @@
-import { AlertCircle, BookOpenText, CalendarClock, CheckCircle2, ClipboardPaste, Clock3, Download, FileOutput, FolderOpen, Import, LoaderCircle, PackageOpen, RefreshCw, WandSparkles } from 'lucide-react';
+import { AlertCircle, BookOpenText, CalendarClock, CheckCircle2, ClipboardPaste, Clock3, Copy, Download, FileOutput, FolderOpen, Import, LoaderCircle, PackageOpen, RefreshCw, WandSparkles } from 'lucide-react';
 import { useState } from 'react';
 import { exportAllJson, exportJournalCsv, exportModuleJson, exportPlannerCsv, exportPromptsMarkdown } from '../../../shared/exporters';
+import { IMPORT_FORMATTING_PROMPT } from '../../../shared/import-format-prompt';
 import type { ImportSelectResult } from '../../../shared/models';
 import { useAppData } from '../../state/AppDataContext';
 import { Button, EmptyState } from '../../components/ui';
@@ -42,6 +43,15 @@ export function ExportPage() {
     setImportOpen(true);
   };
 
+  const copyFormattingPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(IMPORT_FORMATTING_PROMPT);
+      toast('KI-Formatierungsprompt kopiert');
+    } catch {
+      toast('Der Prompt konnte nicht in die Zwischenablage kopiert werden.', 'error');
+    }
+  };
+
   const runAutoExport = async () => {
     const result = await window.marHelper.runAutoExport();
     if (result.state === 'success') toast('PDF erfolgreich aktualisiert');
@@ -61,6 +71,12 @@ export function ExportPage() {
       <div className="import-card__icon"><Import size={22}/></div>
       <div><h2>Daten importieren</h2><p>Sieh dir das genaue Datenformat an oder starte direkt mit deinem Import.</p></div>
       <div className="import-card__actions">
+        <Button
+          variant="ghost"
+          icon={<Copy size={17}/>}
+          title="Prompt, um deine bestehenden Daten selbst mit KI zu formatieren. Kopiere ihn zusammen mit deinen Daten in ein KI-Tool."
+          onClick={() => void copyFormattingPrompt()}
+        >KI-Prompt kopieren</Button>
         <Button variant="ghost" icon={<BookOpenText size={17}/>} onClick={() => setGuideOpen(true)}>Format-Anleitung</Button>
         {state.settings.betaFeatures.rawTextImport && <Button variant="secondary" icon={<ClipboardPaste size={17}/>} onClick={startRawImport}>Rohtext <span className="beta-badge">Beta</span></Button>}
         <Button variant="secondary" icon={<Import size={17}/>} onClick={() => void startImport()}>JSON auswählen</Button>
