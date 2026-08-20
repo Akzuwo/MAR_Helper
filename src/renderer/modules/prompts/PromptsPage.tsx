@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FileText, Plus, Search, Trash2, WandSparkles } from 'lucide-react';
 import type { PromptEntry } from '../../../shared/models';
 import { matchesPromptSearch, upsertPromptEntry } from '../../../shared/prompt-entries';
@@ -21,6 +21,8 @@ export function PromptsPage() {
   const [editing, setEditing] = useState<PromptEntry | null>(null);
   const [deleteEntry, setDeleteEntry] = useState<PromptEntry | null>(null);
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
+  const [viewPhase, setViewPhase] = useState<'idle' | 'enter' | 'exit'>('idle');
+  const pendingSelectedId = useRef<string | null>(null);
 
   const selected = state.promptEntries.find((entry) => entry.id === selectedId) ?? null;
   const filtered = useMemo(() => {
@@ -41,9 +43,25 @@ export function PromptsPage() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  const navigateTo = (id: string | null) => {
+    if (id === selectedId) return;
+    pendingSelectedId.current = id;
+    setViewPhase('exit');
+  };
+
+  const finishViewTransition = (event: React.AnimationEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return;
+    if (viewPhase === 'exit') {
+      setSelectedId(pendingSelectedId.current);
+      setViewPhase('enter');
+    } else if (viewPhase === 'enter') {
+      setViewPhase('idle');
+    }
+  };
+
   const save = (entry: PromptEntry) => {
     void updateState((current) => upsertPromptEntry(current, entry), editing ? 'Prompt aktualisiert' : 'Prompt gespeichert');
-    setEditorOpen(false); setEditing(null); setSelectedId(entry.id);
+    setEditorOpen(false); setEditing(null); navigateTo(entry.id);
   };
 
   const confirmDelete = () => {
@@ -53,12 +71,14 @@ export function PromptsPage() {
   };
 
   if (selected) return <>
-    <PromptDetail entry={selected} onBack={() => setSelectedId(null)} onEdit={() => { setEditing(selected); setEditorOpen(true); }} onDelete={() => setDeleteEntry(selected)} onCopied={() => toast('Prompt und Antwort kopiert')} onRemoveGit={() => void updateState((current) => ({ ...current, promptEntries: current.promptEntries.map((entry) => entry.id === selected.id ? { ...entry, gitSnapshot: undefined, updatedAt: new Date().toISOString() } : entry) }), 'Git-Verknüpfung entfernt')}/>
+    <div className={`prompt-view prompt-view--${viewPhase}`} onAnimationEnd={finishViewTransition}>
+      <PromptDetail entry={selected} onBack={() => navigateTo(null)} onEdit={() => { setEditing(selected); setEditorOpen(true); }} onDelete={() => setDeleteEntry(selected)} onCopied={() => toast('Prompt und Antwort kopiert')} onRemoveGit={() => void updateState((current) => ({ ...current, promptEntries: current.promptEntries.map((entry) => entry.id === selected.id ? { ...entry, gitSnapshot: undefined, updatedAt: new Date().toISOString() } : entry) }), 'Git-Verknüpfung entfernt')}/>
+    </div>
     <PromptEditor open={editorOpen} entry={editing} models={state.promptModels} onClose={() => { setEditorOpen(false); setEditing(null); }} onSave={save} onManageModels={() => toast('Modelle verwaltest du in den Einstellungen.', 'info')}/>
     <ConfirmDialog open={!!deleteEntry} title="Prompt löschen?" description="Prompt und Antwort werden dauerhaft entfernt." onCancel={() => setDeleteEntry(null)} onConfirm={confirmDelete}/>
   </>;
 
-  return <Page>
+  return <div className={`prompt-view prompt-view--${viewPhase}`} onAnimationEnd={finishViewTransition}><Page>
     <PageHeader title="Promptprotokoll" description="Dokumentiere verwendete KI-Prompts und Antworten." actions={<>{state.promptEntries.length > 0 && <Button variant="ghost" icon={<Trash2 size={17}/>} onClick={() => setDeleteAllOpen(true)}>Alle löschen</Button>}<Button icon={<Plus size={18}/>} onClick={() => { setEditing(null); setEditorOpen(true); }}>Prompt erfassen</Button></>}/>
     <div className="prompt-toolbar">
       <label className="search-box"><Search size={18}/><Input aria-label="Prompts durchsuchen" placeholder="Suche in Prompts …" value={search} onChange={(event) => setSearch(event.target.value)}/></label>
@@ -66,7 +86,7 @@ export function PromptsPage() {
     </div>
     {state.promptEntries.length === 0 ? <EmptyState icon={<WandSparkles/>} title="Noch keine Prompts" description="Erfasse deinen ersten KI-Prompt samt Antwort für eine lückenlose Dokumentation." action={<Button icon={<Plus size={17}/>} onClick={() => setEditorOpen(true)}>Prompt erfassen</Button>}/> : filtered.length === 0 ? <EmptyState icon={<Search/>} title="Keine Treffer" description="Passe Suche oder Modellfilter an."/> :
       <div className="prompt-grid" role="list">
-        {filtered.map((entry) => <button className="prompt-card" key={entry.id} role="listitem" onClick={() => setSelectedId(entry.id)}>
+        {filtered.map((entry) => <button className="prompt-card" key={entry.id} role="listitem" onClick={() => navigateTo(entry.id)}>
           <span className="prompt-card__number">#{entry.number}</span>
           <div className="prompt-card__title"><FileText size={18}/><h2>{entry.title?.trim() || promptHeading(entry.prompt)}</h2></div>
           <div className="prompt-card__meta"><span className="chip"><WandSparkles size={13}/>{entry.modelName}</span><time>{dateTime(entry.createdAt)}</time></div>
@@ -75,5 +95,5 @@ export function PromptsPage() {
       </div>}
     <PromptEditor open={editorOpen} entry={editing} models={state.promptModels} onClose={() => { setEditorOpen(false); setEditing(null); }} onSave={save} onManageModels={() => toast('Modelle verwaltest du in den Einstellungen.', 'info')}/>
     <ConfirmDialog open={deleteAllOpen} title="Alle Prompt-Einträge löschen?" description={`${state.promptEntries.length} Einträge werden entfernt. Die fortlaufende Nummerierung wird dabei nicht zurückgesetzt.`} confirmLabel="Alle löschen" onCancel={() => setDeleteAllOpen(false)} onConfirm={() => { void updateState((current) => ({ ...current, promptEntries: [] }), 'Promptprotokoll geleert'); setDeleteAllOpen(false); }}/>
-  </Page>;
+  </Page></div>;
 }

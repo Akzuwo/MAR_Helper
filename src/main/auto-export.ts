@@ -54,11 +54,15 @@ export class AutoExportService {
       if (!directoryStats.isDirectory()) throw new Error('NOT_A_DIRECTORY');
 
       tempDirectory = await fs.mkdtemp(path.join(app.getPath('temp'), 'mar-helper-pdf-'));
+      await fs.copyFile(
+        path.join(app.getAppPath(), 'node_modules', 'pagedjs', 'dist', 'paged.polyfill.min.js'),
+        path.join(tempDirectory, 'paged.polyfill.min.js')
+      );
       const icon = await fs.readFile(path.join(app.getAppPath(), 'references', 'logo', 'screen.png'));
       const iconDataUrl = `data:image/png;base64,${icon.toString('base64')}`;
       renderWindow = new BrowserWindow({
         show: false,
-        webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, javascript: false }
+        webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, javascript: true }
       });
       const documents: Array<{ fileName: string; document: AutoExportDocument }> = state.settings.autoExport.separateDocuments
         ? [
@@ -71,6 +75,12 @@ export class AutoExportService {
         const htmlPath = path.join(tempDirectory, `protokolle-${index}.html`);
         await fs.writeFile(htmlPath, createAutoExportHtml(state, new Date(), item.document), 'utf8');
         await renderWindow.loadFile(htmlPath);
+        await renderWindow.webContents.executeJavaScript(`(async () => {
+          await document.fonts.ready;
+          if (!window.PagedPolyfill) throw new Error('PAGED_JS_UNAVAILABLE');
+          const flow = await window.PagedPolyfill.preview();
+          return flow.total;
+        })()`);
         const pdf = await renderWindow.webContents.printToPDF({
           printBackground: true,
           preferCSSPageSize: true,

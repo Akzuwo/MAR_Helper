@@ -81,6 +81,29 @@ describe('automatic PDF export document', () => {
     expect(html).not.toContain('<h3>Nur tatsächlicher Inhalt</h3>');
   });
 
+  it('renders prompt markdown and builds a paginated table of contents', () => {
+    const state = createDefaultState();
+    state.promptEntries = [{
+      id: 'prompt-markdown', number: 42, title: 'Formatierter Export', modelName: 'Codex',
+      prompt: '## Aufgabe\n\nNutze **fetten Text** und `Code`.',
+      response: '> Hinweis\n\n- Erster Punkt\n- Zweiter Punkt\n\n| A | B |\n|---|---|\n| 1 | 2 |',
+      createdAt: '2026-08-20T08:00:00.000Z'
+    }];
+
+    const html = createAutoExportHtml(state, new Date(), 'prompts');
+    expect(html).toContain('<h2>Aufgabe</h2>');
+    expect(html).toContain('<strong>fetten Text</strong>');
+    expect(html).toContain('<code>Code</code>');
+    expect(html).toContain('<blockquote>');
+    expect(html).toContain('<table>');
+    expect(html).not.toContain('**fetten Text**');
+    expect(html).toContain('<h2>Inhaltsverzeichnis</h2>');
+    expect(html).toContain('href="#prompt-42"');
+    expect(html).toContain('id="prompt-42"');
+    expect(html).toContain('target-counter(attr(href), page)');
+    expect(html).toContain('paged.polyfill.min.js');
+  });
+
   it('can render journal and prompt protocol as separate documents', () => {
     const state = createDefaultState();
     const journal = createAutoExportHtml(state, new Date(), 'journal');
