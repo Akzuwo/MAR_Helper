@@ -45,6 +45,7 @@ function importError(error: unknown, rawText = false) {
 }
 
 function createWindow() {
+  const taskbarIconPath = path.join(app.getAppPath(), 'references', 'logo', 'taskbar-icon.png');
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
@@ -52,7 +53,7 @@ function createWindow() {
     minHeight: 640,
     show: false,
     backgroundColor: '#f8f9fa',
-    icon: path.join(app.getAppPath(), 'references', 'logo', 'taskbar-icon.png'),
+    icon: taskbarIconPath,
     title: 'MAR Helper',
     autoHideMenuBar: true,
     webPreferences: {
@@ -63,7 +64,10 @@ function createWindow() {
     }
   });
 
-  mainWindow.once('ready-to-show', () => mainWindow?.show());
+  mainWindow.once('ready-to-show', () => {
+    mainWindow?.setIcon(taskbarIconPath);
+    mainWindow?.show();
+  });
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:\/\//i.test(url)) void shell.openExternal(url);
     return { action: 'deny' };
@@ -79,6 +83,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  app.setAppUserModelId('ch.marhelper.app');
   store = new JsonStore();
   autoExporter = new AutoExportService((status: AutoExportStatus) => mainWindow?.webContents.send('auto-export:status', status));
   cloudSaver = new CloudSaveService(

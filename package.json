@@ -61,6 +61,7 @@
     ],
     "artifactName": "MAR-Helper-Setup-${version}-${arch}.${ext}",
     "win": {
+      "icon": "references/logo/taskbar-icon.png",
       "target": [
         {
           "target": "nsis",
