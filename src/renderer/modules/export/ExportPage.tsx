@@ -11,7 +11,7 @@ import { ImportGuideModal } from './ImportGuideModal';
 const dateSuffix = () => new Date().toISOString().slice(0, 10);
 
 export function ExportPage() {
-  const { state, autoExportStatus, updateState, toast } = useAppData();
+  const { state, autoExportStatus, toast } = useAppData();
   const [importOpen, setImportOpen] = useState(false);
   const [importSelection, setImportSelection] = useState<ImportSelectResult | null>(null);
   const [importSource, setImportSource] = useState<'file' | 'rawText'>('file');
@@ -42,31 +42,6 @@ export function ExportPage() {
     setImportOpen(true);
   };
 
-  const chooseAutoExportFolder = async () => {
-    try {
-      const result = await window.marHelper.selectAutoExportFolder();
-      if (result.canceled) return;
-      await updateState((current) => ({
-        ...current,
-        settings: { ...current.settings, autoExport: { enabled: true, directory: result.directory } }
-      }), 'Auto-Export eingerichtet');
-    } catch {
-      toast('Der Zielordner konnte nicht ausgewählt werden.', 'error');
-    }
-  };
-
-  const toggleAutoExport = () => {
-    if (!state.settings.autoExport.enabled && !state.settings.autoExport.directory) {
-      void chooseAutoExportFolder();
-      return;
-    }
-    const enabled = state.settings.autoExport.enabled;
-    void updateState((current) => ({
-      ...current,
-      settings: { ...current.settings, autoExport: { ...current.settings.autoExport, enabled: !enabled } }
-    }), `Auto-Export ${enabled ? 'pausiert' : 'aktiviert'}`);
-  };
-
   const runAutoExport = async () => {
     const result = await window.marHelper.runAutoExport();
     if (result.state === 'success') toast('PDF erfolgreich aktualisiert');
@@ -91,15 +66,14 @@ export function ExportPage() {
         <Button variant="secondary" icon={<Import size={17}/>} onClick={() => void startImport()}>JSON auswählen</Button>
       </div>
     </section>
-    {state.settings.betaFeatures.autoExport && <section className="auto-export-card">
+    {(state.settings.autoExport.enabled || state.settings.autoExport.directory) && <section className="auto-export-card">
       <header>
         <span className="auto-export-card__icon"><FileOutput size={22}/></span>
-        <div><div className="auto-export-card__title"><h2>Automatischer PDF-Export</h2><span className="beta-badge">Beta</span></div><p>Hält eine schön formatierte Datei mit Arbeitsjournal, Promptprotokoll und Zeitplan automatisch aktuell.</p></div>
-        <button className={`switch ${state.settings.autoExport.enabled ? 'on' : ''}`} role="switch" aria-checked={state.settings.autoExport.enabled} aria-label={`Auto-Export ${state.settings.autoExport.enabled ? 'pausieren' : 'aktivieren'}`} onClick={toggleAutoExport}><span/></button>
+        <div><div className="auto-export-card__title"><h2>Automatischer PDF-Export</h2></div><p>Die Konfiguration verwaltest du in den Einstellungen.</p></div>
       </header>
       <div className="auto-export-config">
-        <div className="auto-export-folder"><FolderOpen size={18}/><div><strong>Zielordner</strong><span title={state.settings.autoExport.directory}>{state.settings.autoExport.directory || 'Noch kein Ordner ausgewählt'}</span><small>MAR-Helper-Protokolle.pdf</small></div></div>
-        <div className="auto-export-actions"><Button variant="secondary" icon={<FolderOpen size={16}/>} onClick={() => void chooseAutoExportFolder()}>{state.settings.autoExport.directory ? 'Ordner ändern' : 'Ordner auswählen'}</Button><Button variant="secondary" icon={autoExportStatus.state === 'exporting' ? <LoaderCircle className="spin" size={16}/> : <RefreshCw size={16}/>} disabled={!state.settings.autoExport.enabled || autoExportStatus.state === 'exporting'} onClick={() => void runAutoExport()}>Jetzt exportieren</Button></div>
+        <div className="auto-export-folder"><FolderOpen size={18}/><div><strong>Zielordner</strong><span title={state.settings.autoExport.directory}>{state.settings.autoExport.directory}</span><small>{state.settings.autoExport.separateDocuments ? `${state.settings.autoExport.journalFileName} · ${state.settings.autoExport.promptsFileName}` : state.settings.autoExport.fileName}</small></div></div>
+        <div className="auto-export-actions"><Button variant="secondary" icon={autoExportStatus.state === 'exporting' ? <LoaderCircle className="spin" size={16}/> : <RefreshCw size={16}/>} disabled={!state.settings.autoExport.enabled || autoExportStatus.state === 'exporting'} onClick={() => void runAutoExport()}>Jetzt exportieren</Button></div>
       </div>
       <footer className={`auto-export-status auto-export-status--${autoExportStatus.state}`} aria-live="polite">
         {autoExportStatus.state === 'error' ? <AlertCircle size={15}/> : autoExportStatus.state === 'success' ? <CheckCircle2 size={15}/> : autoExportStatus.state === 'exporting' ? <LoaderCircle className="spin" size={15}/> : <span className="status-dot"/>}

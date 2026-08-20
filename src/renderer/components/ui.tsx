@@ -41,8 +41,8 @@ export const Select = forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<H
 );
 Select.displayName = 'Select';
 
-export function Modal({ open, title, description, children, onClose, wide = false, bodyClassName = '' }: {
-  open: boolean; title: string; description?: string; children: React.ReactNode; onClose: () => void; wide?: boolean; bodyClassName?: string
+export function Modal({ open, title, description, children, onClose, wide = false, bodyClassName = '', dismissible = true }: {
+  open: boolean; title: string; description?: string; children: React.ReactNode; onClose: () => void; wide?: boolean; bodyClassName?: string; dismissible?: boolean
 }) {
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -60,14 +60,14 @@ export function Modal({ open, title, description, children, onClose, wide = fals
   useEffect(() => {
     if (!open || !mounted) return;
     const previous = document.activeElement as HTMLElement | null;
-    closeRef.current?.focus();
+    if (dismissible) closeRef.current?.focus();
     const handler = (event: KeyboardEvent) => {
       const overlays = document.querySelectorAll('.overlay');
-      if (event.key === 'Escape' && overlays[overlays.length - 1] === overlayRef.current) onCloseRef.current();
+      if (dismissible && event.key === 'Escape' && overlays[overlays.length - 1] === overlayRef.current) onCloseRef.current();
     };
     window.addEventListener('keydown', handler);
     return () => { window.removeEventListener('keydown', handler); previous?.focus(); };
-  }, [open, mounted]);
+  }, [dismissible, open, mounted]);
   if (!mounted) return null;
 
   return createPortal(<div ref={overlayRef} className={`overlay overlay--${open ? 'open' : 'closing'}`} role="presentation">
@@ -75,12 +75,12 @@ export function Modal({ open, title, description, children, onClose, wide = fals
       className="overlay__backdrop"
       aria-hidden="true"
       onAnimationEnd={(event) => { if (!open && event.animationName === 'backdrop-in') setMounted(false); }}
-      onMouseDown={() => { if (open) onCloseRef.current(); }}
+      onMouseDown={() => { if (open && dismissible) onCloseRef.current(); }}
     />
     <section className={`modal ${wide ? 'modal--wide' : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <header className="modal__header">
         <div><h2 id={titleId}>{title}</h2>{description && <p>{description}</p>}</div>
-        <IconButton ref={closeRef} label="Dialog schliessen" variant="ghost" onClick={() => onCloseRef.current()}><X size={20}/></IconButton>
+        {dismissible && <IconButton ref={closeRef} label="Dialog schliessen" variant="ghost" onClick={() => onCloseRef.current()}><X size={20}/></IconButton>}
       </header>
       <div className={`modal__body ${bodyClassName}`}>{children}</div>
     </section>

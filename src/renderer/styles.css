@@ -58,6 +58,11 @@ button, a, input, select, textarea { outline: none; }
 .sidebar__nav button.active { color: var(--primary); background: #d9dff5; font-weight: 500; }
 .sidebar__nav--bottom { margin-top: auto; padding-top: 14px; border-top: 1px solid #d9dadb; }
 .sidebar__empty { margin: 8px 12px; color: var(--outline); font-size: 12px; }
+.history-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: auto; padding: 12px 8px 4px; border-top: 1px solid #d9dadb; }
+.history-controls + .sidebar__nav--bottom { margin-top: 0; padding-top: 6px; border-top: 0; }
+.history-controls button { height: 34px; display: grid; place-items: center; border: 1px solid var(--outline-soft); border-radius: 8px; color: var(--text-muted); background: white; cursor: pointer; }
+.history-controls button:hover:not(:disabled) { color: var(--primary); background: var(--primary-tint); }
+.history-controls button:disabled { opacity: .38; cursor: default; }
 
 .page { height: 100%; overflow: auto; padding: 32px 30px 48px; scroll-behavior: smooth; }
 .page > * { width: 100%; max-width: 1240px; margin-left: auto; margin-right: auto; }
@@ -235,6 +240,11 @@ button, a, input, select, textarea { outline: none; }
 .markdown-content th { background: var(--surface-low); color: var(--text); }
 
 .planner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+.planner-dashboard { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin-bottom: 20px; }
+.planner-dashboard > div { display: grid; grid-template-columns: 38px 1fr; grid-template-rows: auto auto; column-gap: 11px; padding: 15px 17px; border: 1px solid var(--outline-soft); border-radius: var(--radius-md); background: white; box-shadow: var(--shadow-card); }
+.planner-dashboard > div > span { grid-row: 1/3; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 9px; color: var(--primary); background: var(--primary-tint); }
+.planner-dashboard p { margin: 0; color: var(--text-muted); font-size: 12px; }
+.planner-dashboard strong { font-size: 18px; line-height: 23px; font-weight: 600; }
 .task-column { min-height: 300px; background: white; border: 1px solid var(--outline-soft); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-card); }
 .task-column > header { height: 62px; display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; background: var(--surface); border-bottom: 1px solid var(--outline-soft); }
 .task-column > header > div { display: flex; align-items: center; gap: 10px; }
@@ -279,6 +289,14 @@ button, a, input, select, textarea { outline: none; }
 .switch > span { display: block; width: 24px; height: 24px; background: white; border: 1px solid #c7c9cc; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,.15); transition: transform .2s cubic-bezier(.2,.8,.2,1); }
 .switch.on { background: var(--primary-bright); }
 .switch.on > span { transform: translateX(24px); border-color: white; }
+.setting-choice { min-height: 72px; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--outline-soft); border-radius: var(--radius); background: var(--surface-low); cursor: pointer; }
+.setting-choice > span:nth-child(2) { min-width: 0; flex: 1; }
+.setting-choice strong, .setting-choice small { display: block; }
+.setting-choice small { margin-top: 2px; color: var(--text-muted); }
+.cloud-info { display: flex; align-items: flex-start; gap: 11px; padding: 13px 14px; border-radius: var(--radius); color: #3f3b66; background: var(--primary-tint); }
+.cloud-info > svg { flex: 0 0 auto; margin-top: 1px; color: var(--primary); }
+.cloud-info p { margin: 0; }
+.cloud-info code { font-size: 12px; }
 .model-manager { padding: 20px 24px 24px; }
 .add-model { max-width: 650px; margin-bottom: 18px; }
 .model-list { border: 1px solid var(--outline-soft); border-radius: var(--radius); overflow: hidden; }
@@ -556,7 +574,7 @@ button, a, input, select, textarea { outline: none; }
   .today-card { min-height: 170px; display: grid; grid-template-columns: 1fr 1fr; gap: 0 22px; }
   .today-card .eyebrow, .today-card .button { grid-column: 1/-1; }
   .today-card .button { margin-top: 16px; }
-  .prompt-grid, .planner-grid, .export-grid { grid-template-columns: 1fr; }
+  .prompt-grid, .planner-grid, .planner-dashboard, .export-grid { grid-template-columns: 1fr; }
   .journal-row { grid-template-columns: 120px minmax(200px,1fr) 90px; }
   .journal-row > span:nth-child(3), .journal-row--head > span:nth-child(3) { display: none; }
   .raw-guide__examples { grid-template-columns: 1fr; }

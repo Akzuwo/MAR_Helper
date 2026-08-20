@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createDefaultState } from '../../shared/defaults';
-import type { AppState, AutoExportStatus, ImportMode } from '../../shared/models';
+import type { AppState, AutoExportStatus, CloudSaveStatus, HistoryStatus, ImportMode } from '../../shared/models';
 
 type ToastKind = 'success' | 'error' | 'info';
 export interface ToastMessage { id: string; message: string; kind: ToastKind }
@@ -11,7 +11,11 @@ interface AppDataContextValue {
   loadError: string | null;
   saving: boolean;
   autoExportStatus: AutoExportStatus;
+  historyStatus: HistoryStatus;
+  cloudSaveStatus: CloudSaveStatus;
   updateState: (updater: (current: AppState) => AppState, successMessage?: string) => Promise<boolean>;
+  undo: () => Promise<void>;
+  redo: () => Promise<void>;
   commitImport: (sessionId: string, mode: ImportMode) => Promise<boolean>;
   toast: (message: string, kind?: ToastKind) => void;
   toasts: ToastMessage[];
@@ -26,6 +30,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [autoExportStatus, setAutoExportStatus] = useState<AutoExportStatus>({ state: 'idle' });
+  const [historyStatus, setHistoryStatus] = useState<HistoryStatus>({ canUndo: false, canRedo: false });
+  const [cloudSaveStatus, setCloudSaveStatus] = useState<CloudSaveStatus>({ state: 'idle' });
   const [loadError, setLoadError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const saveQueue = useRef(Promise.resolve(true));
@@ -47,11 +53,24 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     if (status.state === 'error') toast(status.message, 'error');
   }), [toast]);
 
+  useEffect(() => window.marHelper.onCloudSaveStatus((status) => {
+    setCloudSaveStatus(status);
+    if (status.state === 'error') toast(status.message, 'error');
+  }), [toast]);
+
+  useEffect(() => window.marHelper.onCloudStateUpdated((updated) => {
+    stateRef.current = updated;
+    setState(updated);
+    void window.marHelper.getHistoryStatus().then(setHistoryStatus);
+    toast('Neuer Cloud-Stand wurde geladen', 'info');
+  }), [toast]);
+
   useEffect(() => {
     window.marHelper.loadState()
       .then((loaded) => {
         setState(loaded);
         stateRef.current = loaded;
+        void window.marHelper.getHistoryStatus().then(setHistoryStatus);
       })
       .catch((error: unknown) => {
         setLoadError(error instanceof Error ? error.message : 'Die lokale Datenbank konnte nicht geladen werden.');
@@ -73,6 +92,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         const persisted = await window.marHelper.saveState(next);
         stateRef.current = persisted;
         setState(persisted);
+        setHistoryStatus(await window.marHelper.getHistoryStatus());
         if (successMessage) toast(successMessage);
         return true;
       } catch (error) {
@@ -96,6 +116,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       if (!result.ok) { toast(result.message, 'error'); return false; }
       stateRef.current = result.state;
       setState(result.state);
+      setHistoryStatus(await window.marHelper.getHistoryStatus());
       toast('Import abgeschlossen');
       return true;
     } catch {
@@ -106,8 +127,33 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     }
   }, [toast]);
 
-  const value = useMemo(() => ({ state, loading, loadError, saving, autoExportStatus, updateState, commitImport, toast, toasts, dismissToast }),
-    [state, loading, loadError, saving, autoExportStatus, updateState, commitImport, toast, toasts, dismissToast]);
+  const moveHistory = useCallback(async (direction: 'undo' | 'redo') => {
+    await saveQueue.current;
+    const result = direction === 'undo' ? await window.marHelper.undoState() : await window.marHelper.redoState();
+    setHistoryStatus(result.status);
+    if (!result.ok) { toast(result.message, 'info'); return; }
+    stateRef.current = result.state;
+    setState(result.state);
+    toast(direction === 'undo' ? 'Änderung rückgängig gemacht' : 'Änderung wiederhergestellt');
+  }, [toast]);
+
+  const undo = useCallback(() => moveHistory('undo'), [moveHistory]);
+  const redo = useCallback(() => moveHistory('redo'), [moveHistory]);
+
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      if (!(event.ctrlKey || event.metaKey) || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+      if (event.key.toLocaleLowerCase() === 'z' && event.shiftKey) { event.preventDefault(); void redo(); }
+      else if (event.key.toLocaleLowerCase() === 'z') { event.preventDefault(); void undo(); }
+      else if (event.key.toLocaleLowerCase() === 'y') { event.preventDefault(); void redo(); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [redo, undo]);
+
+  const value = useMemo(() => ({ state, loading, loadError, saving, autoExportStatus, historyStatus, cloudSaveStatus, updateState, undo, redo, commitImport, toast, toasts, dismissToast }),
+    [state, loading, loadError, saving, autoExportStatus, historyStatus, cloudSaveStatus, updateState, undo, redo, commitImport, toast, toasts, dismissToast]);
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 }

@@ -4,15 +4,17 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { applyImport, ImportValidationError, parseImport, type ImportBundle } from '../shared/importers';
 import { parseRawTextImport } from '../shared/raw-importer';
-import type { AppState, AutoExportStatus, ImportMode, ImportSummary, SaveFileRequest } from '../shared/models';
+import type { AppState, AutoExportStatus, CloudSaveStatus, ImportMode, ImportSummary, SaveFileRequest } from '../shared/models';
 import { AutoExportService } from './auto-export';
+import { CloudSaveService } from './cloud-save';
 import { JsonStore } from './store';
 import { configureAutoUpdater } from './updater';
-import { checkGit, listCommits, readCommit, resolveRepository } from './git-integration/GitService';
+import { checkGit, checkRemoteRepository, listCommits, readCommit, resolveRepository } from './git-integration/GitService';
 
 let mainWindow: BrowserWindow | null = null;
 let store: JsonStore;
 let autoExporter: AutoExportService;
+let cloudSaver: CloudSaveService;
 const importSessions = new Map<string, { bundle: ImportBundle; createdAt: number }>();
 const IMPORT_SESSION_TTL = 15 * 60 * 1000;
 
@@ -79,10 +81,27 @@ function createWindow() {
 app.whenReady().then(() => {
   store = new JsonStore();
   autoExporter = new AutoExportService((status: AutoExportStatus) => mainWindow?.webContents.send('auto-export:status', status));
-  ipcMain.handle('state:load', () => store.load());
+  cloudSaver = new CloudSaveService(
+    store,
+    (status: CloudSaveStatus) => mainWindow?.webContents.send('cloud-save:status', status),
+    (state: AppState) => { autoExporter.schedule(state); mainWindow?.webContents.send('cloud-save:state-updated', state); }
+  );
+  ipcMain.handle('state:load', async () => { const state = await store.load(); cloudSaver.configure(state, true); return state; });
+  ipcMain.handle('history:status', () => store.historyStatus());
+  ipcMain.handle('history:undo', async () => {
+    const result = await store.undo();
+    if (result.ok) { autoExporter.schedule(result.state); cloudSaver.schedule(result.state); }
+    return result;
+  });
+  ipcMain.handle('history:redo', async () => {
+    const result = await store.redo();
+    if (result.ok) { autoExporter.schedule(result.state); cloudSaver.schedule(result.state); }
+    return result;
+  });
   ipcMain.handle('state:save', async (_event, state: AppState) => {
     const persisted = await store.save(state);
     autoExporter.schedule(persisted);
+    cloudSaver.schedule(persisted);
     return persisted;
   });
   ipcMain.handle('export:save', async (_event, request: SaveFileRequest) => {
@@ -107,6 +126,9 @@ app.whenReady().then(() => {
     return result.canceled || !directory ? { canceled: true } : { canceled: false, directory };
   });
   ipcMain.handle('auto-export:run', async () => autoExporter.runNow(await store.load()));
+  ipcMain.handle('cloud-save:check-repository', (_event, repositoryPath: string) => checkRemoteRepository(repositoryPath));
+  ipcMain.handle('cloud-save:sync', () => cloudSaver.syncNow());
+  ipcMain.handle('cloud-save:resolve-conflict', (_event, useRemote: boolean) => cloudSaver.resolveConflict(useRemote === true));
   ipcMain.handle('import:open', async () => {
     if (!mainWindow) return { canceled: true };
     const result = await dialog.showOpenDialog(mainWindow, {
@@ -158,6 +180,7 @@ app.whenReady().then(() => {
         return applied;
       });
       autoExporter.schedule(state);
+      cloudSaver.schedule(state);
       importSessions.delete(sessionId);
       return { ok: true, state, summary };
     } catch {
@@ -186,5 +209,6 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
+  cloudSaver?.stop();
   if (process.platform !== 'darwin') app.quit();
 });
