@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Calendar, Check, CheckCircle2, Circle, ListTodo, Plus } from 'lucide-react';
+import { Calendar, Check, CheckCircle2, Circle, Clock3, ListChecks, ListTodo, Plus, Trash2 } from 'lucide-react';
 import type { PlannerTask } from '../../../shared/models';
+import { formatDuration } from '../../../shared/timer';
 import { useAppData } from '../../state/AppDataContext';
 import { Button, ConfirmDialog, EmptyState } from '../../components/ui';
 import { Page, PageHeader } from '../../layout/Page';
@@ -32,8 +33,10 @@ export function PlannerPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<PlannerTask | null>(null);
   const [deleting, setDeleting] = useState<PlannerTask | null>(null);
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
   const openTasks = useMemo(() => state.plannerTasks.filter((task) => !task.completed).sort((a, b) => (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999')), [state.plannerTasks]);
   const doneTasks = useMemo(() => state.plannerTasks.filter((task) => task.completed).sort((a, b) => (b.updatedAt ?? b.createdAt).localeCompare(a.updatedAt ?? a.createdAt)), [state.plannerTasks]);
+  const totalWorkingTime = useMemo(() => state.journalEntries.reduce((total, entry) => total + entry.workingTimeMs, 0), [state.journalEntries]);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -69,7 +72,12 @@ export function PlannerPage() {
   const openDialog = (task?: PlannerTask) => { setEditing(task ?? null); setDialogOpen(true); };
 
   return <Page>
-    <PageHeader title="Zeitplan" description="Plane die nächsten Aufgaben deiner Maturaarbeit." actions={<Button icon={<Plus size={18}/>} onClick={() => openDialog()}>Task</Button>}/>
+    <PageHeader title="Zeitplan" description="Plane die nächsten Aufgaben deiner Maturaarbeit." actions={<>{state.plannerTasks.length > 0 && <Button variant="ghost" icon={<Trash2 size={17}/>} onClick={() => setDeleteAllOpen(true)}>Alle löschen</Button>}<Button icon={<Plus size={18}/>} onClick={() => openDialog()}>Task</Button></>}/>
+    <section className="planner-dashboard" aria-label="Projektübersicht">
+      <div><span><Clock3 size={18}/></span><p>Gesamter Zeitaufwand</p><strong>{formatDuration(totalWorkingTime, true)}</strong></div>
+      <div><span><ListChecks size={18}/></span><p>Erfasste Sessions</p><strong>{state.journalEntries.length}</strong></div>
+      <div><span><CheckCircle2 size={18}/></span><p>Erledigte Tasks</p><strong>{doneTasks.length} / {state.plannerTasks.length}</strong></div>
+    </section>
     {state.plannerTasks.length === 0 ? <EmptyState icon={<ListTodo/>} title="Noch keine Tasks" description="Erstelle deinen ersten Task, um deinen Zeitplan zu beginnen." action={<Button icon={<Plus size={17}/>} onClick={() => openDialog()}>Task erstellen</Button>}/> :
       <div className="planner-grid">
         <TaskColumn title="Offen" tasks={openTasks} completed={false} onToggle={toggle} onOpen={openDialog}/>
@@ -77,5 +85,6 @@ export function PlannerPage() {
       </div>}
     <TaskDialog open={dialogOpen} task={editing} onClose={() => { setDialogOpen(false); setEditing(null); }} onSave={save} onDelete={(task) => setDeleting(task)}/>
     <ConfirmDialog open={!!deleting} title="Task löschen?" description="Der Task wird dauerhaft entfernt. Bereits verknüpfte Journaleinträge bleiben erhalten." onCancel={() => setDeleting(null)} onConfirm={confirmDelete}/>
+    <ConfirmDialog open={deleteAllOpen} title="Alle Tasks löschen?" description={`${state.plannerTasks.length} offene und erledigte Tasks werden entfernt. Verknüpfte Journaleinträge bleiben bestehen.`} confirmLabel="Alle löschen" onCancel={() => setDeleteAllOpen(false)} onConfirm={() => { void updateState((current) => ({ ...current, plannerTasks: [] }), 'Zeitplan geleert'); setDeleteAllOpen(false); }}/>
   </Page>;
 }

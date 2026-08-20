@@ -7,7 +7,7 @@ const runFile = promisify(execFile);
 const MAX_OUTPUT = 25 * 1024 * 1024;
 const HASH = /^[0-9a-f]{7,40}$/i;
 
-type GitErrorCode = 'GIT_NOT_FOUND' | 'NOT_A_REPOSITORY' | 'REPOSITORY_NOT_FOUND' | 'COMMIT_NOT_FOUND' | 'REPOSITORY_UNREADABLE' | 'GIT_FAILED' | 'DIFF_TOO_LARGE';
+type GitErrorCode = 'GIT_NOT_FOUND' | 'NOT_A_REPOSITORY' | 'REPOSITORY_NOT_FOUND' | 'REMOTE_NOT_FOUND' | 'COMMIT_NOT_FOUND' | 'REPOSITORY_UNREADABLE' | 'GIT_FAILED' | 'DIFF_TOO_LARGE';
 
 const fail = <T>(code: GitErrorCode, message: string): GitResult<T> => ({ ok: false, code, message });
 
@@ -24,7 +24,7 @@ function friendlyError(error: unknown): { code: GitErrorCode; message: string } 
 }
 
 async function git(args: string[], maxBuffer = MAX_OUTPUT): Promise<string> {
-  const { stdout } = await runFile('git', args, { encoding: 'utf8', windowsHide: true, maxBuffer });
+  const { stdout } = await runFile('git', args, { encoding: 'utf8', windowsHide: true, maxBuffer, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
   return stdout.replace(/\r\n/g, '\n');
 }
 
@@ -46,6 +46,19 @@ export async function resolveRepository(folderPath: string): Promise<GitResult<{
   } catch (error) {
     const value = friendlyError(error);
     return fail(value.code, value.message);
+  }
+}
+
+export async function checkRemoteRepository(folderPath: string): Promise<GitResult<{ remoteUrl: string }>> {
+  const repository = await resolveRepository(folderPath);
+  if (!repository.ok) return repository;
+  try {
+    const remoteUrl = (await git(['-C', repository.data.path, 'remote', 'get-url', 'origin'], 1024 * 1024)).trim();
+    if (!remoteUrl) return fail('REMOTE_NOT_FOUND', 'Das Repository besitzt keinen Remote „origin“.');
+    await git(['-C', repository.data.path, 'ls-remote', 'origin', 'HEAD'], 2 * 1024 * 1024);
+    return { ok: true, data: { remoteUrl } };
+  } catch {
+    return fail('REMOTE_NOT_FOUND', 'Cloud Save benötigt ein Remote-Repository mit dem Namen „origin“.');
   }
 }
 

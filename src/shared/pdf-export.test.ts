@@ -5,28 +5,41 @@ import { AUTO_EXPORT_FILE_NAME, createAutoExportHtml, createPdfHeaderTemplate, P
 describe('automatic PDF export document', () => {
   it('migrates the beta and export settings disabled by default', () => {
     const migrated = normalizeState({ version: 4, settings: { modules: { journal: true, prompts: true, planner: true } } } as never);
-    expect(migrated.version).toBe(5);
-    expect(migrated.settings.betaFeatures.autoExport).toBe(false);
-    expect(migrated.settings.autoExport).toEqual({ enabled: false });
+    expect(migrated.version).toBe(6);
+    expect(migrated.settings.betaFeatures.cloudSave).toBe(false);
+    expect(migrated.settings.autoExport).toEqual({
+      enabled: false, fileName: 'MAR-Helper-Protokolle.pdf', separateDocuments: false,
+      journalFileName: 'MAR-Helper-Arbeitsjournal.pdf', promptsFileName: 'MAR-Helper-Promptprotokoll.pdf'
+    });
     expect(AUTO_EXPORT_FILE_NAME).toBe('MAR-Helper-Protokolle.pdf');
   });
 
   it('only enables automatic PDF export with a target directory', () => {
     const missingDirectory = createDefaultState();
-    missingDirectory.settings.betaFeatures.autoExport = true;
     missingDirectory.settings.autoExport.enabled = true;
 
     const normalizedWithoutDirectory = normalizeState(missingDirectory);
-    expect(normalizedWithoutDirectory.settings.betaFeatures.autoExport).toBe(false);
     expect(normalizedWithoutDirectory.settings.autoExport.enabled).toBe(false);
 
     const configured = createDefaultState();
-    configured.settings.betaFeatures.autoExport = true;
-    configured.settings.autoExport = { enabled: true, directory: 'C:\\Exports' };
+    configured.settings.autoExport = { ...configured.settings.autoExport, enabled: true, directory: 'C:\\Exports' };
 
     const normalizedWithDirectory = normalizeState(configured);
-    expect(normalizedWithDirectory.settings.betaFeatures.autoExport).toBe(true);
-    expect(normalizedWithDirectory.settings.autoExport).toEqual({ enabled: true, directory: 'C:\\Exports' });
+    expect(normalizedWithDirectory.settings.autoExport).toEqual(configured.settings.autoExport);
+  });
+
+  it('migrates the former Auto Export beta setting into the regular feature', () => {
+    const migrated = normalizeState({
+      version: 5,
+      settings: {
+        modules: { journal: true, prompts: true, planner: true },
+        betaFeatures: { rawTextImport: false, autoExport: true },
+        autoExport: { enabled: true, directory: 'C:\\Exports' }
+      }
+    } as never);
+    expect(migrated.settings.autoExport.enabled).toBe(true);
+    expect(migrated.settings.autoExport.directory).toBe('C:\\Exports');
+    expect(migrated.settings.autoExport.fileName).toBe('MAR-Helper-Protokolle.pdf');
   });
 
   it('renders every protocol with a print layout and escapes user content', () => {
@@ -66,5 +79,16 @@ describe('automatic PDF export document', () => {
     const html = createAutoExportHtml(state);
     expect(html).toContain('Nur tatsächlicher Inhalt');
     expect(html).not.toContain('<h3>Nur tatsächlicher Inhalt</h3>');
+  });
+
+  it('can render journal and prompt protocol as separate documents', () => {
+    const state = createDefaultState();
+    const journal = createAutoExportHtml(state, new Date(), 'journal');
+    const prompts = createAutoExportHtml(state, new Date(), 'prompts');
+    expect(journal).toContain('<h2>Arbeitsjournal</h2>');
+    expect(journal).not.toContain('<h2>Promptprotokoll</h2>');
+    expect(journal).not.toContain('<h2>Zeitplan</h2>');
+    expect(prompts).toContain('<h2>Promptprotokoll</h2>');
+    expect(prompts).not.toContain('<h2>Arbeitsjournal</h2>');
   });
 });

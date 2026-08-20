@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FileText, Plus, Search, WandSparkles } from 'lucide-react';
+import { FileText, Plus, Search, Trash2, WandSparkles } from 'lucide-react';
 import type { PromptEntry } from '../../../shared/models';
 import { matchesPromptSearch, upsertPromptEntry } from '../../../shared/prompt-entries';
 import { useAppData } from '../../state/AppDataContext';
@@ -20,6 +20,7 @@ export function PromptsPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<PromptEntry | null>(null);
   const [deleteEntry, setDeleteEntry] = useState<PromptEntry | null>(null);
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
 
   const selected = state.promptEntries.find((entry) => entry.id === selectedId) ?? null;
   const filtered = useMemo(() => {
@@ -58,7 +59,7 @@ export function PromptsPage() {
   </>;
 
   return <Page>
-    <PageHeader title="Promptprotokoll" description="Dokumentiere verwendete KI-Prompts und Antworten." actions={<Button icon={<Plus size={18}/>} onClick={() => { setEditing(null); setEditorOpen(true); }}>Prompt erfassen</Button>}/>
+    <PageHeader title="Promptprotokoll" description="Dokumentiere verwendete KI-Prompts und Antworten." actions={<>{state.promptEntries.length > 0 && <Button variant="ghost" icon={<Trash2 size={17}/>} onClick={() => setDeleteAllOpen(true)}>Alle löschen</Button>}<Button icon={<Plus size={18}/>} onClick={() => { setEditing(null); setEditorOpen(true); }}>Prompt erfassen</Button></>}/>
     <div className="prompt-toolbar">
       <label className="search-box"><Search size={18}/><Input aria-label="Prompts durchsuchen" placeholder="Suche in Prompts …" value={search} onChange={(event) => setSearch(event.target.value)}/></label>
       <Select aria-label="Nach Modell filtern" value={modelFilter} onChange={(event) => setModelFilter(event.target.value)}><option value="">Alle Modelle</option>{Array.from(new Set(state.promptEntries.map((entry) => entry.modelName))).sort().map((model) => <option key={model} value={model}>{model}</option>)}</Select>
@@ -73,5 +74,6 @@ export function PromptsPage() {
         </button>)}
       </div>}
     <PromptEditor open={editorOpen} entry={editing} models={state.promptModels} onClose={() => { setEditorOpen(false); setEditing(null); }} onSave={save} onManageModels={() => toast('Modelle verwaltest du in den Einstellungen.', 'info')}/>
+    <ConfirmDialog open={deleteAllOpen} title="Alle Prompt-Einträge löschen?" description={`${state.promptEntries.length} Einträge werden entfernt. Die fortlaufende Nummerierung wird dabei nicht zurückgesetzt.`} confirmLabel="Alle löschen" onCancel={() => setDeleteAllOpen(false)} onConfirm={() => { void updateState((current) => ({ ...current, promptEntries: [] }), 'Promptprotokoll geleert'); setDeleteAllOpen(false); }}/>
   </Page>;
 }

@@ -11,16 +11,26 @@ export interface AppSettings {
   gitIntegration: GitIntegrationSettings;
   betaFeatures: BetaFeatureSettings;
   autoExport: AutoExportSettings;
+  cloudSave: CloudSaveSettings;
 }
 
 export interface BetaFeatureSettings {
   rawTextImport: boolean;
-  autoExport: boolean;
+  cloudSave: boolean;
 }
 
 export interface AutoExportSettings {
   enabled: boolean;
   directory?: string;
+  fileName: string;
+  separateDocuments: boolean;
+  journalFileName: string;
+  promptsFileName: string;
+}
+
+export interface CloudSaveSettings {
+  enabled: boolean;
+  repositoryId?: string;
 }
 
 export interface GitRepository {
@@ -146,9 +156,20 @@ export type AutoExportFolderResult = { canceled: true } | { canceled: false; dir
 export type AutoExportStatus =
   | { state: 'idle' }
   | { state: 'exporting' }
-  | { state: 'success'; filePath: string; exportedAt: string }
+  | { state: 'success'; filePath: string; filePaths: string[]; exportedAt: string }
   | { state: 'error'; message: string };
 export type AutoExportResult = Extract<AutoExportStatus, { state: 'success' | 'error' }>;
+
+export interface HistoryStatus { canUndo: boolean; canRedo: boolean }
+export type HistoryResult = { ok: true; state: AppState; status: HistoryStatus } | { ok: false; message: string; status: HistoryStatus };
+
+export type CloudSaveStatus =
+  | { state: 'idle' }
+  | { state: 'syncing' }
+  | { state: 'success'; syncedAt: string }
+  | { state: 'error'; message: string }
+  | { state: 'conflict'; localEntries: number; remoteEntries: number; changedEntries: number };
+export type CloudSaveSyncResult = Extract<CloudSaveStatus, { state: 'success' | 'error' | 'conflict' }>;
 
 export type ImportKind = 'backup' | 'journal' | 'prompts' | 'planner';
 export type ImportMode = 'merge' | 'replace';
@@ -169,10 +190,18 @@ export type UpdateStatus =
 export interface MarHelperApi {
   loadState: () => Promise<AppState>;
   saveState: (state: AppState) => Promise<AppState>;
+  getHistoryStatus: () => Promise<HistoryStatus>;
+  undoState: () => Promise<HistoryResult>;
+  redoState: () => Promise<HistoryResult>;
   saveExport: (request: SaveFileRequest) => Promise<SaveFileResult>;
   selectAutoExportFolder: () => Promise<AutoExportFolderResult>;
   runAutoExport: () => Promise<AutoExportResult>;
   onAutoExportStatus: (listener: (status: AutoExportStatus) => void) => () => void;
+  checkCloudRepository: (repositoryPath: string) => Promise<GitResult<{ remoteUrl: string }>>;
+  syncCloudSave: () => Promise<CloudSaveSyncResult>;
+  resolveCloudConflict: (useRemote: boolean) => Promise<CloudSaveSyncResult>;
+  onCloudSaveStatus: (listener: (status: CloudSaveStatus) => void) => () => void;
+  onCloudStateUpdated: (listener: (state: AppState) => void) => () => void;
   openImport: () => Promise<ImportSelectResult>;
   previewRawImport: (content: string) => Promise<ImportSelectResult>;
   commitImport: (sessionId: string, mode: ImportMode) => Promise<ImportCommitResult>;

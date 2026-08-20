@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import type { AppState, AutoExportResult, AutoExportStatus } from '../shared/models';
-import { AUTO_EXPORT_FILE_NAME, createAutoExportHtml, createPdfHeaderTemplate, PDF_FOOTER_TEMPLATE } from '../shared/pdf-export';
+import { AUTO_EXPORT_FILE_NAME, createAutoExportHtml, createPdfHeaderTemplate, PDF_FOOTER_TEMPLATE, type AutoExportDocument } from '../shared/pdf-export';
 
 type StatusListener = (status: AutoExportStatus) => void;
 
@@ -32,8 +32,7 @@ export class AutoExportService {
   }
 
   private configured(state: AppState): boolean {
-    return state.settings.betaFeatures.autoExport
-      && state.settings.autoExport.enabled
+    return state.settings.autoExport.enabled
       && Boolean(state.settings.autoExport.directory);
   }
 
@@ -55,36 +54,45 @@ export class AutoExportService {
       if (!directoryStats.isDirectory()) throw new Error('NOT_A_DIRECTORY');
 
       tempDirectory = await fs.mkdtemp(path.join(app.getPath('temp'), 'mar-helper-pdf-'));
-      const htmlPath = path.join(tempDirectory, 'protokolle.html');
       const icon = await fs.readFile(path.join(app.getAppPath(), 'references', 'logo', 'screen.png'));
       const iconDataUrl = `data:image/png;base64,${icon.toString('base64')}`;
-      await fs.writeFile(htmlPath, createAutoExportHtml(state), 'utf8');
-
       renderWindow = new BrowserWindow({
         show: false,
         webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, javascript: false }
       });
-      await renderWindow.loadFile(htmlPath);
-      const pdf = await renderWindow.webContents.printToPDF({
-        printBackground: true,
-        preferCSSPageSize: true,
-        generateTaggedPDF: true,
-        displayHeaderFooter: true,
-        headerTemplate: createPdfHeaderTemplate(iconDataUrl),
-        footerTemplate: PDF_FOOTER_TEMPLATE
-      });
-
-      const filePath = path.join(directory, AUTO_EXPORT_FILE_NAME);
-      const temporaryPdf = path.join(directory, `.${AUTO_EXPORT_FILE_NAME}.${randomUUID()}.tmp`);
-      await fs.writeFile(temporaryPdf, pdf);
-      try {
-        await fs.rename(temporaryPdf, filePath);
-      } catch {
-        try { await fs.copyFile(temporaryPdf, filePath); }
-        finally { await fs.unlink(temporaryPdf).catch(() => undefined); }
+      const documents: Array<{ fileName: string; document: AutoExportDocument }> = state.settings.autoExport.separateDocuments
+        ? [
+            { fileName: state.settings.autoExport.journalFileName, document: 'journal' },
+            { fileName: state.settings.autoExport.promptsFileName, document: 'prompts' }
+          ]
+        : [{ fileName: state.settings.autoExport.fileName || AUTO_EXPORT_FILE_NAME, document: 'all' }];
+      const filePaths: string[] = [];
+      for (const [index, item] of documents.entries()) {
+        const htmlPath = path.join(tempDirectory, `protokolle-${index}.html`);
+        await fs.writeFile(htmlPath, createAutoExportHtml(state, new Date(), item.document), 'utf8');
+        await renderWindow.loadFile(htmlPath);
+        const pdf = await renderWindow.webContents.printToPDF({
+          printBackground: true,
+          preferCSSPageSize: true,
+          generateTaggedPDF: true,
+          displayHeaderFooter: true,
+          headerTemplate: createPdfHeaderTemplate(iconDataUrl),
+          footerTemplate: PDF_FOOTER_TEMPLATE
+        });
+        const safeName = path.basename(item.fileName) || AUTO_EXPORT_FILE_NAME;
+        const filePath = path.join(directory, safeName.toLocaleLowerCase().endsWith('.pdf') ? safeName : `${safeName}.pdf`);
+        const temporaryPdf = path.join(directory, `.${safeName}.${randomUUID()}.tmp`);
+        await fs.writeFile(temporaryPdf, pdf);
+        try {
+          await fs.rename(temporaryPdf, filePath);
+        } catch {
+          try { await fs.copyFile(temporaryPdf, filePath); }
+          finally { await fs.unlink(temporaryPdf).catch(() => undefined); }
+        }
+        filePaths.push(filePath);
       }
 
-      const result = { state: 'success' as const, filePath, exportedAt: new Date().toISOString() };
+      const result = { state: 'success' as const, filePath: filePaths[0], filePaths, exportedAt: new Date().toISOString() };
       this.onStatus(result);
       return result;
     } catch (error) {

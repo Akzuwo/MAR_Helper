@@ -2,6 +2,7 @@ import type { AppState, JournalEntry, PlannerTask, PromptEntry } from './models'
 import { formatDuration } from './timer';
 
 export const AUTO_EXPORT_FILE_NAME = 'MAR-Helper-Protokolle.pdf';
+export type AutoExportDocument = 'all' | 'journal' | 'prompts';
 export const createPdfHeaderTemplate = (appIconDataUrl: string) => `<div style="box-sizing:border-box;width:100%;padding:0 15mm;font-size:0;text-align:left"><span style="position:relative;display:inline-block;width:24px;height:24px;overflow:hidden;border-radius:5px;background:white"><img src="${escapeHtml(appIconDataUrl)}" alt="" style="position:absolute;width:69px;height:69px;max-width:none;left:-22px;top:-18px"></span></div>`;
 export const PDF_FOOTER_TEMPLATE = '<div style="box-sizing:border-box;width:100%;padding:0 15mm;color:#777587;font:9px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;text-align:right"><span class="pageNumber"></span> / <span class="totalPages"></span></div>';
 
@@ -50,13 +51,27 @@ const plannerTask = (task: PlannerTask) => `<article class="task ${task.complete
   <time>${task.dueDate ? escapeHtml(dateOnly(task.dueDate)) : 'Kein Termin'}</time>
 </article>`;
 
-export function createAutoExportHtml(state: AppState, exportedAt = new Date()): string {
+export function createAutoExportHtml(state: AppState, exportedAt = new Date(), document: AutoExportDocument = 'all'): string {
   const journals = [...state.journalEntries].sort((a, b) => a.startedAt.localeCompare(b.startedAt));
   const prompts = [...state.promptEntries].sort((a, b) => a.number - b.number);
   const tasks = [...state.plannerTasks].sort((a, b) => Number(a.completed) - Number(b.completed) || (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999'));
   const totalWorkingTime = journals.reduce((sum, entry) => sum + entry.workingTimeMs, 0);
   const completedTasks = tasks.filter((task) => task.completed).length;
   const exportedLabel = dateTime(exportedAt.toISOString());
+  const includeJournal = document === 'all' || document === 'journal';
+  const includePrompts = document === 'all' || document === 'prompts';
+  const includePlanner = document === 'all';
+  const documentTitle = document === 'journal' ? 'Arbeitsjournal' : document === 'prompts' ? 'Promptprotokoll' : 'Protokolle und Projektfortschritt';
+  const documentDescription = document === 'journal'
+    ? 'Eine aktuelle, druckfertige Übersicht deiner dokumentierten Arbeitszeit und Notizen.'
+    : document === 'prompts'
+      ? 'Eine aktuelle, druckfertige Übersicht deiner dokumentierten KI-Nutzung.'
+      : 'Eine aktuelle, druckfertige Übersicht aus Arbeitsjournal, Promptprotokoll und Zeitplan.';
+  const summary = [
+    ...(includeJournal ? [`<div><strong>${journals.length}</strong><span>Journaleinträge · ${escapeHtml(formatDuration(totalWorkingTime, true))}</span></div>`] : []),
+    ...(includePrompts ? [`<div><strong>${prompts.length}</strong><span>Dokumentierte Prompts</span></div>`] : []),
+    ...(includePlanner ? [`<div><strong>${completedTasks}/${tasks.length}</strong><span>Aufgaben erledigt</span></div>`] : [])
+  ].join('');
 
   return `<!doctype html>
 <html lang="de"><head><meta charset="utf-8"><title>MAR Helper – Protokolle</title><style>
@@ -69,7 +84,7 @@ export function createAutoExportHtml(state: AppState, exportedAt = new Date()): 
   .kicker, .section-kicker { color: #4f46e5; font-size: 9pt; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
   h1 { max-width: 150mm; margin: 5mm 0 4mm; font-size: 35pt; line-height: 1.04; letter-spacing: -.035em; }
   .cover-main > p { max-width: 132mm; margin: 0; color: #575e70; font-size: 14pt; line-height: 1.5; }
-  .summary { display: grid; grid-template-columns: repeat(3,1fr); gap: 4mm; margin-top: 18mm; }
+  .summary { display: grid; grid-template-columns: repeat(${document === 'all' ? 3 : 1},minmax(0,1fr)); gap: 4mm; max-width: ${document === 'all' ? 'none' : '62mm'}; margin-top: 18mm; }
   .summary > div { padding: 5mm; border: .3mm solid #d7d5e2; border-radius: 3mm; background: #f8f9fa; }
   .summary strong, .summary span { display: block; }
   .summary strong { color: #3525cd; font-size: 20pt; line-height: 1.1; }
@@ -109,13 +124,13 @@ export function createAutoExportHtml(state: AppState, exportedAt = new Date()): 
   .empty { padding: 15mm; border: .35mm dashed #c7c4d8; border-radius: 3mm; color: #777587; text-align: center; background: #f8f9fa; }
 </style></head><body>
   <section class="cover">
-    <div><div class="cover-main"><span class="kicker">MAR Helper · Automatischer Export · Beta</span><h1>Protokolle und Projektfortschritt</h1><p>Eine aktuelle, druckfertige Übersicht aus Arbeitsjournal, Promptprotokoll und Zeitplan.</p>
-        <div class="summary"><div><strong>${journals.length}</strong><span>Journaleinträge · ${escapeHtml(formatDuration(totalWorkingTime, true))}</span></div><div><strong>${prompts.length}</strong><span>Dokumentierte Prompts</span></div><div><strong>${completedTasks}/${tasks.length}</strong><span>Aufgaben erledigt</span></div></div>
+    <div><div class="cover-main"><span class="kicker">MAR Helper · Automatischer Export</span><h1>${escapeHtml(documentTitle)}</h1><p>${escapeHtml(documentDescription)}</p>
+        <div class="summary">${summary}</div>
       </div></div>
     <footer class="cover-footer"><span>Lokal mit MAR Helper erstellt</span><span>Stand ${escapeHtml(exportedLabel)}</span></footer>
   </section>
-  <section class="module"><header class="module-header"><div><span class="section-kicker">Arbeitsverlauf</span><h2>Arbeitsjournal</h2></div><p>${journals.length} Einträge<br>${escapeHtml(formatDuration(totalWorkingTime, true))} dokumentiert</p></header>${journals.length ? journals.map(journalEntry).join('') : emptyState('Noch keine Journaleinträge vorhanden.')}</section>
-  <section class="module"><header class="module-header"><div><span class="section-kicker">KI-Nutzung</span><h2>Promptprotokoll</h2></div><p>${prompts.length} Einträge<br>fortlaufend nummeriert</p></header>${prompts.length ? prompts.map(promptEntry).join('') : emptyState('Noch keine Prompt-Einträge vorhanden.')}</section>
-  <section class="module"><header class="module-header"><div><span class="section-kicker">Planung</span><h2>Zeitplan</h2></div><p>${completedTasks} von ${tasks.length}<br>Aufgaben erledigt</p></header>${tasks.length ? tasks.map(plannerTask).join('') : emptyState('Noch keine Aufgaben vorhanden.')}</section>
+  ${includeJournal ? `<section class="module"><header class="module-header"><div><span class="section-kicker">Arbeitsverlauf</span><h2>Arbeitsjournal</h2></div><p>${journals.length} Einträge<br>${escapeHtml(formatDuration(totalWorkingTime, true))} dokumentiert</p></header>${journals.length ? journals.map(journalEntry).join('') : emptyState('Noch keine Journaleinträge vorhanden.')}</section>` : ''}
+  ${includePrompts ? `<section class="module"><header class="module-header"><div><span class="section-kicker">KI-Nutzung</span><h2>Promptprotokoll</h2></div><p>${prompts.length} Einträge<br>fortlaufend nummeriert</p></header>${prompts.length ? prompts.map(promptEntry).join('') : emptyState('Noch keine Prompt-Einträge vorhanden.')}</section>` : ''}
+  ${includePlanner ? `<section class="module"><header class="module-header"><div><span class="section-kicker">Planung</span><h2>Zeitplan</h2></div><p>${completedTasks} von ${tasks.length}<br>Aufgaben erledigt</p></header>${tasks.length ? tasks.map(plannerTask).join('') : emptyState('Noch keine Aufgaben vorhanden.')}</section>` : ''}
 </body></html>`;
 }

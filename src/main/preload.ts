@@ -1,9 +1,12 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { AppState, AutoExportStatus, MarHelperApi, SaveFileRequest, UpdateStatus } from '../shared/models';
+import type { AppState, AutoExportStatus, CloudSaveStatus, MarHelperApi, SaveFileRequest, UpdateStatus } from '../shared/models';
 
 const api: MarHelperApi = {
   loadState: () => ipcRenderer.invoke('state:load') as Promise<AppState>,
   saveState: (state) => ipcRenderer.invoke('state:save', state) as Promise<AppState>,
+  getHistoryStatus: () => ipcRenderer.invoke('history:status'),
+  undoState: () => ipcRenderer.invoke('history:undo'),
+  redoState: () => ipcRenderer.invoke('history:redo'),
   saveExport: (request: SaveFileRequest) => ipcRenderer.invoke('export:save', request),
   selectAutoExportFolder: () => ipcRenderer.invoke('auto-export:select-folder'),
   runAutoExport: () => ipcRenderer.invoke('auto-export:run'),
@@ -11,6 +14,19 @@ const api: MarHelperApi = {
     const handler = (_event: Electron.IpcRendererEvent, status: AutoExportStatus) => listener(status);
     ipcRenderer.on('auto-export:status', handler);
     return () => ipcRenderer.removeListener('auto-export:status', handler);
+  },
+  checkCloudRepository: (repositoryPath) => ipcRenderer.invoke('cloud-save:check-repository', repositoryPath),
+  syncCloudSave: () => ipcRenderer.invoke('cloud-save:sync'),
+  resolveCloudConflict: (useRemote) => ipcRenderer.invoke('cloud-save:resolve-conflict', useRemote),
+  onCloudSaveStatus: (listener: (status: CloudSaveStatus) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, status: CloudSaveStatus) => listener(status);
+    ipcRenderer.on('cloud-save:status', handler);
+    return () => ipcRenderer.removeListener('cloud-save:status', handler);
+  },
+  onCloudStateUpdated: (listener: (state: AppState) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, state: AppState) => listener(state);
+    ipcRenderer.on('cloud-save:state-updated', handler);
+    return () => ipcRenderer.removeListener('cloud-save:state-updated', handler);
   },
   openImport: () => ipcRenderer.invoke('import:open'),
   previewRawImport: (content) => ipcRenderer.invoke('import:preview-raw', content),

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, CirclePause, CirclePlay, Clock3, Link2, Plus, Square, StickyNote } from 'lucide-react';
+import { CalendarDays, CirclePause, CirclePlay, Clock3, Link2, Plus, Square, StickyNote, Trash2 } from 'lucide-react';
 import type { ActiveTimer, JournalEntry } from '../../../shared/models';
 import { formatDuration, getPausedTimeMs, getWorkingTimeMs, pauseTimer, resumeTimer } from '../../../shared/timer';
 import { useAppData } from '../../state/AppDataContext';
@@ -23,6 +23,7 @@ export function JournalPage() {
   const [deleteEntry, setDeleteEntry] = useState<JournalEntry | null>(null);
   const [timerNotesOpen, setTimerNotesOpen] = useState(false);
   const [timerNotesDraft, setTimerNotesDraft] = useState('');
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
 
   const timer = state.activeTimer;
   const plannerIntegration = state.settings.modules.planner;
@@ -125,7 +126,7 @@ export function JournalPage() {
   const todayMs = todayEntries.reduce((sum, entry) => sum + entry.workingTimeMs, 0) + (timer && isToday(timer.startedAt) ? getWorkingTimeMs(timer, now) : 0);
 
   return <Page>
-    <PageHeader title="Arbeitsjournal" description="Erfasse und verwalte deine Arbeitszeiten und Notizen."/>
+    <PageHeader title="Arbeitsjournal" description="Erfasse und verwalte deine Arbeitszeiten und Notizen." actions={entries.length > 0 && <Button variant="ghost" icon={<Trash2 size={17}/>} onClick={() => setDeleteAllOpen(true)}>Alle löschen</Button>}/>
     <section className={`journal-hero ${timer ? 'journal-hero--active' : ''}`}>
       {timer ? <>
         <div className="timer-card">
@@ -177,5 +178,6 @@ export function JournalPage() {
       </div>
     </Modal>
     <ConfirmDialog open={!!deleteEntry} title="Eintrag löschen?" description="Dieser Journaleintrag wird dauerhaft entfernt. Der verknüpfte Zeitplan-Task bleibt bestehen." onCancel={() => setDeleteEntry(null)} onConfirm={confirmDelete}/>
+    <ConfirmDialog open={deleteAllOpen} title="Alle Journaleinträge löschen?" description={`${entries.length} Einträge werden entfernt. Du kannst diesen Schritt anschliessend über die Änderungshistorie rückgängig machen.`} confirmLabel="Alle löschen" onCancel={() => setDeleteAllOpen(false)} onConfirm={() => { void updateState((current) => ({ ...current, journalEntries: [] }), 'Arbeitsjournal geleert'); setDeleteAllOpen(false); }}/>
   </Page>;
 }
