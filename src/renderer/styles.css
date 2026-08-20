@@ -251,8 +251,9 @@ button, a, input, select, textarea { outline: none; }
 .prompt-card__title svg { color: var(--primary); flex: 0 0 auto; }
 .prompt-card h2 { font-size: 16px; line-height: 24px; margin: 0; font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .prompt-card p { margin: 8px 0 0 27px; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.breadcrumb { appearance: none; border: 0; background: transparent; color: var(--text-muted); padding: 0; margin-bottom: 22px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; }
-.breadcrumb:hover { color: var(--primary); }
+.breadcrumb { position: sticky; top: 12px; z-index: 5; width: max-content; max-width: 100%; min-height: 44px; appearance: none; border: 1px solid var(--outline-soft); border-radius: var(--radius); background: rgba(255,255,255,.96); color: var(--text-muted); padding: 10px 14px; margin-bottom: 22px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500; box-shadow: 0 2px 8px rgba(25,28,29,.06); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); transition: color 200ms var(--motion-standard), border-color 200ms var(--motion-standard), background-color 200ms var(--motion-standard), transform 180ms var(--motion-standard), box-shadow 220ms var(--motion-standard); }
+.breadcrumb:hover { color: var(--primary); border-color: #aaa8ba; background: white; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(25,28,29,.1); }
+.breadcrumb:active { transform: translateY(0); }
 .prompt-detail-page .page-header { margin-bottom: 8px; }
 .prompt-detail-page .page-header p { font-size: 14px; }
 .prompt-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
