@@ -104,6 +104,27 @@ describe('automatic PDF export document', () => {
     expect(html).toContain('paged.polyfill.min.js');
   });
 
+  it('prints the complete stored Git diff for a prompt', () => {
+    const state = createDefaultState();
+    state.promptEntries = [{
+      id: 'prompt-with-diff', number: 43, modelName: 'Codex', prompt: 'Ändere die Datei.', response: 'Erledigt.',
+      createdAt: '2026-08-20T08:00:00.000Z',
+      gitSnapshot: {
+        repositoryName: 'MAR Helper', commitHash: '1234567890abcdef', shortCommitHash: '1234567', commitMessage: 'PDF-Export',
+        committedAt: '2026-08-20T08:01:00.000Z', filesChanged: 1, additions: 1, deletions: 1,
+        files: [{ path: 'src/example.ts', additions: 1, deletions: 1 }],
+        diff: 'diff --git a/src/example.ts b/src/example.ts\n--- a/src/example.ts\n+++ b/src/example.ts\n@@ -1 +1 @@\n-const oldValue = true;\n+const newValue = true;'
+      }
+    }];
+
+    const html = createAutoExportHtml(state, new Date(), 'prompts');
+    expect(html).toContain('Git-Diff (vollständig)');
+    expect(html).toContain('-const oldValue = true;');
+    expect(html).toContain('+const newValue = true;');
+    expect(html).toContain('.git-diff pre');
+    expect(html).toContain('break-inside: auto');
+  });
+
   it('can render journal and prompt protocol as separate documents', () => {
     const state = createDefaultState();
     const journal = createAutoExportHtml(state, new Date(), 'journal');

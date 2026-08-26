@@ -43,6 +43,15 @@ const markdownPreview = (value: string) => value.replace(/```[\s\S]*?```/g, 'Cod
 const promptTitle = (entry: PromptEntry) => entry.title || markdownPreview(entry.prompt).slice(0, 100) || 'Prompt';
 const promptAnchor = (entry: PromptEntry) => `prompt-${entry.number}`;
 
+const gitDiff = (entry: PromptEntry) => {
+  const snapshot = entry.gitSnapshot;
+  if (!snapshot) return '';
+  return `<section class="git-diff">
+    <h4 class="git-diff__label">Git-Diff${snapshot.diffTruncated ? ' (unvollständig)' : ' (vollständig)'}</h4>
+    <pre>${escapeHtml(snapshot.diff)}</pre>
+  </section>`;
+};
+
 const promptEntry = (entry: PromptEntry) => `<article class="entry prompt-entry" id="${promptAnchor(entry)}">
   <div class="prompt-heading">
     <span class="number">#${entry.number}</span>
@@ -52,6 +61,7 @@ const promptEntry = (entry: PromptEntry) => `<article class="entry prompt-entry"
   <section class="text-block"><h4 class="text-block__label">Prompt</h4><div class="markdown-body">${renderMarkdown(entry.prompt)}</div></section>
   <section class="text-block answer"><h4 class="text-block__label">Antwort</h4><div class="markdown-body">${renderMarkdown(entry.response)}</div></section>
   ${entry.gitSnapshot ? `<div class="commit"><b>${escapeHtml(entry.gitSnapshot.repositoryName)}</b><span>${escapeHtml(entry.gitSnapshot.shortCommitHash)} · ${escapeHtml(entry.gitSnapshot.commitMessage)}</span><small>${entry.gitSnapshot.filesChanged} Dateien · +${entry.gitSnapshot.additions} / -${entry.gitSnapshot.deletions}</small></div>` : ''}
+  ${gitDiff(entry)}
 </article>`;
 
 const promptTableOfContents = (entries: PromptEntry[]) => `<section class="toc">
@@ -126,7 +136,7 @@ export function createAutoExportHtml(state: AppState, exportedAt = new Date(), d
   .metrics { display: flex; flex-wrap: wrap; gap: 5mm; margin-top: 2.5mm; color: #575e70; font-size: 8.5pt; }
   .metrics b { color: #3525cd; font-weight: 600; }
   .notes { margin: 3mm 0 0; padding-top: 3mm; border-top: .3mm solid #e7e6ed; color: #464555; white-space: pre-wrap; }
-  .prompt-entry { padding: 5mm; }
+  .prompt-entry { padding: 5mm; break-inside: auto; }
   .prompt-heading { display: flex; align-items: flex-start; gap: 4mm; }
   .prompt-heading > div { min-width: 0; flex: 1; }
   .prompt-heading p { margin: 1mm 0 0; color: #575e70; font-size: 8.5pt; }
@@ -157,6 +167,9 @@ export function createAutoExportHtml(state: AppState, exportedAt = new Date(), d
   .commit { display: grid; grid-template-columns: auto 1fr auto; gap: 3mm; margin-top: 3mm; padding: 3mm 4mm; border-radius: 2mm; color: #464555; background: #eef2ff; font-size: 8pt; }
   .commit span { overflow-wrap: anywhere; }
   .commit small { color: #575e70; }
+  .git-diff { margin-top: 3mm; break-inside: auto; }
+  .git-diff__label { margin: 0; padding: 2.5mm 3mm; break-after: avoid; border-radius: 2mm 2mm 0 0; color: #f0f1f2; background: #34343a; font-size: 8pt; letter-spacing: .06em; text-transform: uppercase; }
+  .git-diff pre { margin: 0; padding: 3mm; overflow-wrap: anywhere; white-space: pre-wrap; break-inside: auto; border-radius: 0 0 2mm 2mm; color: #e8e8ea; background: #1f1f20; font: 6.8pt/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
   .task { display: grid; grid-template-columns: 7mm 1fr auto; align-items: start; gap: 3mm; margin-bottom: 3mm; padding: 4mm 5mm; break-inside: avoid; border: .3mm solid #d7d5e2; border-radius: 2.5mm; }
   .task-state { width: 6mm; height: 6mm; display: grid; place-items: center; border: .35mm solid #aaa8ba; border-radius: 1.5mm; color: white; }
   .task.done .task-state { border-color: #4f46e5; background: #4f46e5; }
