@@ -10,14 +10,17 @@ type StatusListener = (status: AutoExportStatus) => void;
 export class AutoExportService {
   private queuedState: AppState | null = null;
   private running: Promise<void> | null = null;
+  private activeExports = 0;
+  private pendingRuns = 0;
+  private idleWaiters = new Set<() => void>();
 
   constructor(private readonly onStatus: StatusListener) {}
 
   schedule(state: AppState): void {
-    if (!this.configured(state)) { this.queuedState = null; return; }
+    if (!this.configured(state)) { this.queuedState = null; this.notifyIfIdle(); return; }
     this.queuedState = state;
     if (!this.running) {
-      this.running = this.drain().finally(() => { this.running = null; });
+      this.running = this.drain().finally(() => { this.running = null; this.notifyIfIdle(); });
     }
   }
 
@@ -27,8 +30,23 @@ export class AutoExportService {
       this.onStatus(result);
       return result;
     }
-    if (this.running) await this.running;
-    return this.exportState(state);
+    this.pendingRuns += 1;
+    try {
+      if (this.running) await this.running;
+      return await this.exportState(state);
+    } finally {
+      this.pendingRuns -= 1;
+      this.notifyIfIdle();
+    }
+  }
+
+  isBusy(): boolean {
+    return this.running !== null || this.queuedState !== null || this.activeExports > 0 || this.pendingRuns > 0;
+  }
+
+  waitForIdle(): Promise<void> {
+    if (!this.isBusy()) return Promise.resolve();
+    return new Promise((resolve) => this.idleWaiters.add(resolve));
   }
 
   private configured(state: AppState): boolean {
@@ -45,10 +63,11 @@ export class AutoExportService {
   }
 
   private async exportState(state: AppState): Promise<AutoExportResult> {
-    this.onStatus({ state: 'exporting' });
+    this.activeExports += 1;
     let renderWindow: BrowserWindow | null = null;
     let tempDirectory = '';
     try {
+      this.onStatus({ state: 'exporting' });
       const directory = path.resolve(state.settings.autoExport.directory!);
       const directoryStats = await fs.stat(directory);
       if (!directoryStats.isDirectory()) throw new Error('NOT_A_DIRECTORY');
@@ -118,6 +137,14 @@ export class AutoExportService {
     } finally {
       if (renderWindow && !renderWindow.isDestroyed()) renderWindow.destroy();
       if (tempDirectory) await fs.rm(tempDirectory, { recursive: true, force: true }).catch(() => undefined);
+      this.activeExports -= 1;
+      this.notifyIfIdle();
     }
+  }
+
+  private notifyIfIdle(): void {
+    if (this.isBusy()) return;
+    for (const resolve of this.idleWaiters) resolve();
+    this.idleWaiters.clear();
   }
 }

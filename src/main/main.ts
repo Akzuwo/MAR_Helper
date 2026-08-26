@@ -6,6 +6,7 @@ import { applyImport, ImportValidationError, parseImport, type ImportBundle } fr
 import { parseRawTextImport } from '../shared/raw-importer';
 import type { AppState, AutoExportStatus, CloudSaveStatus, ImportMode, ImportSummary, SaveFileRequest } from '../shared/models';
 import { AutoExportService } from './auto-export';
+import { BackgroundWork } from './background-work';
 import { CloudSaveService } from './cloud-save';
 import { JsonStore } from './store';
 import { configureAutoUpdater } from './updater';
@@ -15,6 +16,9 @@ let mainWindow: BrowserWindow | null = null;
 let store: JsonStore;
 let autoExporter: AutoExportService;
 let cloudSaver: CloudSaveService;
+const backgroundWork = new BackgroundWork();
+let backgroundShutdownStarted = false;
+let allowWindowClose = false;
 const importSessions = new Map<string, { bundle: ImportBundle; createdAt: number }>();
 const IMPORT_SESSION_TTL = 15 * 60 * 1000;
 
@@ -42,6 +46,21 @@ function importError(error: unknown, rawText = false) {
     canceled: false as const,
     error: { code: 'READ_FAILED' as const, title: 'Import nicht möglich', message: rawText ? 'Der Rohtext konnte nicht analysiert werden.' : 'Die ausgewählte Datei konnte nicht sicher gelesen werden.' }
   };
+}
+
+const wait = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+async function finishInBackground(window: BrowserWindow): Promise<void> {
+  cloudSaver.beginShutdown();
+  do {
+    await Promise.all([backgroundWork.waitForIdle(), autoExporter.waitForIdle(), cloudSaver.waitForIdle()]);
+    await wait(250);
+  } while (backgroundWork.isBusy() || autoExporter.isBusy() || cloudSaver.isBusy());
+
+  cloudSaver.stop();
+  allowWindowClose = true;
+  if (!window.isDestroyed()) window.destroy();
+  app.quit();
 }
 
 function createWindow() {
@@ -76,6 +95,18 @@ function createWindow() {
     const currentUrl = mainWindow?.webContents.getURL();
     if (currentUrl && url !== currentUrl) event.preventDefault();
   });
+  mainWindow.on('close', (event) => {
+    const window = mainWindow;
+    if (!window || allowWindowClose) return;
+    event.preventDefault();
+    window.hide();
+    if (backgroundShutdownStarted) return;
+    backgroundShutdownStarted = true;
+    void finishInBackground(window);
+  });
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
 
   const devServer = process.env.VITE_DEV_SERVER_URL;
   if (devServer) void mainWindow.loadURL(devServer);
@@ -93,22 +124,22 @@ app.whenReady().then(() => {
   );
   ipcMain.handle('state:load', async () => { const state = await store.load(); cloudSaver.configure(state, true); return state; });
   ipcMain.handle('history:status', () => store.historyStatus());
-  ipcMain.handle('history:undo', async () => {
+  ipcMain.handle('history:undo', () => backgroundWork.track((async () => {
     const result = await store.undo();
     if (result.ok) { autoExporter.schedule(result.state); cloudSaver.schedule(result.state); }
     return result;
-  });
-  ipcMain.handle('history:redo', async () => {
+  })()));
+  ipcMain.handle('history:redo', () => backgroundWork.track((async () => {
     const result = await store.redo();
     if (result.ok) { autoExporter.schedule(result.state); cloudSaver.schedule(result.state); }
     return result;
-  });
-  ipcMain.handle('state:save', async (_event, state: AppState) => {
+  })()));
+  ipcMain.handle('state:save', (_event, state: AppState) => backgroundWork.track((async () => {
     const persisted = await store.save(state);
     autoExporter.schedule(persisted);
     cloudSaver.schedule(persisted);
     return persisted;
-  });
+  })()));
   ipcMain.handle('export:save', async (_event, request: SaveFileRequest) => {
     if (!mainWindow) return { canceled: true };
     const result = await dialog.showSaveDialog(mainWindow, {
@@ -117,7 +148,7 @@ app.whenReady().then(() => {
       filters: request.filters
     });
     if (result.canceled || !result.filePath) return { canceled: true };
-    await fs.writeFile(result.filePath, request.content, 'utf8');
+    await backgroundWork.track(fs.writeFile(result.filePath, request.content, 'utf8'));
     return { canceled: false, filePath: result.filePath };
   });
   ipcMain.handle('auto-export:select-folder', async () => {
@@ -179,11 +210,11 @@ app.whenReady().then(() => {
     }
     try {
       let summary: ImportSummary = { imported: {}, skipped: 0, conflicts: 0 };
-      const state = await store.transaction((current) => {
+      const state = await backgroundWork.track(store.transaction((current) => {
         const applied = applyImport(current, session.bundle, mode as ImportMode);
         summary = { imported: session.bundle.counts, skipped: 0, conflicts: 0 };
         return applied;
-      });
+      }));
       autoExporter.schedule(state);
       cloudSaver.schedule(state);
       importSessions.delete(sessionId);
@@ -209,11 +240,12 @@ app.whenReady().then(() => {
   createWindow();
   configureAutoUpdater(() => mainWindow);
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (!backgroundShutdownStarted && BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
 
 app.on('window-all-closed', () => {
+  if (backgroundShutdownStarted && !allowWindowClose) return;
   cloudSaver?.stop();
   if (process.platform !== 'darwin') app.quit();
 });

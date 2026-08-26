@@ -33,6 +33,8 @@ export class CloudSaveService {
   private pushTimer: NodeJS.Timeout | null = null;
   private running: Promise<CloudSaveSyncResult> | null = null;
   private lastError = '';
+  private shuttingDown = false;
+  private idleWaiters = new Set<() => void>();
 
   constructor(
     private readonly store: JsonStore,
@@ -43,7 +45,7 @@ export class CloudSaveService {
   configure(state: AppState, syncImmediately = false): void {
     this.state = state;
     if (!this.configured(state)) { this.stop(); this.onStatus({ state: 'idle' }); return; }
-    if (!this.timer) this.timer = setInterval(() => { void this.sync(false); }, POLL_INTERVAL);
+    if (!this.shuttingDown && !this.timer) this.timer = setInterval(() => { void this.sync(false); }, POLL_INTERVAL);
     if (syncImmediately) void this.sync(false);
   }
 
@@ -51,7 +53,10 @@ export class CloudSaveService {
     this.configure(state);
     if (!this.configured(state)) return;
     if (this.pushTimer) clearTimeout(this.pushTimer);
-    this.pushTimer = setTimeout(() => { this.pushTimer = null; void this.sync(true); }, 1_200);
+    this.pushTimer = setTimeout(() => {
+      this.pushTimer = null;
+      void this.sync(true).finally(() => this.notifyIfIdle());
+    }, 1_200);
   }
 
   async syncNow(): Promise<CloudSaveSyncResult> { return this.sync(true); }
@@ -73,6 +78,23 @@ export class CloudSaveService {
     this.pushTimer = null;
     this.pendingRemote = null;
     this.pendingStatus = null;
+    this.notifyIfIdle();
+  }
+
+  beginShutdown(): void {
+    this.shuttingDown = true;
+    if (this.timer) clearInterval(this.timer);
+    this.timer = null;
+    this.notifyIfIdle();
+  }
+
+  isBusy(): boolean {
+    return this.running !== null || this.pushTimer !== null;
+  }
+
+  waitForIdle(): Promise<void> {
+    if (!this.isBusy()) return Promise.resolve();
+    return new Promise((resolve) => this.idleWaiters.add(resolve));
   }
 
   private configured(state: AppState): boolean {
@@ -87,8 +109,14 @@ export class CloudSaveService {
   private async sync(pushLocal: boolean): Promise<CloudSaveSyncResult> {
     if (this.pendingStatus) return this.pendingStatus;
     if (this.running) return this.running;
-    this.running = this.performSync(pushLocal).finally(() => { this.running = null; });
+    this.running = this.performSync(pushLocal).finally(() => { this.running = null; this.notifyIfIdle(); });
     return this.running;
+  }
+
+  private notifyIfIdle(): void {
+    if (this.isBusy()) return;
+    for (const resolve of this.idleWaiters) resolve();
+    this.idleWaiters.clear();
   }
 
   private async performSync(pushLocal: boolean): Promise<CloudSaveSyncResult> {
