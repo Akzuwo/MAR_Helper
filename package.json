@@ -1,6 +1,6 @@
 {
   "name": "mar-helper",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "Modulare Desktop-App für Maturaarbeiten",
   "main": "dist-main/main/main.js",
   "author": "MAR Helper",
