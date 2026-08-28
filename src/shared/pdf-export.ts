@@ -43,12 +43,23 @@ const markdownPreview = (value: string) => value.replace(/```[\s\S]*?```/g, 'Cod
 const promptTitle = (entry: PromptEntry) => entry.title || markdownPreview(entry.prompt).slice(0, 100) || 'Prompt';
 const promptAnchor = (entry: PromptEntry) => `prompt-${entry.number}`;
 
+const renderGitDiff = (diff: string) => diff.split('\n').map((line) => {
+  const kind = line.startsWith('+') && !line.startsWith('+++')
+    ? ' diff-add'
+    : line.startsWith('-') && !line.startsWith('---')
+      ? ' diff-del'
+      : line.startsWith('@@')
+        ? ' diff-hunk'
+        : '';
+  return `<span class="git-diff__line${kind}">${escapeHtml(line)}</span>`;
+}).join('');
+
 const gitDiff = (entry: PromptEntry) => {
   const snapshot = entry.gitSnapshot;
   if (!snapshot) return '';
   return `<section class="git-diff">
     <h4 class="git-diff__label">Git-Diff${snapshot.diffTruncated ? ' (unvollständig)' : ' (vollständig)'}</h4>
-    <pre>${escapeHtml(snapshot.diff)}</pre>
+    <pre>${renderGitDiff(snapshot.diff)}</pre>
   </section>`;
 };
 
@@ -169,7 +180,11 @@ export function createAutoExportHtml(state: AppState, exportedAt = new Date(), d
   .commit small { color: #575e70; }
   .git-diff { margin-top: 3mm; break-inside: auto; }
   .git-diff__label { margin: 0; padding: 2.5mm 3mm; break-after: avoid; border-radius: 2mm 2mm 0 0; color: #f0f1f2; background: #34343a; font-size: 8pt; letter-spacing: .06em; text-transform: uppercase; }
-  .git-diff pre { margin: 0; padding: 3mm; overflow-wrap: anywhere; white-space: pre-wrap; break-inside: auto; border-radius: 0 0 2mm 2mm; color: #e8e8ea; background: #1f1f20; font: 6.8pt/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+  .git-diff pre { margin: 0; padding: 2mm 0 3mm; overflow-wrap: anywhere; white-space: pre-wrap; break-inside: auto; border: .3mm solid #d7d5e2; border-top: 0; border-radius: 0 0 2mm 2mm; color: #292a30; background: white; font: 6.8pt/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+  .git-diff__line { display: block; min-height: 1.45em; padding: 0 3mm; white-space: pre-wrap; }
+  .git-diff .diff-add { color: #185c39; background: #e9f7ef; }
+  .git-diff .diff-del { color: #8a2929; background: #fceaea; }
+  .git-diff .diff-hunk { color: #4336b1; background: #eeecff; }
   .task { display: grid; grid-template-columns: 7mm 1fr auto; align-items: start; gap: 3mm; margin-bottom: 3mm; padding: 4mm 5mm; break-inside: avoid; border: .3mm solid #d7d5e2; border-radius: 2.5mm; }
   .task-state { width: 6mm; height: 6mm; display: grid; place-items: center; border: .35mm solid #aaa8ba; border-radius: 1.5mm; color: white; }
   .task.done .task-state { border-color: #4f46e5; background: #4f46e5; }

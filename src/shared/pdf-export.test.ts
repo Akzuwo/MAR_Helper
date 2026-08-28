@@ -119,8 +119,11 @@ describe('automatic PDF export document', () => {
 
     const html = createAutoExportHtml(state, new Date(), 'prompts');
     expect(html).toContain('Git-Diff (vollständig)');
-    expect(html).toContain('-const oldValue = true;');
-    expect(html).toContain('+const newValue = true;');
+    expect(html).toContain('<span class="git-diff__line diff-del">-const oldValue = true;</span>');
+    expect(html).toContain('<span class="git-diff__line diff-add">+const newValue = true;</span>');
+    expect(html).toContain('<span class="git-diff__line diff-hunk">@@ -1 +1 @@</span>');
+    expect(html).toContain('.git-diff .diff-add { color: #185c39; background: #e9f7ef; }');
+    expect(html).toContain('.git-diff .diff-del { color: #8a2929; background: #fceaea; }');
     expect(html).toContain('.git-diff pre');
     expect(html).toContain('break-inside: auto');
   });
