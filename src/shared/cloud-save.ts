@@ -1,6 +1,6 @@
 import type { AppState } from './models';
 
-export type CloudSaveData = Pick<AppState, 'journalEntries' | 'activeTimer' | 'promptModels' | 'promptEntries' | 'nextPromptNumber' | 'plannerTasks'>;
+export type CloudSaveData = Pick<AppState, 'journalEntries' | 'activeTimer' | 'promptModels' | 'promptEntries' | 'nextPromptNumber' | 'plannerTasks'> & { promptChats?: AppState['promptChats']; lastPromptModelId?: string };
 
 const canonical = (value: unknown) => JSON.stringify(value);
 
@@ -9,13 +9,15 @@ export const cloudDataFrom = (state: AppState): CloudSaveData => ({
   activeTimer: state.activeTimer,
   promptModels: state.promptModels,
   promptEntries: state.promptEntries,
+  promptChats: state.promptChats,
+  lastPromptModelId: state.lastPromptModelId,
   nextPromptNumber: state.nextPromptNumber,
   plannerTasks: state.plannerTasks
 });
 
 export function cloudDifference(local: AppState, remote: CloudSaveData) {
   const collections: Array<[Array<{ id: string }>, Array<{ id: string }>]> = [
-    [local.journalEntries, remote.journalEntries], [local.promptEntries, remote.promptEntries],
+    [local.journalEntries, remote.journalEntries], [local.promptEntries, remote.promptEntries], [local.promptChats, remote.promptChats ?? []],
     [local.plannerTasks, remote.plannerTasks], [local.promptModels, remote.promptModels]
   ];
   let changedEntries = 0;

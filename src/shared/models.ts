@@ -123,6 +123,16 @@ export interface PromptEntry {
   createdAt: string;
   updatedAt?: string;
   gitSnapshot?: PromptGitSnapshot;
+  chatId?: string;
+}
+
+export interface PromptChat {
+  id: string;
+  number: number;
+  title: string;
+  createdAt: string;
+  updatedAt?: string;
+  nextPromptNumber: number;
 }
 
 export interface PlannerTask {
@@ -142,6 +152,8 @@ export interface AppState {
   activeTimer: ActiveTimer | null;
   promptModels: PromptModel[];
   promptEntries: PromptEntry[];
+  promptChats: PromptChat[];
+  lastPromptModelId?: string;
   nextPromptNumber: number;
   plannerTasks: PlannerTask[];
 }
@@ -178,7 +190,7 @@ export type CloudSaveSyncResult = Extract<CloudSaveStatus, { state: 'success' | 
 
 export type ImportKind = 'backup' | 'journal' | 'prompts' | 'planner';
 export type ImportMode = 'merge' | 'replace';
-export interface ImportCounts { journal?: number; prompts?: number; planner?: number; models?: number; repositories?: number; gitSnapshots?: number; activeTimer?: number }
+export interface ImportCounts { journal?: number; prompts?: number; chats?: number; planner?: number; models?: number; repositories?: number; gitSnapshots?: number; activeTimer?: number }
 export interface ImportPreview { sessionId: string; fileName: string; kind: ImportKind; formatVersion: number; legacy: boolean; counts: ImportCounts; source?: 'file'|'rawText'; detectedFormat?: string }
 export type ImportSelectResult = { canceled: true } | { canceled: false; preview: ImportPreview } | { canceled: false; error: { code: 'INVALID_JSON'|'UNSUPPORTED_FILE'|'UNSUPPORTED_VERSION'|'READ_FAILED'; title: string; message: string } };
 export interface ImportSummary { imported: ImportCounts; skipped: number; conflicts: number }

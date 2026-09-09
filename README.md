@@ -18,7 +18,7 @@ Da einzelne Versionen möglicherweise noch nicht digital signiert sind, kann Win
 Beim ersten Start kannst du in den Einstellungen festlegen, welche Bereiche du verwenden möchtest:
 
 - **Arbeitsjournal** zum Erfassen von Arbeitszeiten und Notizen
-- **Promptprotokoll** zum Dokumentieren von Prompts, Antworten und optionalen Git-Commits
+- **Promptprotokoll** zum Dokumentieren einzelner Prompts oder ganzer Chats mit hierarchischer Nummerierung, frei wählbarem Datum und optionalen Git-Commits
 - **Zeitplan** zum Planen und Nachverfolgen von Aufgaben
 
 Die Bereiche lassen sich später jederzeit ein- oder ausblenden. Bereits erfasste Daten bleiben dabei erhalten.

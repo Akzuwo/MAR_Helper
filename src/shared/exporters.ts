@@ -1,4 +1,5 @@
-import type { AppState, JournalEntry, PlannerTask, PromptEntry } from './models';
+import type { AppState, JournalEntry, PlannerTask, PromptChat, PromptEntry } from './models';
+import { promptDisplayNumber } from './prompt-entries';
 import { EXPORT_FORMAT, EXPORT_FORMAT_VERSION } from './importers';
 import { APP_VERSION } from './app-version';
 
@@ -45,14 +46,16 @@ const gitMarkdown = (entry: PromptEntry): string[] => {
   ];
 };
 
-export const exportPromptsMarkdown = (entries: PromptEntry[]) => [
+export const exportPromptsMarkdown = (entries: PromptEntry[], chats: PromptChat[] = []) => [
   '# Promptprotokoll',
   '',
-  ...[...entries].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).flatMap((entry) => {
+  ...[...entries].sort((a, b) => a.createdAt.localeCompare(b.createdAt)).flatMap((entry) => {
     const title = entry.title?.trim().replace(/\s+/g, ' ');
+    const chat = entry.chatId ? chats.find((item) => item.id === entry.chatId) : undefined;
     return [
-      `## #${entry.number}${title ? ` – ${title}` : ''}`,
+      `## #${promptDisplayNumber(entry, chats)}${title ? ` – ${title}` : ''}`,
       '',
+      ...(chat ? [`**Chat:** #${chat.number} – ${chat.title}  `] : ['**Chat:** Einzelprompt  ']),
       `**Modell:** ${entry.modelName}  `,
       `**Zeitpunkt:** ${deDateTime(entry.createdAt)}`,
       '',
@@ -77,11 +80,12 @@ export const exportAllJson = (state: AppState) => JSON.stringify({
   data: state
 }, null, 2);
 
-export const exportModuleJson = (module: 'journal' | 'prompts' | 'planner', data: JournalEntry[] | PromptEntry[] | PlannerTask[]) => JSON.stringify({
+export const exportModuleJson = (module: 'journal' | 'prompts' | 'planner', data: JournalEntry[] | PromptEntry[] | PlannerTask[], promptChats: PromptChat[] = []) => JSON.stringify({
   format: EXPORT_FORMAT,
   formatVersion: EXPORT_FORMAT_VERSION,
   appVersion: APP_VERSION,
   module,
   exportedAt: new Date().toISOString(),
+  ...(module === 'prompts' ? { promptChats } : {}),
   data
 }, null, 2);

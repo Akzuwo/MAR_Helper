@@ -5,7 +5,7 @@ describe('visual effect settings', () => {
   it('keeps the optional scroll effects disabled for new and migrated data', () => {
     expect(createDefaultState().settings.visualEffects.scrollEffects).toBe(false);
     const migrated = normalizeState({ version: 6, settings: { modules: { journal: true, prompts: true, planner: true } } } as never);
-    expect(migrated.version).toBe(7);
+    expect(migrated.version).toBe(8);
     expect(migrated.settings.visualEffects.scrollEffects).toBe(false);
   });
 

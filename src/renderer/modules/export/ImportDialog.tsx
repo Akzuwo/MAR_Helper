@@ -11,6 +11,7 @@ const kindLabel: Record<ImportPreview['kind'], string> = {
 const countLabels: Array<{ key: keyof ImportCounts; title: string; unit: (count: number) => string }> = [
   { key: 'journal', title: 'Arbeitsjournal', unit: (count) => count === 1 ? 'Eintrag' : 'Einträge' },
   { key: 'prompts', title: 'Promptprotokoll', unit: (count) => count === 1 ? 'Eintrag' : 'Einträge' },
+  { key: 'chats', title: 'Prompt-Chats', unit: (count) => count === 1 ? 'Chat' : 'Chats' },
   { key: 'planner', title: 'Zeitplan', unit: (count) => count === 1 ? 'Task' : 'Tasks' },
   { key: 'models', title: 'KI-Modelle', unit: (count) => count === 1 ? 'Modell' : 'Modelle' },
   { key: 'repositories', title: 'Git-Repositories', unit: (count) => count === 1 ? 'Konfiguration' : 'Konfigurationen' },

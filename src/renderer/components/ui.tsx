@@ -1,5 +1,5 @@
-import { AlertCircle, Check, Info, LoaderCircle, X } from 'lucide-react';
-import { forwardRef, useEffect, useId, useRef, useState } from 'react';
+import { AlertCircle, Check, ChevronDown, Info, LoaderCircle, X } from 'lucide-react';
+import { Children, forwardRef, isValidElement, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 export function Button({ variant = 'primary', size = 'md', icon, children, className = '', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -36,10 +36,56 @@ export const Textarea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttrib
 );
 Textarea.displayName = 'Textarea';
 
-export const Select = forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>((props, ref) =>
-  <select ref={ref} className={`input select ${props.className || ''}`} {...props} />
-);
-Select.displayName = 'Select';
+const optionText = (content: React.ReactNode): string => Children.toArray(content).map((item) => {
+  if (typeof item === 'string' || typeof item === 'number') return String(item);
+  return isValidElement<{ children?: React.ReactNode }>(item) ? optionText(item.props.children) : '';
+}).join('');
+
+export function Select({ children, value = '', onChange, disabled, className = '', 'aria-label': ariaLabel }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const options = Children.toArray(children).filter(isValidElement).map((option) => ({
+    value: String((option.props as { value?: string | number }).value ?? ''),
+    label: optionText((option.props as { children?: React.ReactNode }).children),
+    disabled: Boolean((option.props as { disabled?: boolean }).disabled)
+  }));
+  const selectedValue = String(value ?? '');
+  const selected = options.find((option) => option.value === selectedValue) ?? options[0];
+
+  useEffect(() => {
+    const close = (event: PointerEvent) => { if (!wrapperRef.current?.contains(event.target as Node)) setOpen(false); };
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, []);
+  useEffect(() => { if (disabled) setOpen(false); }, [disabled]);
+
+  const choose = (nextValue: string) => {
+    if (nextValue === selectedValue) { setOpen(false); return; }
+    onChange?.({ target: { value: nextValue }, currentTarget: { value: nextValue } } as unknown as React.ChangeEvent<HTMLSelectElement>);
+    setOpen(false);
+  };
+  const onKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === 'Escape') { setOpen(false); return; }
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setOpen((current) => !current); return; }
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    event.preventDefault();
+    const available = options.filter((option) => !option.disabled);
+    const index = Math.max(0, available.findIndex((option) => option.value === selectedValue));
+    const next = available[(index + (event.key === 'ArrowDown' ? 1 : available.length - 1)) % available.length];
+    if (next) choose(next.value);
+  };
+
+  return <div ref={wrapperRef} className={`custom-select ${open ? 'custom-select--open' : ''} ${className}`}>
+    <button type="button" className="input select-trigger" role="combobox" aria-label={ariaLabel} aria-expanded={open} aria-haspopup="listbox" disabled={disabled} onClick={() => setOpen((current) => !current)} onKeyDown={onKeyDown}>
+      <span>{selected?.label || 'Auswählen'}</span><ChevronDown size={17}/>
+    </button>
+    <div className="select-menu" role="listbox" aria-label={ariaLabel} aria-hidden={!open}>
+      {options.map((option) => <button type="button" role="option" aria-selected={option.value === selectedValue} className="select-option" key={option.value} disabled={option.disabled} tabIndex={open ? 0 : -1} onClick={() => choose(option.value)}>
+        <span>{option.label}</span>{option.value === selectedValue && <Check size={16}/>}
+      </button>)}
+    </div>
+  </div>;
+}
 
 export function Modal({ open, title, description, children, onClose, wide = false, bodyClassName = '', dismissible = true }: {
   open: boolean; title: string; description?: string; children: React.ReactNode; onClose: () => void; wide?: boolean; bodyClassName?: string; dismissible?: boolean

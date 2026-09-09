@@ -91,4 +91,17 @@ describe('MAR Helper imports', () => {
     expect(imported.promptEntries.find((entry) => entry.id === 'free')?.title).toBe('Freie Nummer');
     expect(imported.nextPromptNumber).toBe(10);
   });
+
+  it('imports chats together with their prompt relationships and local numbers', () => {
+    const chat = { id: 'chat-import', number: 4, title: 'Importierter Chat', createdAt: '2026-09-09T08:00:00.000Z', nextPromptNumber: 3 };
+    const bundle = parseImport(JSON.stringify({
+      format: 'mar-helper-export', formatVersion: 3, module: 'prompts', promptChats: [chat], data: [
+        { id: 'chat-prompt', number: 2, chatId: chat.id, modelName: 'Codex', prompt: 'P', response: 'A', createdAt: '2026-09-09T09:00:00.000Z' }
+      ]
+    }));
+    const imported = applyImport(createDefaultState(), bundle, 'replace');
+    expect(bundle.counts.chats).toBe(1);
+    expect(imported.promptChats[0]).toMatchObject({ id: chat.id, number: 4, title: chat.title, nextPromptNumber: 3 });
+    expect(imported.promptEntries[0]).toMatchObject({ chatId: chat.id, number: 2 });
+  });
 });

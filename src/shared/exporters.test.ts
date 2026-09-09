@@ -11,7 +11,7 @@ const entries: PromptEntry[] = [
 describe('prompt exports', () => {
   it('exports persistent numbers and optional titles to JSON', () => {
     const exported = JSON.parse(exportModuleJson('prompts', entries));
-    expect(exported.formatVersion).toBe(2);
+    expect(exported.formatVersion).toBe(3);
     expect(exported.data[0]).toMatchObject({ number: 42, title: 'Git-Integration für Promptprotokoll' });
     expect(exported.data[1].number).toBe(43);
     expect(exported.data[1]).not.toHaveProperty('title');
@@ -27,6 +27,17 @@ describe('prompt exports', () => {
     expect(markdown).toContain('## #42 – Git-Integration für Promptprotokoll');
     expect(markdown).toContain('## #43\n');
     expect(markdown).toContain('**Modell:** Codex  \n**Zeitpunkt:**');
+  });
+
+  it('exports chat membership and every prompt in chronological order', () => {
+    const chat = { id: 'chat-1', number: 7, title: 'Recherche', createdAt: '2026-09-09T08:00:00.000Z', nextPromptNumber: 3 };
+    const markdown = exportPromptsMarkdown([
+      { ...entries[0], id: 'later', number: 2, chatId: chat.id, createdAt: '2026-09-09T10:00:00.000Z' },
+      { ...entries[1], id: 'earlier', number: 1, chatId: chat.id, createdAt: '2026-09-09T09:00:00.000Z' }
+    ], [chat]);
+    expect(markdown).toContain('## #7.1');
+    expect(markdown).toContain('**Chat:** #7 – Recherche');
+    expect(markdown.indexOf('## #7.1')).toBeLessThan(markdown.indexOf('## #7.2'));
   });
 });
 

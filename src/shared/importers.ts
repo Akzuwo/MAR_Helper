@@ -1,10 +1,10 @@
 import { normalizeState } from './defaults';
-import type { AppState, GitRepository, ImportCounts, JournalEntry, PlannerTask, PromptEntry, PromptGitSnapshot, PromptModel } from './models';
-import { normalizePromptEntries, type PromptEntryInput } from './prompt-entries';
+import type { AppState, GitRepository, ImportCounts, JournalEntry, PlannerTask, PromptChat, PromptEntry, PromptGitSnapshot, PromptModel } from './models';
+import type { PromptEntryInput } from './prompt-entries';
 
 export type ImportKind = 'backup' | 'journal' | 'prompts' | 'planner';
 export const EXPORT_FORMAT = 'mar-helper-export';
-export const EXPORT_FORMAT_VERSION = 2;
+export const EXPORT_FORMAT_VERSION = 3;
 
 export class ImportValidationError extends Error {
   constructor(public readonly code: 'INVALID_JSON' | 'UNSUPPORTED_FILE' | 'UNSUPPORTED_VERSION', message: string) { super(message); this.name = 'ImportValidationError'; }
@@ -15,6 +15,7 @@ export interface ImportBundle {
   state?: AppState;
   journalEntries?: JournalEntry[];
   promptEntries?: PromptEntryInput[];
+  promptChats?: PromptChat[];
   plannerTasks?: PlannerTask[];
   counts: ImportCounts;
   formatVersion: number;
@@ -60,7 +61,13 @@ const isPromptEntry = (value: unknown): value is PromptEntryInput => isRecord(va
   && typeof value.response === 'string'
   && isDate(value.createdAt)
   && isOptionalString(value.modelId)
+  && isOptionalString(value.chatId)
   && (value.gitSnapshot === undefined || isPromptGitSnapshot(value.gitSnapshot))
+  && (value.updatedAt === undefined || isDate(value.updatedAt));
+
+const isPromptChat = (value: unknown): value is PromptChat => isRecord(value)
+  && isString(value.id) && isPositiveInteger(value.number) && isString(value.title) && isDate(value.createdAt)
+  && (value.nextPromptNumber === undefined || isPositiveInteger(value.nextPromptNumber))
   && (value.updatedAt === undefined || isDate(value.updatedAt));
 
 const isPlannerTask = (value: unknown): value is PlannerTask => isRecord(value)
@@ -93,6 +100,7 @@ function parseBackup(value: unknown): AppState | null {
   if (typeof modules.journal !== 'boolean' || typeof modules.prompts !== 'boolean' || typeof modules.planner !== 'boolean') return null;
   const journalEntries = assertArray(candidate.journalEntries, isJournalEntry, 'Das Arbeitsjournal');
   const promptEntries = assertArray(candidate.promptEntries, isPromptEntry, 'Das Promptprotokoll');
+  const promptChats = candidate.promptChats === undefined ? [] : assertArray(candidate.promptChats, isPromptChat, 'Die Chatliste');
   const plannerTasks = assertArray(candidate.plannerTasks, isPlannerTask, 'Der Zeitplan');
   const promptModels = assertArray(candidate.promptModels, isPromptModel, 'Die Modellliste');
   const gitIntegration = candidate.settings.gitIntegration;
@@ -109,7 +117,7 @@ function parseBackup(value: unknown): AppState | null {
       throw new Error('Der gespeicherte Timerzustand ist ungültig.');
     }
   }
-  return normalizeState({ ...candidate, journalEntries, promptEntries, plannerTasks, promptModels } as Partial<AppState>);
+  return normalizeState({ ...candidate, journalEntries, promptEntries, promptChats, plannerTasks, promptModels } as Partial<AppState>);
 }
 
 export function parseImport(content: string): ImportBundle {
@@ -138,6 +146,7 @@ export function parseImport(content: string): ImportBundle {
     counts: {
       journal: backup.journalEntries.length,
       prompts: backup.promptEntries.length,
+      chats: backup.promptChats.length,
       planner: backup.plannerTasks.length,
       models: backup.promptModels.length,
       repositories: backup.settings.gitIntegration.repositories.length,
@@ -158,7 +167,10 @@ export function parseImport(content: string): ImportBundle {
   }
   if (requestedKind === 'prompts' || (source.length > 0 && source.every(isPromptEntry))) {
     const entries = assertArray(source, isPromptEntry, 'Das Promptprotokoll');
-    return { kind: 'prompts', promptEntries: entries, counts: { prompts: entries.length, gitSnapshots: entries.filter((entry) => entry.gitSnapshot).length }, formatVersion, legacy };
+    const chats = envelope?.promptChats === undefined ? [] : assertArray(envelope.promptChats, isPromptChat, 'Die Chatliste');
+    const chatIds = new Set(chats.map((chat) => chat.id));
+    if (entries.some((entry) => entry.chatId && !chatIds.has(entry.chatId))) throw new ImportValidationError('UNSUPPORTED_FILE', 'Ein Prompt verweist auf einen nicht vorhandenen Chat.');
+    return { kind: 'prompts', promptEntries: entries, promptChats: chats, counts: { prompts: entries.length, chats: chats.length, gitSnapshots: entries.filter((entry) => entry.gitSnapshot).length }, formatVersion, legacy };
   }
   if (requestedKind === 'planner' || (source.length > 0 && source.every(isPlannerTask))) {
     const entries = assertArray(source, isPlannerTask, 'Der Zeitplan');
@@ -190,16 +202,25 @@ const mergeWithIdMap = <T extends { id: string }>(current: T[], incoming: T[]) =
 
 const mergeById = <T extends { id: string }>(current: T[], incoming: T[]) => mergeWithIdMap(current, incoming).items;
 
-const mergePromptEntries = (current: PromptEntry[], incoming: PromptEntryInput[], requestedNextNumber: number) => {
-  const candidates: PromptEntryInput[] = [...current];
-  incoming.forEach((item) => {
+const mergePromptData = (current: AppState, incomingEntries: PromptEntryInput[], incomingChats: PromptChat[]) => {
+  const chats = mergeWithIdMap(current.promptChats, incomingChats);
+  const remappedEntries = incomingEntries.map((entry) => ({
+    ...entry,
+    chatId: entry.chatId ? (chats.idMap.get(entry.chatId) ?? entry.chatId) : undefined
+  }));
+  const candidates: PromptEntryInput[] = [...current.promptEntries];
+  remappedEntries.forEach((item) => {
     const existing = candidates.find((candidate) => candidate.id === item.id);
     if (!existing) candidates.push(item);
     else if (canonical(existing) !== canonical(item)) candidates.push({ ...item, id: crypto.randomUUID() });
   });
-  const added = candidates.slice(current.length);
-  const normalized = normalizePromptEntries(added, current.map((entry) => entry.number), requestedNextNumber);
-  return { items: [...current, ...normalized.entries], nextPromptNumber: normalized.nextPromptNumber };
+  const normalized = normalizeState({
+    ...current,
+    promptChats: chats.items,
+    promptEntries: candidates as PromptEntry[],
+    nextPromptNumber: current.nextPromptNumber
+  });
+  return { promptChats: normalized.promptChats, promptEntries: normalized.promptEntries, nextPromptNumber: normalized.nextPromptNumber };
 };
 
 const mergeModels = (current: PromptModel[], incoming: PromptModel[]) => {
@@ -237,10 +258,11 @@ export function applyImport(current: AppState, bundle: ImportBundle, mode: 'merg
     });
     const tasks = mergeWithIdMap(current.plannerTasks, bundle.state.plannerTasks);
     const models = mergeModels(modelsForEntries(current.promptModels, bundle.state.promptEntries), bundle.state.promptModels);
-    const prompts = mergePromptEntries(current.promptEntries, bundle.state.promptEntries.map((entry) => ({
+    const incomingPrompts = bundle.state.promptEntries.map((entry) => ({
       ...entry,
       modelId: entry.modelId ? (models.idMap.get(entry.modelId) ?? entry.modelId) : undefined
-    })), current.nextPromptNumber);
+    }));
+    const prompts = mergePromptData(current, incomingPrompts, bundle.state.promptChats);
     return {
       ...current,
       settings: {
@@ -256,7 +278,8 @@ export function applyImport(current: AppState, bundle: ImportBundle, mode: 'merg
         linkedTaskId: entry.linkedTaskId ? (tasks.idMap.get(entry.linkedTaskId) ?? entry.linkedTaskId) : undefined
       }))),
       activeTimer: current.activeTimer ?? bundle.state.activeTimer,
-      promptEntries: prompts.items,
+      promptChats: prompts.promptChats,
+      promptEntries: prompts.promptEntries,
       nextPromptNumber: prompts.nextPromptNumber,
       plannerTasks: tasks.items,
       promptModels: models.items
@@ -265,16 +288,15 @@ export function applyImport(current: AppState, bundle: ImportBundle, mode: 'merg
   if (bundle.kind === 'journal') return { ...current, journalEntries: mode === 'replace' ? bundle.journalEntries! : mergeById(current.journalEntries, bundle.journalEntries!) };
   if (bundle.kind === 'planner') return { ...current, plannerTasks: mode === 'replace' ? bundle.plannerTasks! : mergeById(current.plannerTasks, bundle.plannerTasks!) };
   const entries = bundle.promptEntries!;
+  const chats = bundle.promptChats ?? [];
   const prompts = mode === 'replace'
-    ? (() => {
-      const normalized = normalizePromptEntries(entries, [], current.nextPromptNumber);
-      return { items: normalized.entries, nextPromptNumber: normalized.nextPromptNumber };
-    })()
-    : mergePromptEntries(current.promptEntries, entries, current.nextPromptNumber);
+    ? normalizeState({ ...current, promptEntries: entries as PromptEntry[], promptChats: chats, nextPromptNumber: current.nextPromptNumber })
+    : mergePromptData(current, entries, chats);
   return {
     ...current,
-    promptEntries: prompts.items,
+    promptEntries: prompts.promptEntries,
+    promptChats: prompts.promptChats,
     nextPromptNumber: prompts.nextPromptNumber,
-    promptModels: modelsForEntries(current.promptModels, prompts.items)
+    promptModels: modelsForEntries(current.promptModels, prompts.promptEntries)
   };
 }

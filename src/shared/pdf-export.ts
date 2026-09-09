@@ -1,5 +1,6 @@
 import MarkdownIt from 'markdown-it';
-import type { AppState, JournalEntry, PlannerTask, PromptEntry } from './models';
+import type { AppState, JournalEntry, PlannerTask, PromptChat, PromptEntry } from './models';
+import { promptDisplayNumber } from './prompt-entries';
 import { formatDuration } from './timer';
 
 export const AUTO_EXPORT_FILE_NAME = 'MAR-Helper-Protokolle.pdf';
@@ -41,7 +42,7 @@ const journalEntry = (entry: JournalEntry) => `<article class="entry journal-ent
 
 const markdownPreview = (value: string) => value.replace(/```[\s\S]*?```/g, 'Codeblock').replace(/[#*_>`|~\[\]()]/g, '').replace(/\s+/g, ' ').trim();
 const promptTitle = (entry: PromptEntry) => entry.title || markdownPreview(entry.prompt).slice(0, 100) || 'Prompt';
-const promptAnchor = (entry: PromptEntry) => `prompt-${entry.number}`;
+const promptAnchor = (entry: PromptEntry) => `prompt-${entry.id.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
 
 const renderGitDiff = (diff: string) => diff.split('\n').map((line) => {
   const kind = line.startsWith('+') && !line.startsWith('+++')
@@ -63,21 +64,24 @@ const gitDiff = (entry: PromptEntry) => {
   </section>`;
 };
 
-const promptEntry = (entry: PromptEntry) => `<article class="entry prompt-entry" id="${promptAnchor(entry)}">
+const promptEntry = (entry: PromptEntry, chats: PromptChat[]) => {
+  const chat = entry.chatId ? chats.find((item) => item.id === entry.chatId) : undefined;
+  return `<article class="entry prompt-entry" id="${promptAnchor(entry)}">
   <div class="prompt-heading">
-    <span class="number">#${entry.number}</span>
+    <span class="number">#${escapeHtml(promptDisplayNumber(entry, chats))}</span>
     <div><h3>${escapeHtml(promptTitle(entry))}</h3>
-    <p>${escapeHtml(entry.modelName)} · ${escapeHtml(dateTime(entry.createdAt))}${entry.updatedAt ? ` · bearbeitet ${escapeHtml(dateTime(entry.updatedAt))}` : ''}</p></div>
+    <p>${chat ? `Chat #${chat.number} · ${escapeHtml(chat.title)} · ` : 'Einzelprompt · '}${escapeHtml(entry.modelName)} · ${escapeHtml(dateTime(entry.createdAt))}${entry.updatedAt ? ` · bearbeitet ${escapeHtml(dateTime(entry.updatedAt))}` : ''}</p></div>
   </div>
   <section class="text-block"><h4 class="text-block__label">Prompt</h4><div class="markdown-body">${renderMarkdown(entry.prompt)}</div></section>
   <section class="text-block answer"><h4 class="text-block__label">Antwort</h4><div class="markdown-body">${renderMarkdown(entry.response)}</div></section>
   ${entry.gitSnapshot ? `<div class="commit"><b>${escapeHtml(entry.gitSnapshot.repositoryName)}</b><span>${escapeHtml(entry.gitSnapshot.shortCommitHash)} · ${escapeHtml(entry.gitSnapshot.commitMessage)}</span><small>${entry.gitSnapshot.filesChanged} Dateien · +${entry.gitSnapshot.additions} / -${entry.gitSnapshot.deletions}</small></div>` : ''}
   ${gitDiff(entry)}
 </article>`;
+};
 
-const promptTableOfContents = (entries: PromptEntry[]) => `<section class="toc">
+const promptTableOfContents = (entries: PromptEntry[], chats: PromptChat[]) => `<section class="toc">
   <header class="module-header"><div><span class="section-kicker">Navigation</span><h2>Inhaltsverzeichnis</h2></div><p>${entries.length} ${entries.length === 1 ? 'Prompt' : 'Prompts'}<br>mit Seitenangaben</p></header>
-  <ol class="toc-list">${entries.map((entry) => `<li><a href="#${promptAnchor(entry)}"><span class="toc-number">#${entry.number}</span><span class="toc-title">${escapeHtml(promptTitle(entry))}</span><span class="toc-leader"></span></a></li>`).join('')}</ol>
+  <ol class="toc-list">${entries.map((entry) => `<li><a href="#${promptAnchor(entry)}"><span class="toc-number">#${escapeHtml(promptDisplayNumber(entry, chats))}</span><span class="toc-title">${escapeHtml(promptTitle(entry))}</span><span class="toc-leader"></span></a></li>`).join('')}</ol>
 </section>`;
 
 const plannerTask = (task: PlannerTask) => `<article class="task ${task.completed ? 'done' : ''}">
@@ -88,7 +92,7 @@ const plannerTask = (task: PlannerTask) => `<article class="task ${task.complete
 
 export function createAutoExportHtml(state: AppState, exportedAt = new Date(), document: AutoExportDocument = 'all'): string {
   const journals = [...state.journalEntries].sort((a, b) => a.startedAt.localeCompare(b.startedAt));
-  const prompts = [...state.promptEntries].sort((a, b) => a.number - b.number);
+  const prompts = [...state.promptEntries].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const tasks = [...state.plannerTasks].sort((a, b) => Number(a.completed) - Number(b.completed) || (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999'));
   const totalWorkingTime = journals.reduce((sum, entry) => sum + entry.workingTimeMs, 0);
   const completedTasks = tasks.filter((task) => task.completed).length;
@@ -199,9 +203,9 @@ export function createAutoExportHtml(state: AppState, exportedAt = new Date(), d
       </div></div>
     <footer class="cover-footer"><span>Lokal mit MAR Helper erstellt</span><span>Stand ${escapeHtml(exportedLabel)}</span></footer>
   </section>
-  ${includePrompts && prompts.length ? promptTableOfContents(prompts) : ''}
+  ${includePrompts && prompts.length ? promptTableOfContents(prompts, state.promptChats) : ''}
   ${includeJournal ? `<section class="module"><header class="module-header"><div><span class="section-kicker">Arbeitsverlauf</span><h2>Arbeitsjournal</h2></div><p>${journals.length} Einträge<br>${escapeHtml(formatDuration(totalWorkingTime, true))} dokumentiert</p></header>${journals.length ? journals.map(journalEntry).join('') : emptyState('Noch keine Journaleinträge vorhanden.')}</section>` : ''}
-  ${includePrompts ? `<section class="module"><header class="module-header"><div><span class="section-kicker">KI-Nutzung</span><h2>Promptprotokoll</h2></div><p>${prompts.length} Einträge<br>fortlaufend nummeriert</p></header>${prompts.length ? prompts.map(promptEntry).join('') : emptyState('Noch keine Prompt-Einträge vorhanden.')}</section>` : ''}
+  ${includePrompts ? `<section class="module"><header class="module-header"><div><span class="section-kicker">KI-Nutzung</span><h2>Promptprotokoll</h2></div><p>${prompts.length} Einträge<br>chronologisch geordnet</p></header>${prompts.length ? prompts.map((entry) => promptEntry(entry, state.promptChats)).join('') : emptyState('Noch keine Prompt-Einträge vorhanden.')}</section>` : ''}
   ${includePlanner ? `<section class="module"><header class="module-header"><div><span class="section-kicker">Planung</span><h2>Zeitplan</h2></div><p>${completedTasks} von ${tasks.length}<br>Aufgaben erledigt</p></header>${tasks.length ? tasks.map(plannerTask).join('') : emptyState('Noch keine Aufgaben vorhanden.')}</section>` : ''}
   <script>window.PagedConfig = { auto: false };</script><script src="./paged.polyfill.min.js"></script>
 </body></html>`;

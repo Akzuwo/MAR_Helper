@@ -5,7 +5,7 @@ import { AUTO_EXPORT_FILE_NAME, createAutoExportHtml, createPdfHeaderTemplate, P
 describe('automatic PDF export document', () => {
   it('migrates the beta and export settings disabled by default', () => {
     const migrated = normalizeState({ version: 4, settings: { modules: { journal: true, prompts: true, planner: true } } } as never);
-    expect(migrated.version).toBe(7);
+    expect(migrated.version).toBe(8);
     expect(migrated.settings.betaFeatures.cloudSave).toBe(false);
     expect(migrated.settings.autoExport).toEqual({
       enabled: false, fileName: 'MAR-Helper-Protokolle.pdf', separateDocuments: false,
@@ -98,10 +98,23 @@ describe('automatic PDF export document', () => {
     expect(html).toContain('<table>');
     expect(html).not.toContain('**fetten Text**');
     expect(html).toContain('<h2>Inhaltsverzeichnis</h2>');
-    expect(html).toContain('href="#prompt-42"');
-    expect(html).toContain('id="prompt-42"');
+    expect(html).toContain('href="#prompt-prompt-markdown"');
+    expect(html).toContain('id="prompt-prompt-markdown"');
     expect(html).toContain('target-counter(attr(href), page)');
     expect(html).toContain('paged.polyfill.min.js');
+  });
+
+  it('labels chat prompts and orders all individual prompts chronologically', () => {
+    const state = createDefaultState();
+    state.promptChats = [{ id: 'chat-1', number: 1, title: 'Konzept', createdAt: '2026-09-09T08:00:00.000Z', nextPromptNumber: 3 }];
+    state.promptEntries = [
+      { id: 'later', number: 2, chatId: 'chat-1', modelName: 'Codex', prompt: 'Später', response: 'B', createdAt: '2026-09-09T10:00:00.000Z' },
+      { id: 'earlier', number: 1, chatId: 'chat-1', modelName: 'Codex', prompt: 'Früher', response: 'A', createdAt: '2026-09-09T09:00:00.000Z' }
+    ];
+    const html = createAutoExportHtml(state, new Date(), 'prompts');
+    expect(html).toContain('#1.1');
+    expect(html).toContain('Chat #1 · Konzept');
+    expect(html.indexOf('id="prompt-earlier"')).toBeLessThan(html.indexOf('id="prompt-later"'));
   });
 
   it('prints the complete stored Git diff for a prompt', () => {

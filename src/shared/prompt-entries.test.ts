@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { normalizeState } from './defaults';
 import type { PromptEntry } from './models';
-import { matchesPromptSearch, upsertPromptEntry } from './prompt-entries';
+import { createPromptChat, matchesPromptSearch, movePromptToChat, promptDisplayNumber, upsertPromptEntry } from './prompt-entries';
 
 const prompt = (id: string, createdAt: string, number = 0, title?: string): PromptEntry => ({
   id, number, title, modelName: 'Codex', prompt: `Prompt ${id}`, response: `Antwort ${id}`, createdAt
@@ -55,5 +55,36 @@ describe('persistent prompt numbering', () => {
     expect(matchesPromptSearch(entry, 'gpt-5.6')).toBe(true);
     expect(matchesPromptSearch(entry, 'Antwort search')).toBe(true);
     expect(matchesPromptSearch(entry, '#13')).toBe(false);
+  });
+
+  it('numbers chats on the top level and never reuses local prompt numbers', () => {
+    let state = normalizeState(undefined);
+    const created = createPromptChat(state, 'Kapitel überarbeiten', '2026-09-09T08:00:00.000Z');
+    state = created.state;
+    expect(created.chat.number).toBe(1);
+
+    state = upsertPromptEntry(state, { ...prompt('chat-one', '2026-09-09T08:01:00.000Z'), chatId: created.chat.id });
+    state = upsertPromptEntry(state, { ...prompt('chat-two', '2026-09-09T08:02:00.000Z'), chatId: created.chat.id });
+    expect(state.promptEntries.map((entry) => promptDisplayNumber(entry, state.promptChats))).toEqual(['1.1', '1.2']);
+
+    state = { ...state, promptEntries: state.promptEntries.filter((entry) => entry.id !== 'chat-two') };
+    state = upsertPromptEntry(state, { ...prompt('chat-three', '2026-09-09T08:03:00.000Z'), chatId: created.chat.id });
+    expect(promptDisplayNumber(state.promptEntries.at(-1)!, state.promptChats)).toBe('1.3');
+
+    state = upsertPromptEntry(state, prompt('standalone', '2026-09-09T08:04:00.000Z'));
+    expect(state.promptEntries.at(-1)?.number).toBe(2);
+  });
+
+  it('moves a standalone prompt into a chat and remembers its model', () => {
+    let state = normalizeState(undefined);
+    const created = createPromptChat(state, 'Zielchat');
+    state = created.state;
+    state = upsertPromptEntry(state, { ...prompt('standalone', '2026-09-09T08:00:00.000Z'), modelId: 'model-gemini' });
+    expect(state.lastPromptModelId).toBe('model-gemini');
+
+    state = movePromptToChat(state, 'standalone', created.chat.id);
+    expect(state.promptEntries[0]).toMatchObject({ chatId: created.chat.id, number: 1 });
+    expect(state.promptChats[0].nextPromptNumber).toBe(2);
+    expect(state.nextPromptNumber).toBe(3);
   });
 });

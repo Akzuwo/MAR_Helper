@@ -1,10 +1,10 @@
-import type { AppState, BetaFeatureSettings } from './models';
+import type { AppState, BetaFeatureSettings, PromptChat } from './models';
 import { normalizePromptEntries, type PromptEntryInput } from './prompt-entries';
 
 const now = new Date().toISOString();
 
 export const createDefaultState = (): AppState => ({
-  version: 7,
+  version: 8,
   settings: {
     modules: { journal: true, prompts: true, planner: true },
     visualEffects: { scrollEffects: false },
@@ -28,6 +28,8 @@ export const createDefaultState = (): AppState => ({
     { id: 'model-codex', name: 'Codex', createdAt: now }
   ],
   promptEntries: [],
+  promptChats: [],
+  lastPromptModelId: undefined,
   nextPromptNumber: 1,
   plannerTasks: []
 });
@@ -35,11 +37,32 @@ export const createDefaultState = (): AppState => ({
 export function normalizeState(input: Partial<AppState> | undefined): AppState {
   const defaults = createDefaultState();
   if (!input) return defaults;
-  const prompts = normalizePromptEntries(
-    (Array.isArray(input.promptEntries) ? input.promptEntries : []) as PromptEntryInput[],
-    [],
-    input.nextPromptNumber ?? 1
-  );
+  const rawChats = ((Array.isArray(input.promptChats) ? input.promptChats : []) as PromptChat[])
+    .filter((chat) => chat && typeof chat.id === 'string' && typeof chat.title === 'string')
+    .map((chat) => ({ ...chat, title: chat.title.trim() }));
+  const chatIds = new Set(rawChats.map((chat) => chat.id));
+  const rawPrompts = (Array.isArray(input.promptEntries) ? input.promptEntries : []) as PromptEntryInput[];
+  const standalone = rawPrompts.filter((entry) => !entry.chatId || !chatIds.has(entry.chatId)).map((entry) => ({ ...entry, chatId: undefined }));
+  const topLevel = [
+    ...rawChats.map((chat, index) => ({ kind: 'chat' as const, index, number: chat.number, createdAt: chat.createdAt })),
+    ...standalone.map((entry, index) => ({ kind: 'prompt' as const, index, number: entry.number, createdAt: entry.createdAt }))
+  ].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.index - b.index);
+  const used = new Set<number>();
+  const assigned = new Map<string, number>();
+  const pending: typeof topLevel = [];
+  topLevel.forEach((item) => {
+    if (Number.isInteger(item.number) && Number(item.number) > 0 && !used.has(Number(item.number))) {
+      used.add(Number(item.number)); assigned.set(`${item.kind}-${item.index}`, Number(item.number));
+    } else pending.push(item);
+  });
+  let nextTopLevel = Math.max(input.nextPromptNumber ?? 1, used.size ? Math.max(...used) + 1 : 1);
+  pending.forEach((item) => { while (used.has(nextTopLevel)) nextTopLevel += 1; assigned.set(`${item.kind}-${item.index}`, nextTopLevel); used.add(nextTopLevel); nextTopLevel += 1; });
+  const numberedChats = rawChats.map((chat, index) => ({ ...chat, number: assigned.get(`chat-${index}`)! }));
+  const topLevelPrompts = standalone.map((entry, index) => ({ ...entry, number: assigned.get(`prompt-${index}`)! })) as ReturnType<typeof normalizePromptEntries>['entries'];
+  const chatResults = numberedChats.map((chat) => ({ chat, normalized: normalizePromptEntries(rawPrompts.filter((entry) => entry.chatId === chat.id), [], chat.nextPromptNumber ?? 1) }));
+  const promptChats = chatResults.map(({ chat, normalized }) => ({ ...chat, nextPromptNumber: normalized.nextPromptNumber }));
+  const chatPrompts = chatResults.flatMap(({ normalized }) => normalized.entries);
+  const highestTopLevel = Math.max(0, ...promptChats.map((chat) => chat.number), ...topLevelPrompts.map((entry) => entry.number));
   const autoExportDirectory = typeof input.settings?.autoExport?.directory === 'string' && input.settings.autoExport.directory.trim()
     ? input.settings.autoExport.directory
     : undefined;
@@ -52,7 +75,7 @@ export function normalizeState(input: Partial<AppState> | undefined): AppState {
   return {
     ...defaults,
     ...input,
-    version: 7,
+    version: 8,
     settings: {
       ...defaults.settings,
       ...input.settings,
@@ -94,8 +117,10 @@ export function normalizeState(input: Partial<AppState> | undefined): AppState {
     journalEntries: Array.isArray(input.journalEntries) ? input.journalEntries : [],
     activeTimer: input.activeTimer ?? null,
     promptModels: Array.isArray(input.promptModels) ? input.promptModels : defaults.promptModels,
-    promptEntries: prompts.entries,
-    nextPromptNumber: prompts.nextPromptNumber,
+    lastPromptModelId: typeof input.lastPromptModelId === 'string' && (Array.isArray(input.promptModels) ? input.promptModels : defaults.promptModels).some((model) => model.id === input.lastPromptModelId) ? input.lastPromptModelId : undefined,
+    promptEntries: [...topLevelPrompts, ...chatPrompts],
+    promptChats,
+    nextPromptNumber: Math.max(nextTopLevel, highestTopLevel + 1, input.nextPromptNumber ?? 1),
     plannerTasks: Array.isArray(input.plannerTasks) ? input.plannerTasks : []
   };
 }

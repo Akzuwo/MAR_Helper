@@ -108,7 +108,7 @@ export function ExportPage() {
           icon={<WandSparkles/>}
           title="Promptprotokoll"
           description={`${state.promptEntries.length} Einträge · Markdown erhält die Formatierung`}
-          actions={<><Button variant="secondary" icon={<Download size={16}/>} onClick={() => save(`promptprotokoll-${dateSuffix()}.md`, 'md', 'Markdown', exportPromptsMarkdown(state.promptEntries))}>Markdown</Button><Button variant="secondary" icon={<Download size={16}/>} onClick={() => save(`promptprotokoll-${dateSuffix()}.json`, 'json', 'JSON', exportModuleJson('prompts', state.promptEntries))}>JSON</Button></>}
+          actions={<><Button variant="secondary" icon={<Download size={16}/>} onClick={() => save(`promptprotokoll-${dateSuffix()}.md`, 'md', 'Markdown', exportPromptsMarkdown(state.promptEntries, state.promptChats))}>Markdown</Button><Button variant="secondary" icon={<Download size={16}/>} onClick={() => save(`promptprotokoll-${dateSuffix()}.json`, 'json', 'JSON', exportModuleJson('prompts', state.promptEntries, state.promptChats))}>JSON</Button></>}
         />}
         {active.planner && <ExportCard
           icon={<CalendarClock/>}
