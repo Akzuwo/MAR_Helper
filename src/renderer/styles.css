@@ -118,6 +118,7 @@ button, a, input, select, textarea { outline: none; }
 .input:disabled { background: var(--surface-container); cursor: not-allowed; }
 .textarea { resize: vertical; min-height: 110px; line-height: 21px; }
 .custom-select { position: relative; width: 100%; min-width: 0; }
+.custom-select--open { z-index: 70; }
 .select-trigger { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--text); text-align: left; cursor: pointer; border-radius: 10px; transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease; }
 .select-trigger:hover:not(:disabled) { border-color: #aaa8ba; background: #faf9ff; }
 .select-trigger:focus-visible, .custom-select--open .select-trigger { border-color: var(--primary-bright); box-shadow: 0 0 0 3px rgba(79,70,229,.12); }
@@ -245,7 +246,7 @@ button, a, input, select, textarea { outline: none; }
 .journal-row small span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .journal-row .duration { text-align: right; color: var(--text); font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; }
 
-.prompt-toolbar { display: grid; grid-template-columns: minmax(260px, 1fr) 210px; gap: 10px; margin-bottom: 18px; }
+.prompt-toolbar { position: relative; z-index: 10; display: grid; grid-template-columns: minmax(260px, 1fr) 210px; gap: 10px; margin-bottom: 18px; }
 .search-box { position: relative; }
 .search-box > svg { position: absolute; left: 12px; top: 12px; color: var(--text-muted); z-index: 1; }
 .search-box .input { padding-left: 39px; }

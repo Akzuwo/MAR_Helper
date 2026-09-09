@@ -53,6 +53,31 @@ async function run() {
   await waitFor(`document.body.innerText.includes('Prompt hinzufügen')`);
   await clickText('Prompt hinzufügen');
   await waitFor(`document.querySelector('.select-trigger')?.innerText.includes('Codex')`);
+  await evaluate(`document.querySelector('.select-trigger').click()`);
+  await waitFor(`document.querySelector('.custom-select--open .select-menu') !== null`);
+  const layering = await evaluate(`(() => {
+    const select = document.querySelector('.custom-select--open');
+    const menu = select?.querySelector('.select-menu');
+    const card = document.querySelector('.prompt-card');
+    if (!select || !menu || !card) return false;
+    const numericZIndex = (element) => getComputedStyle(element).zIndex === 'auto' ? 0 : Number.parseInt(getComputedStyle(element).zIndex, 10);
+    return numericZIndex(select) > numericZIndex(card)
+      && getComputedStyle(menu).pointerEvents === 'auto';
+  })()`);
+  if (!layering) throw new Error('Modell-Dropdown liegt nicht über der Prompt-Card.');
+  await clickText('Zurück zum Promptprotokoll');
+  await waitFor(`document.querySelector('.prompt-toolbar .select-trigger') !== null`);
+  await evaluate(`document.querySelector('.prompt-toolbar .select-trigger').click()`);
+  await waitFor(`document.querySelector('.prompt-toolbar .custom-select--open .select-menu') !== null`);
+  const filterLayering = await evaluate(`(() => {
+    const toolbar = document.querySelector('.prompt-toolbar');
+    const menu = toolbar?.querySelector('.select-menu');
+    const card = document.querySelector('.prompt-card');
+    if (!toolbar || !menu || !card) return false;
+    const numericZIndex = (element) => getComputedStyle(element).zIndex === 'auto' ? 0 : Number.parseInt(getComputedStyle(element).zIndex, 10);
+    return numericZIndex(toolbar) > numericZIndex(card) && getComputedStyle(menu).pointerEvents === 'auto';
+  })()`);
+  if (!filterLayering) throw new Error('Modellfilter liegt nicht über der Prompt-Card.');
   process.stdout.write('Prompt-Chat UI smoke test passed\n');
   socket.close();
 }
