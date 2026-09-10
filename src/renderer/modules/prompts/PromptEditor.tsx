@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { GitCommitHorizontal, Link2Off } from 'lucide-react';
-import type { PromptChat, PromptEntry, PromptGitSnapshot, PromptModel } from '../../../shared/models';
+import type { PromptChat, PromptEntry, PromptGitSnapshot, PromptModel, ReasoningLevel } from '../../../shared/models';
 import { Button, Field, Input, Modal, Select, Textarea } from '../../components/ui';
 import { useAppData } from '../../state/AppDataContext';
 import { CommitPicker } from '../git-integration/CommitPicker';
@@ -18,6 +18,7 @@ export function PromptEditor({ open, entry, chat, models, onClose, onSave, onMan
   const { state } = useAppData();
   const [title, setTitle] = useState('');
   const [modelId, setModelId] = useState('');
+  const [reasoningLevel, setReasoningLevel] = useState<ReasoningLevel | ''>('');
   const [prompt, setPrompt] = useState('');
   const [response, setResponse] = useState('');
   const [createdAt, setCreatedAt] = useState('');
@@ -30,6 +31,7 @@ export function PromptEditor({ open, entry, chat, models, onClose, onSave, onMan
     setTitle(entry?.title ?? '');
     const preferredModelId = entry?.modelId ?? state.lastPromptModelId;
     setModelId(preferredModelId && models.some((model) => model.id === preferredModelId) ? preferredModelId : models[0]?.id ?? '');
+    setReasoningLevel(entry?.reasoningLevel ?? '');
     setPrompt(entry?.prompt ?? '');
     setResponse(entry?.response ?? '');
     setCreatedAt(toLocalInput(entry?.createdAt ?? new Date().toISOString()));
@@ -54,6 +56,7 @@ export function PromptEditor({ open, entry, chat, models, onClose, onSave, onMan
       title: title.trim() || undefined,
       modelId: model.id,
       modelName: model.name,
+      reasoningLevel: reasoningLevel || undefined,
       prompt: prompt.trim(),
       response: response.trim(),
       createdAt: created.toISOString(),
@@ -68,6 +71,11 @@ export function PromptEditor({ open, entry, chat, models, onClose, onSave, onMan
       <Field label="Titel" optional><Input placeholder="z. B. Git-Integration für Promptprotokoll" value={title} onChange={(event) => setTitle(event.target.value)}/></Field>
       <Field label="Modell" error={errors.model}>
         <div className="field-row"><Select value={modelId} onChange={(event) => { setModelId(event.target.value); setErrors((e) => ({ ...e, model: '' })); }} disabled={models.length === 0}><option value="">Modell auswählen</option>{models.map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}</Select><Button type="button" variant="secondary" onClick={onManageModels}>Modelle verwalten</Button></div>
+      </Field>
+      <Field label="Reasoning-Level" optional>
+        <Select value={reasoningLevel} onChange={(event) => setReasoningLevel(event.target.value as ReasoningLevel | '')}>
+          <option value="">Nicht erfasst</option><option value="light">Light</option><option value="medium">Medium</option><option value="high">High</option><option value="extra high">Extra high</option><option value="ultra">Ultra</option>
+        </Select>
       </Field>
       <Field label="Datum und Uhrzeit" optional hint="Ohne Angabe wird der aktuelle Zeitpunkt verwendet." error={errors.createdAt}><Input type="datetime-local" value={createdAt} onChange={(event) => { setCreatedAt(event.target.value); setErrors((current) => ({ ...current, createdAt: '' })); }}/></Field>
       <Field label="Prompt" error={errors.prompt}><Textarea autoFocus rows={7} placeholder="Füge den verwendeten Prompt ein …" value={prompt} onChange={(event) => { setPrompt(event.target.value); setErrors((e) => ({ ...e, prompt: '' })); }}/></Field>

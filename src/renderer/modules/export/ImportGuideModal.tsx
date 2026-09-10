@@ -71,7 +71,7 @@ export function ImportGuideModal({ open, betaEnabled, onClose }: { open: boolean
       </div>
       <div className="format-list">
         <FormatDetails open title="Arbeitsjournal" summary="Aktivität, Notizen, Start, Ende und erfasste Zeiten" required="id, startedAt, endedAt, workingTimeMs, pausedTimeMs" optional="title, notes und linkedTaskId" example={journalExample}/>
-        <FormatDetails title="Promptprotokoll" summary="Prompt, Antwort, Modell, Zeitpunkt und optionale Chat-Zuordnung" required="id, modelName, prompt, response, createdAt" optional="number, title, modelId, chatId, updatedAt und gitSnapshot; promptChats enthält Chat-Titel und Nummern" example={promptExample}/>
+        <FormatDetails title="Promptprotokoll" summary="Prompt, Antwort, Modell, Reasoning-Level, Zeitpunkt und optionale Chat-Zuordnung" required="id, modelName, prompt, response, createdAt" optional="number, title, modelId, reasoningLevel (light, medium, high, extra high oder ultra), chatId, updatedAt und gitSnapshot; promptChats enthält Chat-Titel und Nummern" example={promptExample}/>
         <FormatDetails title="Zeitplan" summary="Aufgabe, Status und Erstellungsdatum" required="id, title, completed, createdAt" optional="description, dueDate und updatedAt" example={plannerExample}/>
       </div>
       <section className={`raw-guide ${betaEnabled ? '' : 'raw-guide--disabled'}`}>

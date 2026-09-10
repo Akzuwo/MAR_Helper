@@ -1,3 +1,5 @@
+import type { ChangelogChanges } from './update-utils';
+
 export type ModuleId = 'journal' | 'prompts' | 'planner';
 
 export interface ModuleSettings {
@@ -13,6 +15,7 @@ export interface AppSettings {
   betaFeatures: BetaFeatureSettings;
   autoExport: AutoExportSettings;
   cloudSave: CloudSaveSettings;
+  termsAcceptedAt?: string;
 }
 
 export interface VisualEffectSettings {
@@ -118,6 +121,7 @@ export interface PromptEntry {
   title?: string;
   modelId?: string;
   modelName: string;
+  reasoningLevel?: ReasoningLevel;
   prompt: string;
   response: string;
   createdAt: string;
@@ -125,6 +129,8 @@ export interface PromptEntry {
   gitSnapshot?: PromptGitSnapshot;
   chatId?: string;
 }
+
+export type ReasoningLevel = 'light' | 'medium' | 'high' | 'extra high' | 'ultra';
 
 export interface PromptChat {
   id: string;
@@ -198,7 +204,7 @@ export type ImportCommitResult = { ok: true; state: AppState; summary: ImportSum
 
 export type UpdateStatus =
   | { state: 'checking' }
-  | { state: 'available'; version: string; releaseName?: string; releaseNotes?: string }
+  | { state: 'available'; version: string; releaseName?: string; releaseNotes?: string; changes?: ChangelogChanges }
   | { state: 'not-available' }
   | { state: 'downloading'; version: string; percent: number; transferred: number; total: number; background?: boolean }
   | { state: 'downloaded'; version: string; installOnQuit?: boolean }

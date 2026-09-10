@@ -57,6 +57,7 @@ export const exportPromptsMarkdown = (entries: PromptEntry[], chats: PromptChat[
       '',
       ...(chat ? [`**Chat:** #${chat.number} – ${chat.title}  `] : ['**Chat:** Einzelprompt  ']),
       `**Modell:** ${entry.modelName}  `,
+      ...(entry.reasoningLevel ? [`**Reasoning-Level:** ${entry.reasoningLevel}  `] : []),
       `**Zeitpunkt:** ${deDateTime(entry.createdAt)}`,
       '',
       '### Prompt',

@@ -3,10 +3,11 @@ import * as electronUpdater from 'electron-updater';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import type { UpdateInstallationResult, UpdatePostponeRequest, UpdateStatus } from '../shared/models';
-import { normalizeReleaseNotes, normalizeReminderDays } from '../shared/update-utils';
+import { findChangelogRelease, normalizeReleaseNotes, normalizeReminderDays, type ChangelogChanges } from '../shared/update-utils';
 
 const { autoUpdater } = electronUpdater;
 const RELEASE_API = 'https://api.github.com/repos/Akzuwo/MAR_Helper/releases/tags/';
+const CHANGELOG_URL = 'https://raw.githubusercontent.com/Akzuwo/MAR_Helper/';
 const MAX_TIMER_DELAY = 2_147_000_000;
 
 interface PendingInstallation {
@@ -26,6 +27,26 @@ interface AvailableUpdate {
   version: string;
   releaseName?: string;
   releaseNotes?: string;
+  changes?: ChangelogChanges;
+}
+
+async function fetchChangelogRelease(version: string): Promise<ChangelogChanges | undefined> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 7_000);
+  try {
+    const tag = encodeURIComponent(`v${version}`);
+    const response = await net.fetch(`${CHANGELOG_URL}${tag}/changelog.json`, {
+      headers: { Accept: 'application/json', 'User-Agent': 'MAR-Helper-Updater' },
+      signal: controller.signal
+    });
+    if (!response.ok) return undefined;
+    const release = findChangelogRelease(await response.json(), version);
+    return release ? { fix: release.fix, new: release.new } : undefined;
+  } catch {
+    return undefined;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 let configured = false;
@@ -167,11 +188,15 @@ export function configureAutoUpdater(getWindow: () => BrowserWindow | null) {
   autoUpdater.on('update-available', (info) => {
     void (async () => {
       updateVersion = info.version;
-      const release = await fetchGitHubRelease(info.version);
+      const [release, changes] = await Promise.all([
+        fetchGitHubRelease(info.version),
+        fetchChangelogRelease(info.version)
+      ]);
       availableUpdate = {
         version: info.version,
         releaseName: release.name ?? info.releaseName ?? undefined,
-        releaseNotes: release.notes ?? normalizeReleaseNotes(info.releaseNotes, info.version)
+        releaseNotes: release.notes ?? normalizeReleaseNotes(info.releaseNotes, info.version),
+        changes
       };
       await preferencesReady;
 

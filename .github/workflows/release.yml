@@ -19,8 +19,8 @@ concurrency:
 env:
   VERSION: ${{ inputs.version }}
   TAG: v${{ inputs.version }}
-  INSTALLER_NAME: MAR-Helper-Setup-${{ inputs.version }}-x64.exe
-  INSTALLER_URL: https://github.com/${{ github.repository }}/releases/download/v${{ inputs.version }}/MAR-Helper-Setup-${{ inputs.version }}-x64.exe
+  INSTALLER_NAME: MAR-Helper-Setup-${{ inputs.version }}.exe
+  INSTALLER_URL: https://github.com/${{ github.repository }}/releases/download/v${{ inputs.version }}/MAR-Helper-Setup-${{ inputs.version }}.exe
 
 jobs:
   windows-release:
@@ -114,31 +114,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Audit native dependencies for Windows ARM64
+        run: node scripts/audit-native-dependencies.cjs
+
+      - name: Validate changelog entry
+        run: npm run validate:changelog
+
       - name: Run tests
         run: npm test
 
       - name: Build application
         run: npm run build
 
-      - name: Package NSIS installer
+      - name: Package universal x64 and ARM64 NSIS installer
         env:
           CSC_LINK: ${{ secrets.WINDOWS_CERTIFICATE }}
           CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-        run: npm exec electron-builder -- --win nsis --publish never
+        run: npm exec electron-builder -- --config electron-builder.release.cjs --win nsis --x64 --arm64 --publish never
 
       - name: Verify release assets
-        run: |
-          $installerPath = Join-Path 'release' $env:INSTALLER_NAME
-          $requiredAssets = @(
-            $installerPath,
-            "$installerPath.blockmap",
-            (Join-Path 'release' 'latest.yml')
-          )
-          foreach ($asset in $requiredAssets) {
-            if (-not (Test-Path -LiteralPath $asset -PathType Leaf)) {
-              throw "Erwartetes Release-Asset fehlt: $asset"
-            }
-          }
+        run: node scripts/verify-windows-release.cjs release $env:VERSION
 
       - name: Commit synchronized version
         run: |
@@ -167,6 +162,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $installerPath = Join-Path 'release' $env:INSTALLER_NAME
+          $releaseNotesPath = Join-Path 'release' 'release-notes.md'
+          node scripts/render-release-notes.cjs $env:VERSION $releaseNotesPath
+          if ($LASTEXITCODE -ne 0) { throw "Der Release-Text für '$env:TAG' konnte nicht erstellt werden." }
           $arguments = @(
             'release', 'create', $env:TAG,
             $installerPath,
@@ -174,7 +172,7 @@ jobs:
             (Join-Path 'release' 'latest.yml'),
             '--verify-tag',
             '--title', "MAR Helper $env:VERSION",
-            '--generate-notes'
+            '--notes-file', $releaseNotesPath
           )
           if ($env:IS_PRERELEASE -eq 'true') {
             $arguments += '--prerelease'
@@ -197,5 +195,5 @@ jobs:
 
           - Tag: ``$env:TAG``
           - Release: https://github.com/${{ github.repository }}/releases/tag/$env:TAG
-          - Installer: $env:INSTALLER_URL
+          - Universal-Installer (Windows x64 und ARM64): $env:INSTALLER_URL
           "@ >> $env:GITHUB_STEP_SUMMARY

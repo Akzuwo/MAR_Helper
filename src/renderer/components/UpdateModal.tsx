@@ -1,14 +1,15 @@
 import { BellRing, CalendarClock, CheckCircle2, Download, Power, RefreshCw, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { UpdateInstallationResult, UpdateStatus } from '../../shared/models';
+import { getChangelogRelease } from '../changelog';
 import { useAppData } from '../state/AppDataContext';
-import { MarkdownContent } from './MarkdownContent';
+import { ChangelogContent } from './ChangelogContent';
 import { Button, Input, Modal } from './ui';
 
 const megabytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 type PostponeChoice = 'five-days' | 'custom' | 'on-quit';
 
-export function UpdateModal() {
+export function UpdateModal({ onInstalledVersionShown }: { onInstalledVersionShown?: (version: string) => void }) {
   const { toast } = useAppData();
   const [status, setStatus] = useState<UpdateStatus | null>(null);
   const [installationResult, setInstallationResult] = useState<UpdateInstallationResult | null>(null);
@@ -22,6 +23,7 @@ export function UpdateModal() {
   useEffect(() => {
     void window.marHelper.consumeUpdateInstallationResult().then((result) => {
       if (!result) return;
+      if (result.state === 'success') onInstalledVersionShown?.(result.version);
       setInstallationResult(result);
       setOpen(true);
     });
@@ -43,12 +45,13 @@ export function UpdateModal() {
         setOpen(true);
       }
     });
-  }, [toast]);
+  }, [onInstalledVersionShown, toast]);
 
   if (!open) return null;
 
   if (installationResult) {
     const success = installationResult.state === 'success';
+    const installedRelease = getChangelogRelease(installationResult.version);
     return <Modal
       open
       title={success ? 'Update erfolgreich installiert' : 'Update nicht installiert'}
@@ -59,6 +62,10 @@ export function UpdateModal() {
         {success ? <CheckCircle2 size={31}/> : <TriangleAlert size={31}/>}
         <h3>{success ? 'Du verwendest die neueste Version.' : 'Deine bisherige Version wurde beibehalten.'}</h3>
         <p>{installationResult.message ?? (success ? 'Alle Komponenten wurden erfolgreich aktualisiert.' : 'Du kannst das Update erneut starten, sobald es wieder angeboten wird.')}</p>
+        {success && <div className="release-notes release-notes--result">
+          <h3>Neu in Version {installationResult.version}</h3>
+          <ChangelogContent releases={installedRelease ? [installedRelease] : []} compact/>
+        </div>}
         <Button variant="secondary" onClick={() => { setInstallationResult(null); setOpen(status?.state === 'available'); }}>Verstanden</Button>
       </div>
     </Modal>;
@@ -66,6 +73,10 @@ export function UpdateModal() {
 
   if (!status || !['available', 'downloading', 'downloaded', 'error'].includes(status.state)) return null;
   const version = 'version' in status ? status.version : '';
+  const localAvailableRelease = status.state === 'available' ? getChangelogRelease(status.version) : undefined;
+  const availableRelease = status.state === 'available' && status.changes
+    ? { version: status.version, ...status.changes }
+    : localAvailableRelease;
   const canClose = status.state === 'available' || status.state === 'error';
 
   const install = async () => {
@@ -127,7 +138,7 @@ export function UpdateModal() {
       </>}
       {status.state === 'available' && !postponeOpen && <>
         <div className="update-highlight"><span><ShieldCheck size={23}/></span><div><strong>Sicheres automatisches Update</strong><p>Der Installer wird vom passenden offiziellen GitHub-Release geladen und kryptografisch geprüft.</p></div></div>
-        <div className="release-notes"><h3>{status.releaseName || 'Änderungen in dieser Version'}</h3>{status.releaseNotes ? <MarkdownContent>{status.releaseNotes}</MarkdownContent> : <p className="release-notes__empty">Für dieses Release wurden keine Update-News veröffentlicht.</p>}</div>
+        <div className="release-notes"><h3>Änderungen in Version {status.version}</h3><ChangelogContent releases={availableRelease ? [availableRelease] : []} compact/></div>
         <div className="form-actions"><Button variant="secondary" disabled={busy} onClick={() => { setPostponeChoice('five-days'); setPostponeError(''); setPostponeOpen(true); }}>Ignorieren</Button><Button icon={<Download size={17}/>} disabled={busy} onClick={() => void install()}>{busy ? 'Starte …' : 'Jetzt aktualisieren'}</Button></div>
       </>}
       {status.state === 'downloading' && <>

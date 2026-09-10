@@ -8,6 +8,9 @@ import { Page, PageHeader } from '../../layout/Page';
 import { GitIntegrationSettings } from '../git-integration/GitIntegrationSettings';
 import { AutoExportSettingsModal } from './AutoExportSettingsModal';
 import { CloudSaveSettingsModal } from './CloudSaveSettingsModal';
+import { TermsModal } from '../../components/TermsModal';
+import { ChangelogModal } from '../../components/ChangelogModal';
+import { markChangelogVersionSeen } from '../../changelog';
 
 const modules: Array<{ id: ModuleId; title: string; description: string; icon: React.ReactNode }> = [
   { id: 'journal', title: 'Arbeitsjournal', description: 'Zeiterfassung und Arbeitsverlauf', icon: <Clock3 size={21}/> },
@@ -24,6 +27,8 @@ export function SettingsPage() {
   const [deletingModel, setDeletingModel] = useState<PromptModel | null>(null);
   const [autoExportOpen, setAutoExportOpen] = useState(false);
   const [cloudSaveOpen, setCloudSaveOpen] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
+  const [changelogOpen, setChangelogOpen] = useState(false);
 
   const toggleModule = (id: ModuleId) => {
     void updateState((current) => ({ ...current, settings: { ...current.settings, modules: { ...current.settings.modules, [id]: !current.settings.modules[id] } } }), `${modules.find((module) => module.id === id)?.title} ${state.settings.modules[id] ? 'deaktiviert' : 'aktiviert'}`);
@@ -151,7 +156,14 @@ export function SettingsPage() {
     </section>
     <section className="about-card">
       <div><h2>MAR Helper</h2><p>Deine Daten bleiben lokal auf diesem Gerät. Die drei Module funktionieren unabhängig voneinander.</p><span>Version {APP_VERSION}</span></div>
+      <div className="about-card__meta"><span>by timolu</span></div>
     </section>
+    <div className="settings-footer-links" aria-label="Weitere Informationen" data-scroll-static>
+      <button type="button" onClick={() => setTermsOpen(true)}>Nutzungsbedingungen</button>
+      <button type="button" onClick={() => { markChangelogVersionSeen(APP_VERSION); setChangelogOpen(true); }}>Changelog</button>
+    </div>
+    <TermsModal open={termsOpen} onClose={() => setTermsOpen(false)}/>
+    <ChangelogModal open={changelogOpen} onClose={() => setChangelogOpen(false)}/>
     <ConfirmDialog open={!!deletingModel} title="Modell löschen?" description={`„${deletingModel?.name ?? ''}“ wird aus der Auswahl entfernt. Bestehende Prompt-Einträge behalten ihren gespeicherten Modellnamen.`} onCancel={() => setDeletingModel(null)} onConfirm={confirmDelete}/>
     <AutoExportSettingsModal open={autoExportOpen} settings={state.settings.autoExport} onClose={() => setAutoExportOpen(false)} onSave={(settings) => {
       void updateState((current) => ({

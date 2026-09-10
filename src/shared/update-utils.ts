@@ -1,3 +1,31 @@
+export interface ChangelogChanges {
+  fix: string[];
+  new: string[];
+}
+
+export interface ChangelogRelease extends ChangelogChanges {
+  version: string;
+}
+
+const isStringList = (value: unknown): value is string[] => Array.isArray(value)
+  && value.every((entry) => typeof entry === 'string' && entry.trim().length > 0);
+
+export const parseChangelog = (value: unknown): ChangelogRelease[] => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
+
+  return Object.entries(value).flatMap(([version, release]) => {
+    if (!release || typeof release !== 'object' || Array.isArray(release)) return [];
+    const candidate = release as Record<string, unknown>;
+    if (!isStringList(candidate.fix) || !isStringList(candidate.new)) return [];
+    return [{ version, fix: candidate.fix, new: candidate.new }];
+  }).sort((left, right) => right.version.localeCompare(left.version, undefined, { numeric: true }));
+};
+
+export const findChangelogRelease = (value: unknown, version: string): ChangelogRelease | undefined => {
+  const normalized = version.trim().replace(/^v/i, '');
+  return parseChangelog(value).find((release) => release.version === normalized);
+};
+
 export const normalizeReleaseNotes = (notes: unknown, version?: string): string | undefined => {
   if (typeof notes === 'string') return notes.trim() || undefined;
   if (!Array.isArray(notes)) return undefined;

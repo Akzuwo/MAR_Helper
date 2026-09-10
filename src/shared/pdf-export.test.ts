@@ -115,6 +115,17 @@ describe('automatic PDF export document', () => {
     expect(html).toContain('#1.1');
     expect(html).toContain('Chat #1 · Konzept');
     expect(html.indexOf('id="prompt-earlier"')).toBeLessThan(html.indexOf('id="prompt-later"'));
+    expect(html).toContain('<li class="toc-chat"><a href="#prompt-earlier"><span class="toc-number">Chat #1</span><span class="toc-title">Konzept</span>');
+    expect(html).toContain('<ol><li><a href="#prompt-earlier"><span class="toc-number">#1.1</span>');
+  });
+
+  it('prints a captured reasoning level', () => {
+    const state = createDefaultState();
+    state.promptEntries = [{
+      id: 'prompt-reasoning', number: 1, modelName: 'Codex', reasoningLevel: 'extra high',
+      prompt: 'Analysiere.', response: 'Erledigt.', createdAt: '2026-09-10T08:00:00.000Z'
+    }];
+    expect(createAutoExportHtml(state, new Date(), 'prompts')).toContain('Reasoning: extra high');
   });
 
   it('prints the complete stored Git diff for a prompt', () => {

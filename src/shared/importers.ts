@@ -57,6 +57,7 @@ const isPromptEntry = (value: unknown): value is PromptEntryInput => isRecord(va
   && (value.number === undefined || isPositiveInteger(value.number))
   && isOptionalString(value.title)
   && isString(value.modelName)
+  && (value.reasoningLevel === undefined || ['light', 'medium', 'high', 'extra high', 'ultra'].includes(String(value.reasoningLevel)))
   && typeof value.prompt === 'string'
   && typeof value.response === 'string'
   && isDate(value.createdAt)
