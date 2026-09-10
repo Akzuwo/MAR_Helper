@@ -1,6 +1,7 @@
-import { AlertCircle, Check, ChevronDown, Info, LoaderCircle, X } from 'lucide-react';
-import { Children, forwardRef, isValidElement, useEffect, useId, useRef, useState } from 'react';
+import { AlertCircle, Check, ChevronDown, Info, X } from 'lucide-react';
+import { Children, forwardRef, isValidElement, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { IntroAnimation } from './IntroAnimation';
 
 export function Button({ variant = 'primary', size = 'md', icon, children, className = '', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; size?: 'sm' | 'md'; icon?: React.ReactNode
@@ -87,22 +88,35 @@ export function Select({ children, value = '', onChange, disabled, className = '
   </div>;
 }
 
-export function Modal({ open, title, description, children, onClose, wide = false, bodyClassName = '', dismissible = true }: {
-  open: boolean; title: string; description?: string; children: React.ReactNode; onClose: () => void; wide?: boolean; bodyClassName?: string; dismissible?: boolean
+export function Modal({ open, title, description, children, onClose, onClosed, wide = false, bodyClassName = '', dismissible = true }: {
+  open: boolean; title: string; description?: string; children: React.ReactNode; onClose: () => void; onClosed?: () => void; wide?: boolean; bodyClassName?: string; dismissible?: boolean
 }) {
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
+  const onClosedRef = useRef(onClosed);
+  const closeCompletedRef = useRef(!open);
+  const presentationRef = useRef({ title, description, children, wide, bodyClassName, dismissible });
   const [mounted, setMounted] = useState(open);
 
+  if (open) presentationRef.current = { title, description, children, wide, bodyClassName, dismissible };
+  const presentation = presentationRef.current;
+
   useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  useEffect(() => { onClosedRef.current = onClosed; }, [onClosed]);
+  const finishClose = useCallback(() => {
+    if (closeCompletedRef.current) return;
+    closeCompletedRef.current = true;
+    setMounted(false);
+    onClosedRef.current?.();
+  }, []);
   useEffect(() => {
-    if (open) { setMounted(true); return; }
+    if (open) { closeCompletedRef.current = false; setMounted(true); return; }
     if (!mounted) return;
-    const fallback = window.setTimeout(() => setMounted(false), 260);
+    const fallback = window.setTimeout(finishClose, 280);
     return () => window.clearTimeout(fallback);
-  }, [open, mounted]);
+  }, [finishClose, open, mounted]);
   useEffect(() => {
     if (!open || !mounted) return;
     const previous = document.activeElement as HTMLElement | null;
@@ -120,15 +134,15 @@ export function Modal({ open, title, description, children, onClose, wide = fals
     <div
       className="overlay__backdrop"
       aria-hidden="true"
-      onAnimationEnd={(event) => { if (!open && event.animationName === 'backdrop-in') setMounted(false); }}
+      onAnimationEnd={(event) => { if (!open && event.animationName === 'backdrop-out') finishClose(); }}
       onMouseDown={() => { if (open && dismissible) onCloseRef.current(); }}
     />
-    <section className={`modal ${wide ? 'modal--wide' : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
+    <section className={`modal ${presentation.wide ? 'modal--wide' : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <header className="modal__header">
-        <div><h2 id={titleId}>{title}</h2>{description && <p>{description}</p>}</div>
-        {dismissible && <IconButton ref={closeRef} label="Dialog schliessen" variant="ghost" onClick={() => onCloseRef.current()}><X size={20}/></IconButton>}
+        <div><h2 id={titleId}>{presentation.title}</h2>{presentation.description && <p>{presentation.description}</p>}</div>
+        {presentation.dismissible && <IconButton ref={closeRef} label="Dialog schliessen" variant="ghost" onClick={() => onCloseRef.current()}><X size={20}/></IconButton>}
       </header>
-      <div className={`modal__body ${bodyClassName}`}>{children}</div>
+      <div className={`modal__body ${presentation.bodyClassName}`}>{presentation.children}</div>
     </section>
   </div>, document.body);
 }
@@ -139,8 +153,8 @@ export function EmptyState({ icon, title, description, action }: { icon: React.R
   </div>;
 }
 
-export function LoadingScreen() {
-  return <div className="loading-screen"><div className="brand-mark">M</div><LoaderCircle className="spin" size={24}/><span>Daten werden geladen …</span></div>;
+export function LoadingScreen({ onComplete }: { onComplete?: () => void }) {
+  return <IntroAnimation onComplete={onComplete}/>;
 }
 
 export function ErrorScreen({ message, retry }: { message: string; retry?: () => void }) {

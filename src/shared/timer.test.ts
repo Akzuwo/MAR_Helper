@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ActiveTimer } from './models';
-import { getPausedTimeMs, getWorkingTimeMs, pauseTimer, resumeTimer } from './timer';
+import { completeTimeSegments, getPausedTimeMs, getWorkingTimeMs, pauseTimer, resumeTimer } from './timer';
 
 const start = new Date('2026-08-17T10:00:00.000Z');
 
@@ -34,5 +34,20 @@ describe('persistent timer calculations', () => {
     const resumed = resumeTimer(paused, new Date('2026-08-17T10:30:00.000Z'));
     expect(resumeTimer(resumed, new Date('2026-08-17T10:35:00.000Z'))).toBe(resumed);
     expect(resumed.notes).toBe('Kapitel 2');
+  });
+
+  it('records exact work and pause periods within one session', () => {
+    const timer: ActiveTimer = {
+      id: '1', title: 'Arbeit', startedAt: start.toISOString(), status: 'running', accumulatedPausedMs: 0,
+      timeSegments: [], currentSegmentStartedAt: start.toISOString()
+    };
+    const paused = pauseTimer(timer, new Date('2026-08-17T10:20:00.000Z'));
+    const resumed = resumeTimer(paused, new Date('2026-08-17T10:30:00.000Z'));
+    const segments = completeTimeSegments(resumed, new Date('2026-08-17T11:00:00.000Z'));
+    expect(segments).toEqual([
+      { type: 'work', startedAt: '2026-08-17T10:00:00.000Z', endedAt: '2026-08-17T10:20:00.000Z' },
+      { type: 'pause', startedAt: '2026-08-17T10:20:00.000Z', endedAt: '2026-08-17T10:30:00.000Z' },
+      { type: 'work', startedAt: '2026-08-17T10:30:00.000Z', endedAt: '2026-08-17T11:00:00.000Z' }
+    ]);
   });
 });

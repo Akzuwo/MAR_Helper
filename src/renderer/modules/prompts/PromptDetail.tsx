@@ -5,11 +5,18 @@ import { Button, IconButton } from '../../components/ui';
 import { MarkdownContent } from '../../components/MarkdownContent';
 import { Page, PageHeader } from '../../layout/Page';
 import { GitSnapshotView } from '../git-integration/GitSnapshotView';
+import { FileAttachments } from '../../components/FileAttachments';
+import { useAppData } from '../../state/AppDataContext';
 
 const dateTime = (iso: string) => new Intl.DateTimeFormat('de-CH', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso));
 export function PromptDetail({ entry, chats, onBack, onEdit, onDelete, onAssign, onCopied, onRemoveGit }: {
   entry: PromptEntry; chats: PromptChat[]; onBack: () => void; onEdit: () => void; onDelete: () => void; onAssign?: () => void; onCopied: () => void; onRemoveGit: () => void
 }) {
+  const { state, toast } = useAppData();
+  const openFile = async (id: string) => {
+    const result = await window.marHelper.openStoredFile(id);
+    if (!result.ok) toast(result.message, 'error');
+  };
   const copyAll = async () => {
     await navigator.clipboard.writeText(`Prompt:\n${entry.prompt}\n\nAntwort:\n${entry.response}`);
     onCopied();
@@ -24,10 +31,12 @@ export function PromptDetail({ entry, chats, onBack, onEdit, onDelete, onAssign,
     <article className="markdown-card">
       <header><span className="markdown-card__icon"><WandSparkles size={17}/></span><h2>Prompt</h2></header>
       <MarkdownContent>{entry.prompt}</MarkdownContent>
+      {state.settings.modules.files && !!entry.promptFileIds?.length && <div className="markdown-card__attachments"><FileAttachments files={state.files.filter((file) => entry.promptFileIds?.includes(file.id))} onOpen={(id) => void openFile(id)}/></div>}
     </article>
     <article className="markdown-card markdown-card--answer">
       <header><span className="markdown-card__icon"><WandSparkles size={17}/></span><h2>Antwort</h2></header>
       <MarkdownContent>{entry.response}</MarkdownContent>
+      {state.settings.modules.files && !!entry.responseFileIds?.length && <div className="markdown-card__attachments"><FileAttachments files={state.files.filter((file) => entry.responseFileIds?.includes(file.id))} onOpen={(id) => void openFile(id)}/></div>}
     </article>
     {entry.gitSnapshot && <GitSnapshotView snapshot={entry.gitSnapshot} onChange={onEdit} onRemove={onRemoveGit}/>}
   </Page>;

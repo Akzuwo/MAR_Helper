@@ -1,4 +1,4 @@
-import type { AppState, BetaFeatureSettings, PromptChat } from './models';
+import type { ActiveTimer, AppState, BetaFeatureSettings, JournalEntry, JournalTimeSegment, PromptChat } from './models';
 import { normalizePromptEntries, type PromptEntryInput } from './prompt-entries';
 
 const now = new Date().toISOString();
@@ -6,7 +6,7 @@ const now = new Date().toISOString();
 export const createDefaultState = (): AppState => ({
   version: 8,
   settings: {
-    modules: { journal: true, prompts: true, planner: true },
+    modules: { journal: true, prompts: true, planner: true, files: false },
     visualEffects: { scrollEffects: false },
     gitIntegration: { enabled: false, repositories: [] },
     betaFeatures: { rawTextImport: false, cloudSave: false },
@@ -31,7 +31,8 @@ export const createDefaultState = (): AppState => ({
   promptChats: [],
   lastPromptModelId: undefined,
   nextPromptNumber: 1,
-  plannerTasks: []
+  plannerTasks: [],
+  files: []
 });
 
 export function normalizeState(input: Partial<AppState> | undefined): AppState {
@@ -72,6 +73,33 @@ export function normalizeState(input: Partial<AppState> | undefined): AppState {
     if (!name) return fallback;
     return name.toLocaleLowerCase().endsWith('.pdf') ? name : `${name}.pdf`;
   };
+  const validSegment = (segment: JournalTimeSegment) => segment
+    && (segment.type === 'work' || segment.type === 'pause')
+    && typeof segment.startedAt === 'string' && !Number.isNaN(Date.parse(segment.startedAt))
+    && typeof segment.endedAt === 'string' && !Number.isNaN(Date.parse(segment.endedAt))
+    && Date.parse(segment.endedAt) >= Date.parse(segment.startedAt);
+  const journalEntries = (Array.isArray(input.journalEntries) ? input.journalEntries : []).map((entry: JournalEntry) => ({
+    ...entry,
+    timeSegments: Array.isArray(entry.timeSegments) && entry.timeSegments.every(validSegment) ? entry.timeSegments : undefined
+  }));
+  const rawTimer = input.activeTimer as ActiveTimer | null | undefined;
+  const activeTimer = rawTimer ? {
+    ...rawTimer,
+    timeSegments: Array.isArray(rawTimer.timeSegments) && rawTimer.timeSegments.every(validSegment) ? rawTimer.timeSegments : undefined,
+    currentSegmentStartedAt: typeof rawTimer.currentSegmentStartedAt === 'string' && !Number.isNaN(Date.parse(rawTimer.currentSegmentStartedAt))
+      ? rawTimer.currentSegmentStartedAt : undefined
+  } : null;
+  const files = (Array.isArray(input.files) ? input.files : []).filter((file, index, all) => file
+    && typeof file.id === 'string' && /^[0-9a-f-]{36}$/i.test(file.id)
+    && all.findIndex((candidate) => candidate?.id === file.id) === index
+    && typeof file.name === 'string' && file.name.trim().length > 0
+    && typeof file.storedName === 'string' && pathSafeStoredName(file.storedName)
+    && typeof file.size === 'number' && file.size >= 0
+    && typeof file.mimeType === 'string' && typeof file.createdAt === 'string' && !Number.isNaN(Date.parse(file.createdAt)));
+  const fileIds = new Set(files.map((file) => file.id));
+  const normalizeFileIds = (value: unknown) => Array.isArray(value)
+    ? Array.from(new Set(value.filter((id): id is string => typeof id === 'string' && fileIds.has(id))))
+    : undefined;
   return {
     ...defaults,
     ...input,
@@ -117,13 +145,22 @@ export function normalizeState(input: Partial<AppState> | undefined): AppState {
         ? input.settings.termsAcceptedAt
         : undefined
     },
-    journalEntries: Array.isArray(input.journalEntries) ? input.journalEntries : [],
-    activeTimer: input.activeTimer ?? null,
+    journalEntries,
+    activeTimer,
     promptModels: Array.isArray(input.promptModels) ? input.promptModels : defaults.promptModels,
     lastPromptModelId: typeof input.lastPromptModelId === 'string' && (Array.isArray(input.promptModels) ? input.promptModels : defaults.promptModels).some((model) => model.id === input.lastPromptModelId) ? input.lastPromptModelId : undefined,
-    promptEntries: [...topLevelPrompts, ...chatPrompts],
+    promptEntries: [...topLevelPrompts, ...chatPrompts].map((entry) => ({
+      ...entry,
+      promptFileIds: normalizeFileIds(entry.promptFileIds),
+      responseFileIds: normalizeFileIds(entry.responseFileIds)
+    })),
     promptChats,
     nextPromptNumber: Math.max(nextTopLevel, highestTopLevel + 1, input.nextPromptNumber ?? 1),
-    plannerTasks: Array.isArray(input.plannerTasks) ? input.plannerTasks : []
+    plannerTasks: Array.isArray(input.plannerTasks) ? input.plannerTasks : [],
+    files
   };
+}
+
+function pathSafeStoredName(value: string): boolean {
+  return value.length > 0 && value.length <= 180 && !value.includes('/') && !value.includes('\\') && value !== '.' && value !== '..';
 }

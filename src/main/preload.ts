@@ -8,6 +8,9 @@ const api: MarHelperApi = {
   undoState: () => ipcRenderer.invoke('history:undo'),
   redoState: () => ipcRenderer.invoke('history:redo'),
   saveExport: (request: SaveFileRequest) => ipcRenderer.invoke('export:save', request),
+  selectStoredFiles: () => ipcRenderer.invoke('files:select'),
+  openStoredFile: (fileId) => ipcRenderer.invoke('files:open', fileId),
+  deleteStoredFile: (fileId) => ipcRenderer.invoke('files:delete', fileId),
   selectAutoExportFolder: () => ipcRenderer.invoke('auto-export:select-folder'),
   runAutoExport: () => ipcRenderer.invoke('auto-export:run'),
   onAutoExportStatus: (listener: (status: AutoExportStatus) => void) => {

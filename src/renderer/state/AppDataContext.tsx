@@ -17,6 +17,7 @@ interface AppDataContextValue {
   undo: () => Promise<void>;
   redo: () => Promise<void>;
   commitImport: (sessionId: string, mode: ImportMode) => Promise<boolean>;
+  applyPersistedState: (state: AppState) => Promise<void>;
   toast: (message: string, kind?: ToastKind) => void;
   toasts: ToastMessage[];
   dismissToast: (id: string) => void;
@@ -140,6 +141,12 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const undo = useCallback(() => moveHistory('undo'), [moveHistory]);
   const redo = useCallback(() => moveHistory('redo'), [moveHistory]);
 
+  const applyPersistedState = useCallback(async (persisted: AppState) => {
+    stateRef.current = persisted;
+    setState(persisted);
+    setHistoryStatus(await window.marHelper.getHistoryStatus());
+  }, []);
+
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
@@ -152,8 +159,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('keydown', handler);
   }, [redo, undo]);
 
-  const value = useMemo(() => ({ state, loading, loadError, saving, autoExportStatus, historyStatus, cloudSaveStatus, updateState, undo, redo, commitImport, toast, toasts, dismissToast }),
-    [state, loading, loadError, saving, autoExportStatus, historyStatus, cloudSaveStatus, updateState, undo, redo, commitImport, toast, toasts, dismissToast]);
+  const value = useMemo(() => ({ state, loading, loadError, saving, autoExportStatus, historyStatus, cloudSaveStatus, updateState, undo, redo, commitImport, applyPersistedState, toast, toasts, dismissToast }),
+    [state, loading, loadError, saving, autoExportStatus, historyStatus, cloudSaveStatus, updateState, undo, redo, commitImport, applyPersistedState, toast, toasts, dismissToast]);
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 }

@@ -23,6 +23,7 @@ export function JournalEntryDialog({ open, entry, tasks, onClose, onSave, onDele
   const [endedAt, setEndedAt] = useState('');
   const [linkedTaskId, setLinkedTaskId] = useState('');
   const [error, setError] = useState('');
+  const [timeChanged, setTimeChanged] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -34,6 +35,7 @@ export function JournalEntryDialog({ open, entry, tasks, onClose, onSave, onDele
     setEndedAt(toLocalInput(entry?.endedAt ?? now.toISOString()));
     setLinkedTaskId(entry?.linkedTaskId ?? '');
     setError('');
+    setTimeChanged(false);
   }, [entry, open]);
 
   const submit = (event: React.FormEvent) => {
@@ -43,7 +45,8 @@ export function JournalEntryDialog({ open, entry, tasks, onClose, onSave, onDele
     if (!startedAt || !endedAt || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return setError('Bitte gib gültige Zeitpunkte ein.');
     if (end < start) return setError('Die Endzeit darf nicht vor der Startzeit liegen.');
     const total = end.getTime() - start.getTime();
-    const paused = Math.min(entry?.pausedTimeMs ?? 0, total);
+    const keepTimeline = Boolean(entry && !timeChanged);
+    const paused = keepTimeline ? Math.min(entry?.pausedTimeMs ?? 0, total) : 0;
     onSave({
       id: entry?.id ?? crypto.randomUUID(),
       title: title.trim(),
@@ -52,6 +55,9 @@ export function JournalEntryDialog({ open, entry, tasks, onClose, onSave, onDele
       endedAt: end.toISOString(),
       workingTimeMs: total - paused,
       pausedTimeMs: paused,
+      timeSegments: keepTimeline
+        ? entry?.timeSegments
+        : [{ type: 'work', startedAt: start.toISOString(), endedAt: end.toISOString() }],
       linkedTaskId: linkedTaskId || undefined
     });
   };
@@ -61,11 +67,18 @@ export function JournalEntryDialog({ open, entry, tasks, onClose, onSave, onDele
       <Field label="Aktivität" optional><Input autoFocus placeholder="Optionaler Titel für diesen Arbeitsblock" value={title} onChange={(e) => { setTitle(e.target.value); setError(''); }}/></Field>
       <Field label="Notizen" optional><Textarea placeholder="Ergebnisse, Fortschritt oder nächste Schritte …" value={notes} onChange={(e) => setNotes(e.target.value)}/></Field>
       <div className="form-grid">
-        <Field label="Start"><Input type="datetime-local" value={startedAt} onChange={(e) => { setStartedAt(e.target.value); setError(''); }}/></Field>
-        <Field label="Ende"><Input type="datetime-local" value={endedAt} onChange={(e) => { setEndedAt(e.target.value); setError(''); }}/></Field>
+        <Field label="Start"><Input type="datetime-local" value={startedAt} onChange={(e) => { setStartedAt(e.target.value); setTimeChanged(true); setError(''); }}/></Field>
+        <Field label="Ende"><Input type="datetime-local" value={endedAt} onChange={(e) => { setEndedAt(e.target.value); setTimeChanged(true); setError(''); }}/></Field>
       </div>
       {tasks.length > 0 && <Field label="Zeitplan-Task" optional><Select value={linkedTaskId} onChange={(e) => setLinkedTaskId(e.target.value)}><option value="">Nicht verknüpft</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</Select></Field>}
-      {entry && <p className="form-note">Gespeicherte Pause: {formatDuration(entry.pausedTimeMs, true)}</p>}
+      {entry?.timeSegments?.length ? <section className="journal-timeline" aria-label="Zeitabschnitte dieser Session">
+        <header><strong>Zeitabschnitte</strong><span>Eine Session mit {entry.timeSegments.length} Arbeits- und Pausenblöcken</span></header>
+        <div>{entry.timeSegments.map((segment, index) => <div className={`journal-timeline__row journal-timeline__row--${segment.type}`} key={`${segment.startedAt}-${index}`}>
+          <span>{segment.type === 'work' ? 'Arbeit' : 'Pause'}</span>
+          <strong>{new Intl.DateTimeFormat('de-CH', { hour: '2-digit', minute: '2-digit' }).format(new Date(segment.startedAt))} – {new Intl.DateTimeFormat('de-CH', { hour: '2-digit', minute: '2-digit' }).format(new Date(segment.endedAt))}</strong>
+          <small>{formatDuration(Date.parse(segment.endedAt) - Date.parse(segment.startedAt), true)}</small>
+        </div>)}</div>
+      </section> : entry && <p className="form-note">Gespeicherte Pause: {formatDuration(entry.pausedTimeMs, true)} · Für ältere Einträge ist keine detaillierte Zeitachse verfügbar.</p>}
       {error && <div className="inline-error" role="alert">{error}</div>}
       <div className="form-actions form-actions--between">
         <div>{entry && onDelete && <Button type="button" variant="danger" onClick={() => onDelete(entry)}>Löschen</Button>}</div>

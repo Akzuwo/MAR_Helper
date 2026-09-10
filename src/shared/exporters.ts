@@ -7,8 +7,8 @@ const csvCell = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""'
 const csv = (rows: unknown[][]) => rows.map((row) => row.map(csvCell).join(',')).join('\r\n');
 
 export const exportJournalCsv = (entries: JournalEntry[]) => csv([
-  ['ID', 'Aktivität', 'Notizen', 'Start', 'Ende', 'Arbeitszeit (ms)', 'Pausenzeit (ms)', 'Task-ID'],
-  ...entries.map((entry) => [entry.id, entry.title, entry.notes, entry.startedAt, entry.endedAt, entry.workingTimeMs, entry.pausedTimeMs, entry.linkedTaskId])
+  ['ID', 'Aktivität', 'Notizen', 'Start', 'Ende', 'Arbeitszeit (ms)', 'Pausenzeit (ms)', 'Zeitabschnitte', 'Task-ID'],
+  ...entries.map((entry) => [entry.id, entry.title, entry.notes, entry.startedAt, entry.endedAt, entry.workingTimeMs, entry.pausedTimeMs, entry.timeSegments ? JSON.stringify(entry.timeSegments) : '', entry.linkedTaskId])
 ]);
 
 export const exportPlannerCsv = (tasks: PlannerTask[]) => csv([

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { GitCommitHorizontal, Link2Off } from 'lucide-react';
 import type { PromptChat, PromptEntry, PromptGitSnapshot, PromptModel, ReasoningLevel } from '../../../shared/models';
 import { Button, Field, Input, Modal, Select, Textarea } from '../../components/ui';
+import { FileAttachments } from '../../components/FileAttachments';
 import { useAppData } from '../../state/AppDataContext';
 import { CommitPicker } from '../git-integration/CommitPicker';
 
@@ -15,7 +16,7 @@ export function PromptEditor({ open, entry, chat, models, onClose, onSave, onMan
   open: boolean; entry: PromptEntry | null; chat?: PromptChat | null; models: PromptModel[]; onClose: () => void;
   onSave: (entry: PromptEntry) => void; onManageModels: () => void
 }) {
-  const { state } = useAppData();
+  const { state, updateState, toast } = useAppData();
   const [title, setTitle] = useState('');
   const [modelId, setModelId] = useState('');
   const [reasoningLevel, setReasoningLevel] = useState<ReasoningLevel | ''>('');
@@ -25,6 +26,9 @@ export function PromptEditor({ open, entry, chat, models, onClose, onSave, onMan
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [gitSnapshot, setGitSnapshot] = useState<PromptGitSnapshot | undefined>();
   const [commitPickerOpen, setCommitPickerOpen] = useState(false);
+  const [promptFileIds, setPromptFileIds] = useState<string[]>([]);
+  const [responseFileIds, setResponseFileIds] = useState<string[]>([]);
+  const [selectingFiles, setSelectingFiles] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -36,8 +40,29 @@ export function PromptEditor({ open, entry, chat, models, onClose, onSave, onMan
     setResponse(entry?.response ?? '');
     setCreatedAt(toLocalInput(entry?.createdAt ?? new Date().toISOString()));
     setGitSnapshot(entry?.gitSnapshot);
+    setPromptFileIds(entry?.promptFileIds ?? []);
+    setResponseFileIds(entry?.responseFileIds ?? []);
     setErrors({});
   }, [entry, models, open, state.lastPromptModelId]);
+
+  const openFile = async (id: string) => {
+    const result = await window.marHelper.openStoredFile(id);
+    if (!result.ok) toast(result.message, 'error');
+  };
+
+  const addFiles = async (target: 'prompt' | 'response') => {
+    setSelectingFiles(true);
+    try {
+      const result = await window.marHelper.selectStoredFiles();
+      if (result.canceled) return;
+      if ('error' in result) { toast(result.error, 'error'); return; }
+      const saved = await updateState((current) => ({ ...current, files: [...current.files, ...result.files.filter((file) => !current.files.some((item) => item.id === file.id))] }));
+      if (!saved) return;
+      const ids = result.files.map((file) => file.id);
+      if (target === 'prompt') setPromptFileIds((current) => [...current, ...ids]);
+      else setResponseFileIds((current) => [...current, ...ids]);
+    } finally { setSelectingFiles(false); }
+  };
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -62,7 +87,9 @@ export function PromptEditor({ open, entry, chat, models, onClose, onSave, onMan
       createdAt: created.toISOString(),
       updatedAt: entry ? new Date().toISOString() : undefined,
       gitSnapshot,
-      chatId: entry?.chatId ?? chat?.id
+      chatId: entry?.chatId ?? chat?.id,
+      promptFileIds,
+      responseFileIds
     });
   };
 
@@ -78,10 +105,10 @@ export function PromptEditor({ open, entry, chat, models, onClose, onSave, onMan
         </Select>
       </Field>
       <Field label="Datum und Uhrzeit" optional hint="Ohne Angabe wird der aktuelle Zeitpunkt verwendet." error={errors.createdAt}><Input type="datetime-local" value={createdAt} onChange={(event) => { setCreatedAt(event.target.value); setErrors((current) => ({ ...current, createdAt: '' })); }}/></Field>
-      <Field label="Prompt" error={errors.prompt}><Textarea autoFocus rows={7} placeholder="Füge den verwendeten Prompt ein …" value={prompt} onChange={(event) => { setPrompt(event.target.value); setErrors((e) => ({ ...e, prompt: '' })); }}/></Field>
-      <Field label="Antwort" error={errors.response} hint="Markdown, Codeblöcke, Tabellen und Links werden automatisch formatiert."><Textarea rows={9} placeholder="Füge die erhaltene Antwort ein …" value={response} onChange={(event) => { setResponse(event.target.value); setErrors((e) => ({ ...e, response: '' })); }}/></Field>
+      <Field label="Prompt" error={errors.prompt}><Textarea autoFocus rows={7} placeholder="Füge den verwendeten Prompt ein …" value={prompt} onChange={(event) => { setPrompt(event.target.value); setErrors((e) => ({ ...e, prompt: '' })); }}/>{state.settings.modules.files && <FileAttachments files={state.files.filter((file) => promptFileIds.includes(file.id))} editable onAdd={() => void addFiles('prompt')} onRemove={(id) => setPromptFileIds((current) => current.filter((item) => item !== id))} onOpen={(id) => void openFile(id)}/>}</Field>
+      <Field label="Antwort" error={errors.response} hint="Markdown, Codeblöcke, Tabellen und Links werden automatisch formatiert."><Textarea rows={9} placeholder="Füge die erhaltene Antwort ein …" value={response} onChange={(event) => { setResponse(event.target.value); setErrors((e) => ({ ...e, response: '' })); }}/>{state.settings.modules.files && <FileAttachments files={state.files.filter((file) => responseFileIds.includes(file.id))} editable onAdd={() => void addFiles('response')} onRemove={(id) => setResponseFileIds((current) => current.filter((item) => item !== id))} onOpen={(id) => void openFile(id)}/>}</Field>
       {state.settings.gitIntegration.enabled && state.settings.gitIntegration.repositories.length > 0 && <section className="editor-git"><div><span className="editor-git__icon"><GitCommitHorizontal size={18}/></span><div><strong>Codeänderungen</strong>{gitSnapshot ? <span>{gitSnapshot.repositoryName} · {gitSnapshot.shortCommitHash} · {gitSnapshot.commitMessage}</span> : <span>Keine Git-Änderungen verknüpft</span>}</div></div><div>{gitSnapshot && <Button type="button" size="sm" variant="ghost" icon={<Link2Off size={15}/>} onClick={() => setGitSnapshot(undefined)}>Verknüpfung entfernen</Button>}<Button type="button" size="sm" variant="secondary" onClick={() => setCommitPickerOpen(true)}>{gitSnapshot ? 'Anderen Commit verknüpfen' : 'Commit verknüpfen'}</Button></div></section>}
-      <div className="form-actions"><Button type="button" variant="secondary" onClick={onClose}>Abbrechen</Button><Button type="submit">{entry ? 'Änderungen speichern' : 'Prompt speichern'}</Button></div>
+      <div className="form-actions"><Button type="button" variant="secondary" onClick={onClose}>Abbrechen</Button><Button type="submit" disabled={selectingFiles}>{entry ? 'Änderungen speichern' : 'Prompt speichern'}</Button></div>
     </form>
     <CommitPicker open={commitPickerOpen} repositories={state.settings.gitIntegration.repositories} promptTimestamp={createdAt && !Number.isNaN(new Date(createdAt).getTime()) ? new Date(createdAt).toISOString() : new Date().toISOString()} onClose={() => setCommitPickerOpen(false)} onSelect={(snapshot) => { setGitSnapshot(snapshot); setCommitPickerOpen(false); }}/>
   </Modal>;

@@ -27,6 +27,10 @@ const dateOnly = (iso: string) => new Intl.DateTimeFormat('de-CH', { dateStyle: 
 
 const emptyState = (copy: string) => `<div class="empty">${escapeHtml(copy)}</div>`;
 
+const journalTimeline = (entry: JournalEntry) => entry.timeSegments?.length ? `<div class="journal-timeline">
+  ${entry.timeSegments.map((segment) => `<span class="journal-segment journal-segment--${segment.type}"><b>${segment.type === 'work' ? 'Arbeit' : 'Pause'}</b> ${escapeHtml(dateTime(segment.startedAt))} – ${escapeHtml(dateTime(segment.endedAt))}</span>`).join('')}
+</div>` : '';
+
 const journalEntry = (entry: JournalEntry) => `<article class="entry journal-entry">
   <div class="entry-marker"></div>
   <div class="entry-main">
@@ -36,6 +40,7 @@ const journalEntry = (entry: JournalEntry) => `<article class="entry journal-ent
       <span><b>${escapeHtml(formatDuration(entry.pausedTimeMs, true))}</b> Pause</span>
       <span><b>${escapeHtml(dateTime(entry.endedAt))}</b> beendet</span>
     </div>
+    ${journalTimeline(entry)}
     ${entry.notes ? `<p class="notes">${escapeHtml(entry.notes)}</p>` : ''}
   </div>
 </article>`;
@@ -161,6 +166,9 @@ export function createAutoExportHtml(state: AppState, exportedAt = new Date(), d
   .module-header p { margin: 0 0 1mm; color: #575e70; text-align: right; }
   .entry { position: relative; margin-bottom: 4mm; break-inside: avoid; border: .3mm solid #d7d5e2; border-radius: 3mm; background: white; }
   .journal-entry { display: grid; grid-template-columns: 2mm 1fr; overflow: hidden; }
+  .journal-timeline { display: flex; flex-wrap: wrap; gap: 1.5mm; margin-top: 2.5mm; }
+  .journal-segment { padding: 1.2mm 2mm; border-radius: 1.5mm; color: #424252; background: #f0f1f2; font-size: 8pt; }
+  .journal-segment--pause { color: #8a3600; background: #fff0e4; }
   .entry-marker { background: #4f46e5; }
   .entry-main { padding: 4.5mm 5mm; }
   .entry-topline { display: flex; align-items: baseline; justify-content: space-between; gap: 8mm; }

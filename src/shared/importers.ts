@@ -30,6 +30,10 @@ const isOptionalString = (value: unknown) => value === undefined || typeof value
 const isDate = (value: unknown): value is string => isString(value) && !Number.isNaN(Date.parse(value));
 const isNonNegativeNumber = (value: unknown) => typeof value === 'number' && Number.isFinite(value) && value >= 0;
 const isPositiveInteger = (value: unknown) => typeof value === 'number' && Number.isInteger(value) && value > 0;
+const isTimeSegment = (value: unknown) => isRecord(value)
+  && (value.type === 'work' || value.type === 'pause')
+  && isDate(value.startedAt) && isDate(value.endedAt)
+  && Date.parse(value.endedAt) >= Date.parse(value.startedAt);
 
 const isPromptGitSnapshot = (value: unknown): value is PromptGitSnapshot => isRecord(value)
   && isString(value.repositoryName) && /^[0-9a-f]{40}$/i.test(String(value.commitHash))
@@ -50,6 +54,7 @@ const isJournalEntry = (value: unknown): value is JournalEntry => isRecord(value
   && Date.parse(value.endedAt) >= Date.parse(value.startedAt)
   && isNonNegativeNumber(value.workingTimeMs)
   && isNonNegativeNumber(value.pausedTimeMs)
+  && (value.timeSegments === undefined || (Array.isArray(value.timeSegments) && value.timeSegments.every(isTimeSegment)))
   && isOptionalString(value.linkedTaskId);
 
 const isPromptEntry = (value: unknown): value is PromptEntryInput => isRecord(value)
@@ -63,6 +68,8 @@ const isPromptEntry = (value: unknown): value is PromptEntryInput => isRecord(va
   && isDate(value.createdAt)
   && isOptionalString(value.modelId)
   && isOptionalString(value.chatId)
+  && (value.promptFileIds === undefined || (Array.isArray(value.promptFileIds) && value.promptFileIds.every(isString)))
+  && (value.responseFileIds === undefined || (Array.isArray(value.responseFileIds) && value.responseFileIds.every(isString)))
   && (value.gitSnapshot === undefined || isPromptGitSnapshot(value.gitSnapshot))
   && (value.updatedAt === undefined || isDate(value.updatedAt));
 
@@ -114,6 +121,8 @@ function parseBackup(value: unknown): AppState | null {
     if (!isRecord(timer) || !isString(timer.id) || !isString(timer.title) || !isDate(timer.startedAt)
       || (timer.status !== 'running' && timer.status !== 'paused') || !isNonNegativeNumber(timer.accumulatedPausedMs)
       || !isOptionalString(timer.notes)
+      || (timer.timeSegments !== undefined && (!Array.isArray(timer.timeSegments) || !timer.timeSegments.every(isTimeSegment)))
+      || (timer.currentSegmentStartedAt !== undefined && !isDate(timer.currentSegmentStartedAt))
       || (timer.pausedAt !== undefined && !isDate(timer.pausedAt))) {
       throw new Error('Der gespeicherte Timerzustand ist ungültig.');
     }

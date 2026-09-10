@@ -18,7 +18,7 @@ export function ExportPage() {
   const [importSource, setImportSource] = useState<'file' | 'rawText'>('file');
   const [guideOpen, setGuideOpen] = useState(false);
   const active = state.settings.modules;
-  const activeCount = Object.values(active).filter(Boolean).length;
+  const activeCount = [active.journal, active.prompts, active.planner].filter(Boolean).length;
 
   const save = async (defaultPath: string, extension: string, name: string, content: string) => {
     try {

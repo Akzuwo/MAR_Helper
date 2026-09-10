@@ -1,4 +1,10 @@
-import type { ActiveTimer } from './models';
+import type { ActiveTimer, JournalTimeSegment } from './models';
+
+const closedSegment = (type: JournalTimeSegment['type'], startedAt: string, at: Date): JournalTimeSegment => ({
+  type,
+  startedAt,
+  endedAt: at.toISOString()
+});
 
 export function getPausedTimeMs(timer: ActiveTimer, at = Date.now()): number {
   if (timer.status !== 'paused' || !timer.pausedAt) return timer.accumulatedPausedMs;
@@ -12,7 +18,15 @@ export function getWorkingTimeMs(timer: ActiveTimer, at = Date.now()): number {
 
 export function pauseTimer(timer: ActiveTimer, at = new Date()): ActiveTimer {
   if (timer.status === 'paused') return timer;
-  return { ...timer, status: 'paused', pausedAt: at.toISOString() };
+  return {
+    ...timer,
+    status: 'paused',
+    pausedAt: at.toISOString(),
+    timeSegments: timer.timeSegments
+      ? [...timer.timeSegments, closedSegment('work', timer.currentSegmentStartedAt ?? timer.startedAt, at)]
+      : undefined,
+    currentSegmentStartedAt: timer.timeSegments ? at.toISOString() : undefined
+  };
 }
 
 export function resumeTimer(timer: ActiveTimer, at = new Date()): ActiveTimer {
@@ -22,8 +36,17 @@ export function resumeTimer(timer: ActiveTimer, at = new Date()): ActiveTimer {
     status: 'running',
     accumulatedPausedMs:
       timer.accumulatedPausedMs + Math.max(0, at.getTime() - Date.parse(timer.pausedAt)),
-    pausedAt: undefined
+    pausedAt: undefined,
+    timeSegments: timer.timeSegments
+      ? [...timer.timeSegments, closedSegment('pause', timer.currentSegmentStartedAt ?? timer.pausedAt, at)]
+      : undefined,
+    currentSegmentStartedAt: timer.timeSegments ? at.toISOString() : undefined
   };
+}
+
+export function completeTimeSegments(timer: ActiveTimer, at = new Date()): JournalTimeSegment[] | undefined {
+  if (!timer.timeSegments || !timer.currentSegmentStartedAt) return undefined;
+  return [...timer.timeSegments, closedSegment(timer.status === 'paused' ? 'pause' : 'work', timer.currentSegmentStartedAt, at)];
 }
 
 export function formatDuration(ms: number, compact = false): string {

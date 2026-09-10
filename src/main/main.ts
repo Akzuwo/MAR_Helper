@@ -1,10 +1,11 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { applyImport, ImportValidationError, parseImport, type ImportBundle } from '../shared/importers';
 import { parseRawTextImport } from '../shared/raw-importer';
-import type { AppState, AutoExportStatus, CloudSaveStatus, ImportMode, ImportSummary, SaveFileRequest } from '../shared/models';
+import type { AppState, AutoExportStatus, CloudSaveStatus, ImportMode, ImportSummary, SaveFileRequest, StoredFile } from '../shared/models';
 import { AutoExportService } from './auto-export';
 import { BackgroundWork } from './background-work';
 import { CloudSaveService } from './cloud-save';
@@ -21,6 +22,46 @@ let backgroundShutdownStarted = false;
 let allowWindowClose = false;
 const importSessions = new Map<string, { bundle: ImportBundle; createdAt: number }>();
 const IMPORT_SESSION_TTL = 15 * 60 * 1000;
+const MAX_STORED_FILE_SIZE = 100 * 1024 * 1024;
+
+function storedFilesDirectory(): string {
+  return path.join(app.getPath('userData'), 'files');
+}
+
+const mimeTypes: Record<string, string> = {
+  '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp',
+  '.svg': 'image/svg+xml', '.pdf': 'application/pdf', '.txt': 'text/plain', '.md': 'text/markdown', '.json': 'application/json',
+  '.csv': 'text/csv', '.doc': 'application/msword', '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.xls': 'application/vnd.ms-excel', '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  '.ppt': 'application/vnd.ms-powerpoint', '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+};
+
+function isFileId(value: unknown): value is string {
+  return typeof value === 'string' && /^[0-9a-f-]{36}$/i.test(value);
+}
+
+interface WindowPreferences { maximized: boolean }
+
+function windowPreferencesPath(): string {
+  return path.join(app.getPath('userData'), 'window-preferences.json');
+}
+
+function loadWindowPreferences(): WindowPreferences {
+  try {
+    const value = JSON.parse(readFileSync(windowPreferencesPath(), 'utf8')) as Partial<WindowPreferences>;
+    return { maximized: value.maximized === true };
+  } catch { return { maximized: false }; }
+}
+
+function saveWindowPreferences(window: BrowserWindow): void {
+  try {
+    const filePath = windowPreferencesPath();
+    mkdirSync(path.dirname(filePath), { recursive: true });
+    writeFileSync(filePath, JSON.stringify({ maximized: window.isMaximized() }, null, 2), 'utf8');
+  } catch (error) {
+    console.warn('Fensterzustand konnte nicht gespeichert werden.', error);
+  }
+}
 
 function createImportPreview(bundle: ImportBundle, fileName: string, source: 'file' | 'rawText', detectedFormat?: string) {
   const now = Date.now();
@@ -65,6 +106,7 @@ async function finishInBackground(window: BrowserWindow): Promise<void> {
 
 function createWindow() {
   const taskbarIconPath = path.join(app.getAppPath(), 'references', 'logo', 'taskbar-icon.png');
+  const windowPreferences = loadWindowPreferences();
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
@@ -85,6 +127,7 @@ function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow?.setIcon(taskbarIconPath);
+    if (windowPreferences.maximized) mainWindow?.maximize();
     mainWindow?.show();
   });
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -99,6 +142,7 @@ function createWindow() {
     const window = mainWindow;
     if (!window || allowWindowClose) return;
     event.preventDefault();
+    saveWindowPreferences(window);
     window.hide();
     if (backgroundShutdownStarted) return;
     backgroundShutdownStarted = true;
@@ -150,6 +194,83 @@ app.whenReady().then(() => {
     if (result.canceled || !result.filePath) return { canceled: true };
     await backgroundWork.track(fs.writeFile(result.filePath, request.content, 'utf8'));
     return { canceled: false, filePath: result.filePath };
+  });
+  ipcMain.handle('files:select', async () => {
+    if (!mainWindow) return { canceled: true };
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Dateien anheften',
+      buttonLabel: 'Kopien anlegen',
+      properties: ['openFile', 'multiSelections']
+    });
+    if (result.canceled || result.filePaths.length === 0) return { canceled: true };
+    const directory = storedFilesDirectory();
+    await fs.mkdir(directory, { recursive: true });
+    const created: StoredFile[] = [];
+    try {
+      for (const sourcePath of result.filePaths) {
+        const stat = await fs.stat(sourcePath);
+        if (!stat.isFile() || stat.size > MAX_STORED_FILE_SIZE) throw new Error(`„${path.basename(sourcePath)}“ ist grösser als 100 MB oder keine reguläre Datei.`);
+        const id = randomUUID();
+        const extension = path.extname(sourcePath).slice(0, 24).replace(/[^.a-z0-9]/gi, '').toLocaleLowerCase();
+        const storedName = `${id}${extension}`;
+        await fs.copyFile(sourcePath, path.join(directory, storedName));
+        created.push({
+          id,
+          name: path.basename(sourcePath),
+          storedName,
+          size: stat.size,
+          mimeType: mimeTypes[extension] ?? 'application/octet-stream',
+          createdAt: new Date().toISOString()
+        });
+      }
+      return { canceled: false, files: created };
+    } catch (error) {
+      await Promise.all(created.map((file) => fs.unlink(path.join(directory, file.storedName)).catch(() => undefined)));
+      return { canceled: false, error: error instanceof Error ? error.message : 'Die Dateien konnten nicht kopiert werden.' };
+    }
+  });
+  ipcMain.handle('files:open', async (_event, fileId: unknown) => {
+    if (!isFileId(fileId)) return { ok: false, message: 'Ungültige Datei-ID.' };
+    const state = await store.load();
+    const file = state.files.find((item) => item.id === fileId);
+    if (!file || path.basename(file.storedName) !== file.storedName) return { ok: false, message: 'Die Datei ist nicht mehr vorhanden.' };
+    const message = await shell.openPath(path.join(storedFilesDirectory(), file.storedName));
+    return message ? { ok: false, message } : { ok: true };
+  });
+  ipcMain.handle('files:delete', async (_event, fileId: unknown) => {
+    if (!isFileId(fileId)) return { ok: false, message: 'Ungültige Datei-ID.' };
+    const state = await store.load();
+    const file = state.files.find((item) => item.id === fileId);
+    if (!file || path.basename(file.storedName) !== file.storedName) return { ok: false, message: 'Die Datei ist nicht mehr vorhanden.' };
+    try {
+      await fs.unlink(path.join(storedFilesDirectory(), file.storedName));
+      const updated = await store.transaction((current) => ({
+        ...current,
+        files: current.files.filter((item) => item.id !== fileId),
+        promptEntries: current.promptEntries.map((entry) => ({
+          ...entry,
+          promptFileIds: entry.promptFileIds?.filter((id) => id !== fileId),
+          responseFileIds: entry.responseFileIds?.filter((id) => id !== fileId)
+        }))
+      }));
+      autoExporter.schedule(updated);
+      cloudSaver.schedule(updated);
+      return { ok: true, state: updated };
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        const updated = await store.transaction((current) => ({
+          ...current,
+          files: current.files.filter((item) => item.id !== fileId),
+          promptEntries: current.promptEntries.map((entry) => ({
+            ...entry,
+            promptFileIds: entry.promptFileIds?.filter((id) => id !== fileId),
+            responseFileIds: entry.responseFileIds?.filter((id) => id !== fileId)
+          }))
+        }));
+        return { ok: true, state: updated };
+      }
+      return { ok: false, message: 'Die gespeicherte Dateikopie konnte nicht gelöscht werden.' };
+    }
   });
   ipcMain.handle('auto-export:select-folder', async () => {
     if (!mainWindow) return { canceled: true };

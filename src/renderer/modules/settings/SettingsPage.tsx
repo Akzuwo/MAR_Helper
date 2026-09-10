@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CalendarClock, ClipboardPaste, Clock3, Cloud, FileOutput, FlaskConical, LoaderCircle, Pencil, Plus, RefreshCw, Save, Settings2, Sparkles, Trash2, WandSparkles } from 'lucide-react';
+import { CalendarClock, ClipboardPaste, Clock3, Cloud, FileOutput, Files, FlaskConical, LoaderCircle, Pencil, Plus, RefreshCw, Save, Settings2, Sparkles, Trash2, WandSparkles } from 'lucide-react';
 import { APP_VERSION } from '../../../shared/app-version';
 import type { ModuleId, PromptModel } from '../../../shared/models';
 import { useAppData } from '../../state/AppDataContext';
@@ -15,7 +15,8 @@ import { markChangelogVersionSeen } from '../../changelog';
 const modules: Array<{ id: ModuleId; title: string; description: string; icon: React.ReactNode }> = [
   { id: 'journal', title: 'Arbeitsjournal', description: 'Zeiterfassung und Arbeitsverlauf', icon: <Clock3 size={21}/> },
   { id: 'prompts', title: 'Promptprotokoll', description: 'Dokumentation deiner KI-Nutzung', icon: <WandSparkles size={21}/> },
-  { id: 'planner', title: 'Zeitplan', description: 'Einfache Aufgabenplanung', icon: <CalendarClock size={21}/> }
+  { id: 'planner', title: 'Zeitplan', description: 'Einfache Aufgabenplanung', icon: <CalendarClock size={21}/> },
+  { id: 'files', title: 'Dateien', description: 'Erstellt beim Anheften jeweils eine lokale Kopie. Viele oder grosse Dateien benötigen deshalb zusätzlichen Speicherplatz.', icon: <Files size={21}/> }
 ];
 
 export function SettingsPage() {

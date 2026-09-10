@@ -4,9 +4,10 @@
       "GitHub-Icon wird im ausgewählten Repository jetzt korrekt angezeigt."
     ],
     "new": [
-      "Nutzungsbedingungen",
       "ARM64-Unterstützung",
-      "Changelog"
+      "Changelog",
+      "Dateien im Promptprotokoll anheften",
+      "Mehr Animationen und Transitions"
     ]
   }
 }

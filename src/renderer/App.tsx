@@ -7,6 +7,7 @@ import { PromptsPage } from './modules/prompts/PromptsPage';
 import { PlannerPage } from './modules/planner/PlannerPage';
 import { ExportPage } from './modules/export/ExportPage';
 import { SettingsPage } from './modules/settings/SettingsPage';
+import { FilesPage } from './modules/files/FilesPage';
 import { UpdateModal } from './components/UpdateModal';
 import { TermsModal } from './components/TermsModal';
 import { ChangelogModal } from './components/ChangelogModal';
@@ -18,6 +19,7 @@ function PageContent({ page }: { page: PageId }) {
   if (page === 'prompts') return <PromptsPage/>;
   if (page === 'planner') return <PlannerPage/>;
   if (page === 'export') return <ExportPage/>;
+  if (page === 'files') return <FilesPage/>;
   return <SettingsPage/>;
 }
 
@@ -50,15 +52,17 @@ export default function App() {
   const { state, loading, loadError, historyStatus, cloudSaveStatus, updateState, undo, redo, toasts, dismissToast } = useAppData();
   const [page, setPage] = useState<PageId>('journal');
   const [changelogOpen, setChangelogOpen] = useState(false);
+  const [introComplete, setIntroComplete] = useState(false);
 
   useEffect(() => {
-    if ((page === 'journal' || page === 'prompts' || page === 'planner') && !state.settings.modules[page]) {
-      const firstActive = (['journal', 'prompts', 'planner'] as const).find((module) => state.settings.modules[module]);
+    if ((page === 'journal' || page === 'prompts' || page === 'planner' || page === 'files') && !state.settings.modules[page]) {
+      const firstActive = (['journal', 'prompts', 'planner', 'files'] as const).find((module) => state.settings.modules[module]);
       setPage(firstActive ?? 'settings');
     }
   }, [page, state.settings.modules]);
 
   const navigate = useCallback((target: PageId) => setPage(target), []);
+  const finishIntro = useCallback(() => setIntroComplete(true), []);
   const noteInstalledVersionShown = useCallback((version: string) => {
     markChangelogVersionSeen(version);
     setChangelogOpen(false);
@@ -71,7 +75,7 @@ export default function App() {
     return () => window.clearTimeout(timeout);
   }, []);
 
-  if (loading) return <LoadingScreen/>;
+  if (loading || !introComplete) return <LoadingScreen onComplete={finishIntro}/>;
   if (loadError) return <ErrorScreen message={loadError} retry={() => window.location.reload()}/>;
 
   const pausedEmphasis = state.settings.visualEffects.scrollEffects && state.activeTimer?.status === 'paused';

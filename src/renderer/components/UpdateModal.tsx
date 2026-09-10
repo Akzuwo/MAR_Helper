@@ -47,16 +47,15 @@ export function UpdateModal({ onInstalledVersionShown }: { onInstalledVersionSho
     });
   }, [onInstalledVersionShown, toast]);
 
-  if (!open) return null;
-
   if (installationResult) {
     const success = installationResult.state === 'success';
     const installedRelease = getChangelogRelease(installationResult.version);
     return <Modal
-      open
+      open={open}
       title={success ? 'Update erfolgreich installiert' : 'Update nicht installiert'}
       description={success ? `MAR Helper ${installationResult.version} ist jetzt einsatzbereit.` : `Die Installation von MAR Helper ${installationResult.version} ist fehlgeschlagen.`}
-      onClose={() => { setInstallationResult(null); setOpen(status?.state === 'available'); }}
+      onClose={() => setOpen(false)}
+      onClosed={() => { setInstallationResult(null); setOpen(status?.state === 'available'); }}
     >
       <div className={`update-result update-result--${installationResult.state}`}>
         {success ? <CheckCircle2 size={31}/> : <TriangleAlert size={31}/>}
@@ -66,7 +65,7 @@ export function UpdateModal({ onInstalledVersionShown }: { onInstalledVersionSho
           <h3>Neu in Version {installationResult.version}</h3>
           <ChangelogContent releases={installedRelease ? [installedRelease] : []} compact/>
         </div>}
-        <Button variant="secondary" onClick={() => { setInstallationResult(null); setOpen(status?.state === 'available'); }}>Verstanden</Button>
+        <Button variant="secondary" onClick={() => setOpen(false)}>Verstanden</Button>
       </div>
     </Modal>;
   }

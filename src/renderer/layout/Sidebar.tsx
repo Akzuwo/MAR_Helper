@@ -1,4 +1,4 @@
-import { CalendarClock, Clock3, FileOutput, Redo2, Settings, Undo2, WandSparkles } from 'lucide-react';
+import { CalendarClock, Clock3, FileOutput, Files, Redo2, Settings, Undo2, WandSparkles } from 'lucide-react';
 import brandLogo from '../../../references/logo/screen.png';
 import type { ModuleId } from '../../shared/models';
 
@@ -7,7 +7,8 @@ export type PageId = ModuleId | 'export' | 'settings';
 const moduleItems: Array<{ id: ModuleId; label: string; icon: React.ReactNode }> = [
   { id: 'journal', label: 'Arbeitsjournal', icon: <Clock3 size={20}/> },
   { id: 'prompts', label: 'Promptprotokoll', icon: <WandSparkles size={20}/> },
-  { id: 'planner', label: 'Zeitplan', icon: <CalendarClock size={20}/> }
+  { id: 'planner', label: 'Zeitplan', icon: <CalendarClock size={20}/> },
+  { id: 'files', label: 'Dateien', icon: <Files size={20}/> }
 ];
 
 export function Sidebar({ page, modules, onNavigate, canUndo, canRedo, onUndo, onRedo }: {

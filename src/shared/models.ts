@@ -1,11 +1,21 @@
 import type { ChangelogChanges } from './update-utils';
 
-export type ModuleId = 'journal' | 'prompts' | 'planner';
+export type ModuleId = 'journal' | 'prompts' | 'planner' | 'files';
+
+export interface StoredFile {
+  id: string;
+  name: string;
+  storedName: string;
+  size: number;
+  mimeType: string;
+  createdAt: string;
+}
 
 export interface ModuleSettings {
   journal: boolean;
   prompts: boolean;
   planner: boolean;
+  files: boolean;
 }
 
 export interface AppSettings {
@@ -93,7 +103,14 @@ export interface JournalEntry {
   endedAt: string;
   workingTimeMs: number;
   pausedTimeMs: number;
+  timeSegments?: JournalTimeSegment[];
   linkedTaskId?: string;
+}
+
+export interface JournalTimeSegment {
+  type: 'work' | 'pause';
+  startedAt: string;
+  endedAt: string;
 }
 
 export type TimerStatus = 'running' | 'paused';
@@ -106,6 +123,8 @@ export interface ActiveTimer {
   status: TimerStatus;
   pausedAt?: string;
   accumulatedPausedMs: number;
+  timeSegments?: JournalTimeSegment[];
+  currentSegmentStartedAt?: string;
   linkedTaskId?: string;
 }
 
@@ -128,6 +147,8 @@ export interface PromptEntry {
   updatedAt?: string;
   gitSnapshot?: PromptGitSnapshot;
   chatId?: string;
+  promptFileIds?: string[];
+  responseFileIds?: string[];
 }
 
 export type ReasoningLevel = 'light' | 'medium' | 'high' | 'extra high' | 'ultra';
@@ -162,7 +183,15 @@ export interface AppState {
   lastPromptModelId?: string;
   nextPromptNumber: number;
   plannerTasks: PlannerTask[];
+  files: StoredFile[];
 }
+
+export type SelectFilesResult =
+  | { canceled: true }
+  | { canceled: false; files: StoredFile[] }
+  | { canceled: false; error: string };
+export type FileActionResult = { ok: true } | { ok: false; message: string };
+export type DeleteFileResult = { ok: true; state: AppState } | { ok: false; message: string };
 
 export interface SaveFileRequest {
   defaultPath: string;
@@ -223,6 +252,9 @@ export interface MarHelperApi {
   undoState: () => Promise<HistoryResult>;
   redoState: () => Promise<HistoryResult>;
   saveExport: (request: SaveFileRequest) => Promise<SaveFileResult>;
+  selectStoredFiles: () => Promise<SelectFilesResult>;
+  openStoredFile: (fileId: string) => Promise<FileActionResult>;
+  deleteStoredFile: (fileId: string) => Promise<DeleteFileResult>;
   selectAutoExportFolder: () => Promise<AutoExportFolderResult>;
   runAutoExport: () => Promise<AutoExportResult>;
   onAutoExportStatus: (listener: (status: AutoExportStatus) => void) => () => void;

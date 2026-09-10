@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, CirclePause, CirclePlay, Clock3, Link2, ListChecks, Plus, Square, StickyNote, Trash2 } from 'lucide-react';
+import { CalendarDays, CirclePause, CirclePlay, Clock3, Link2, ListChecks, Plus, RotateCcw, Square, StickyNote, Trash2 } from 'lucide-react';
 import type { ActiveTimer, JournalEntry } from '../../../shared/models';
-import { formatDuration, getPausedTimeMs, getWorkingTimeMs, pauseTimer, resumeTimer } from '../../../shared/timer';
+import { completeTimeSegments, formatDuration, getPausedTimeMs, getWorkingTimeMs, pauseTimer, resumeTimer } from '../../../shared/timer';
 import { useAppData } from '../../state/AppDataContext';
 import { Button, ConfirmDialog, EmptyState, Field, Input, Modal, Select, Textarea } from '../../components/ui';
 import { Page, PageHeader } from '../../layout/Page';
@@ -31,7 +31,7 @@ export function JournalPage() {
   const entries = useMemo(() => [...state.journalEntries].sort((a, b) => b.startedAt.localeCompare(a.startedAt)), [state.journalEntries]);
 
   useEffect(() => {
-    if (!timer || timer.status === 'paused') return;
+    if (!timer) return;
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, [timer]);
@@ -61,13 +61,16 @@ export function JournalPage() {
   const start = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!activity.trim()) return setValidation('Bitte beschreibe zuerst deine Aktivität.');
+    const startedAt = new Date().toISOString();
     const activeTimer: ActiveTimer = {
       id: crypto.randomUUID(),
       title: activity.trim(),
       notes: notes.trim() || undefined,
-      startedAt: new Date().toISOString(),
+      startedAt,
       status: 'running',
       accumulatedPausedMs: 0,
+      timeSegments: [],
+      currentSegmentStartedAt: startedAt,
       linkedTaskId: taskId || undefined
     };
     await updateState((current) => ({ ...current, activeTimer }), 'Timer gestartet');
@@ -81,6 +84,14 @@ export function JournalPage() {
     setNow(Date.now());
   };
 
+  const restartPauseAnimation = () => {
+    const shell = document.querySelector<HTMLElement>('.app-shell--paused-emphasis');
+    if (!shell) return;
+    shell.classList.remove('app-shell--paused-emphasis');
+    void shell.offsetWidth;
+    shell.classList.add('app-shell--paused-emphasis');
+  };
+
   const stop = () => {
     if (!timer) return;
     const endedAt = new Date();
@@ -92,6 +103,7 @@ export function JournalPage() {
       endedAt: endedAt.toISOString(),
       workingTimeMs: getWorkingTimeMs(timer, endedAt.getTime()),
       pausedTimeMs: getPausedTimeMs(timer, endedAt.getTime()),
+      timeSegments: completeTimeSegments(timer, endedAt),
       linkedTaskId: timer.linkedTaskId
     };
     const showCompletion = state.settings.visualEffects.scrollEffects;
@@ -156,8 +168,13 @@ export function JournalPage() {
           {timer.linkedTaskId && <div className="timer-link"><Link2 size={14}/>{state.plannerTasks.find((task) => task.id === timer.linkedTaskId)?.title ?? 'Verknüpfter Task'}</div>}
           {timer.notes && <p className="timer-notes"><StickyNote size={14}/><span>{timer.notes}</span></p>}
           <div className="timer-value" aria-label={`Arbeitszeit ${formatDuration(getWorkingTimeMs(timer, now))}`}>{formatDuration(getWorkingTimeMs(timer, now))}</div>
+          <div className={`timer-current-segment timer-current-segment--${timer.status}`}>
+            <strong>{timer.status === 'paused' ? 'Pause' : 'Arbeit'}</strong>
+            <span>seit {time(timer.currentSegmentStartedAt ?? timer.pausedAt ?? timer.startedAt)}</span>
+          </div>
           <div className="timer-actions">
             <Button variant="secondary" icon={<StickyNote size={17}/>} onClick={openTimerNotes}>Notizen</Button>
+            {timer.status === 'paused' && state.settings.visualEffects.scrollEffects && <Button variant="secondary" icon={<RotateCcw size={17}/>} onClick={restartPauseAnimation}>Glow neu starten</Button>}
             <Button className="timer-action timer-action--pause" icon={timer.status === 'running' ? <CirclePause size={18}/> : <CirclePlay size={18}/>} onClick={togglePause}>{timer.status === 'running' ? 'Pausieren' : 'Fortsetzen'}</Button>
             <Button className="timer-action timer-action--stop" icon={<Square size={16}/>} onClick={stop}>Beenden</Button>
           </div>
