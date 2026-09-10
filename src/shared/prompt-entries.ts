@@ -109,7 +109,7 @@ export function matchesPromptSearch(entry: PromptEntry, search: string, chats: P
   if (!query) return true;
   const chat = entry.chatId ? chats.find((item) => item.id === entry.chatId) : undefined;
   const number = promptDisplayNumber(entry, chats);
-  return `#${number} ${number} ${chat?.title ?? ''} ${entry.title ?? ''} ${entry.modelName} ${entry.prompt} ${entry.response}`
+  return `#${number} ${number} ${chat?.title ?? ''} ${entry.title ?? ''} ${entry.modelName} ${entry.reasoningLevel ?? ''} ${entry.prompt} ${entry.response}`
     .toLocaleLowerCase('de')
     .includes(query);
 }

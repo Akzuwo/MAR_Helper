@@ -1,0 +1,12 @@
+{
+  "1.5.0": {
+    "fix": [
+      "GitHub-Icon wird im ausgewählten Repository jetzt korrekt angezeigt."
+    ],
+    "new": [
+      "Nutzungsbedingungen",
+      "ARM64-Unterstützung",
+      "Changelog"
+    ]
+  }
+}

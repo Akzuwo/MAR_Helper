@@ -15,3 +15,13 @@ describe('visual effect settings', () => {
     expect(normalizeState(state).settings.visualEffects.scrollEffects).toBe(true);
   });
 });
+
+describe('terms acceptance', () => {
+  it('requires acceptance for old states and preserves a valid acceptance timestamp', () => {
+    expect(normalizeState({ version: 8 } as never).settings.termsAcceptedAt).toBeUndefined();
+    const acceptedAt = '2026-09-10T08:00:00.000Z';
+    const state = createDefaultState();
+    state.settings.termsAcceptedAt = acceptedAt;
+    expect(normalizeState(state).settings.termsAcceptedAt).toBe(acceptedAt);
+  });
+});

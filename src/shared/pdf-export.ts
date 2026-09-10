@@ -70,7 +70,7 @@ const promptEntry = (entry: PromptEntry, chats: PromptChat[]) => {
   <div class="prompt-heading">
     <span class="number">#${escapeHtml(promptDisplayNumber(entry, chats))}</span>
     <div><h3>${escapeHtml(promptTitle(entry))}</h3>
-    <p>${chat ? `Chat #${chat.number} · ${escapeHtml(chat.title)} · ` : 'Einzelprompt · '}${escapeHtml(entry.modelName)} · ${escapeHtml(dateTime(entry.createdAt))}${entry.updatedAt ? ` · bearbeitet ${escapeHtml(dateTime(entry.updatedAt))}` : ''}</p></div>
+    <p>${chat ? `Chat #${chat.number} · ${escapeHtml(chat.title)} · ` : 'Einzelprompt · '}${escapeHtml(entry.modelName)}${entry.reasoningLevel ? ` · Reasoning: ${escapeHtml(entry.reasoningLevel)}` : ''} · ${escapeHtml(dateTime(entry.createdAt))}${entry.updatedAt ? ` · bearbeitet ${escapeHtml(dateTime(entry.updatedAt))}` : ''}</p></div>
   </div>
   <section class="text-block"><h4 class="text-block__label">Prompt</h4><div class="markdown-body">${renderMarkdown(entry.prompt)}</div></section>
   <section class="text-block answer"><h4 class="text-block__label">Antwort</h4><div class="markdown-body">${renderMarkdown(entry.response)}</div></section>
@@ -79,10 +79,25 @@ const promptEntry = (entry: PromptEntry, chats: PromptChat[]) => {
 </article>`;
 };
 
-const promptTableOfContents = (entries: PromptEntry[], chats: PromptChat[]) => `<section class="toc">
+const tocPrompt = (entry: PromptEntry, chats: PromptChat[]) => `<li><a href="#${promptAnchor(entry)}"><span class="toc-number">#${escapeHtml(promptDisplayNumber(entry, chats))}</span><span class="toc-title">${escapeHtml(promptTitle(entry))}</span><span class="toc-leader"></span></a></li>`;
+
+const promptTableOfContents = (entries: PromptEntry[], chats: PromptChat[]) => {
+  const chatMap = new Map(chats.map((chat) => [chat.id, chat]));
+  const grouped = new Map(chats.map((chat) => [chat.id, entries.filter((entry) => entry.chatId === chat.id)]));
+  const topLevel = [
+    ...entries.filter((entry) => !entry.chatId || !chatMap.has(entry.chatId)).map((entry) => ({ kind: 'prompt' as const, createdAt: entry.createdAt, entry })),
+    ...chats.filter((chat) => (grouped.get(chat.id)?.length ?? 0) > 0).map((chat) => ({ kind: 'chat' as const, createdAt: chat.createdAt, chat }))
+  ].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const items = topLevel.map((item) => {
+    if (item.kind === 'prompt') return tocPrompt(item.entry, chats);
+    const chatEntries = grouped.get(item.chat.id)!;
+    return `<li class="toc-chat"><a href="#${promptAnchor(chatEntries[0])}"><span class="toc-number">Chat #${item.chat.number}</span><span class="toc-title">${escapeHtml(item.chat.title)}</span><span class="toc-leader"></span></a><ol>${chatEntries.map((entry) => tocPrompt(entry, chats)).join('')}</ol></li>`;
+  }).join('');
+  return `<section class="toc">
   <header class="module-header"><div><span class="section-kicker">Navigation</span><h2>Inhaltsverzeichnis</h2></div><p>${entries.length} ${entries.length === 1 ? 'Prompt' : 'Prompts'}<br>mit Seitenangaben</p></header>
-  <ol class="toc-list">${entries.map((entry) => `<li><a href="#${promptAnchor(entry)}"><span class="toc-number">#${escapeHtml(promptDisplayNumber(entry, chats))}</span><span class="toc-title">${escapeHtml(promptTitle(entry))}</span><span class="toc-leader"></span></a></li>`).join('')}</ol>
+  <ol class="toc-list">${items}</ol>
 </section>`;
+};
 
 const plannerTask = (task: PlannerTask) => `<article class="task ${task.completed ? 'done' : ''}">
   <span class="task-state">${task.completed ? '✓' : ''}</span>
@@ -138,6 +153,9 @@ export function createAutoExportHtml(state: AppState, exportedAt = new Date(), d
   .toc-number { color: #3525cd; font: 700 9pt ui-monospace,monospace; }
   .toc-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .toc-leader { min-width: 8mm; border-bottom: .25mm dotted #aaa8ba; }
+  .toc-list .toc-chat { border-bottom: 0; }
+  .toc-chat > a { font-weight: 700; background: #f4f3ff; }
+  .toc-chat > ol { margin: 0 0 2mm 8mm; padding: 0; list-style: none; }
   .module-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 10mm; margin-bottom: 8mm; padding-bottom: 5mm; border-bottom: .35mm solid #c7c4d8; }
   .module-header h2 { margin: 1mm 0 0; font-size: 24pt; line-height: 1.15; letter-spacing: -.025em; }
   .module-header p { margin: 0 0 1mm; color: #575e70; text-align: right; }

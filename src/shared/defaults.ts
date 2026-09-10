@@ -112,7 +112,10 @@ export function normalizeState(input: Partial<AppState> | undefined): AppState {
         enabled: input.settings?.betaFeatures?.cloudSave === true && input.settings?.cloudSave?.enabled === true
           && typeof input.settings.cloudSave.repositoryId === 'string',
         repositoryId: typeof input.settings?.cloudSave?.repositoryId === 'string' ? input.settings.cloudSave.repositoryId : undefined
-      }
+      },
+      termsAcceptedAt: typeof input.settings?.termsAcceptedAt === 'string' && !Number.isNaN(Date.parse(input.settings.termsAcceptedAt))
+        ? input.settings.termsAcceptedAt
+        : undefined
     },
     journalEntries: Array.isArray(input.journalEntries) ? input.journalEntries : [],
     activeTimer: input.activeTimer ?? null,

@@ -8,6 +8,10 @@ import { PlannerPage } from './modules/planner/PlannerPage';
 import { ExportPage } from './modules/export/ExportPage';
 import { SettingsPage } from './modules/settings/SettingsPage';
 import { UpdateModal } from './components/UpdateModal';
+import { TermsModal } from './components/TermsModal';
+import { ChangelogModal } from './components/ChangelogModal';
+import { APP_VERSION } from '../shared/app-version';
+import { getChangelogRelease, hasSeenChangelogVersion, markChangelogVersionSeen } from './changelog';
 
 function PageContent({ page }: { page: PageId }) {
   if (page === 'journal') return <JournalPage/>;
@@ -43,8 +47,9 @@ function PageTransition({ page }: { page: PageId }) {
 }
 
 export default function App() {
-  const { state, loading, loadError, historyStatus, cloudSaveStatus, undo, redo, toasts, dismissToast } = useAppData();
+  const { state, loading, loadError, historyStatus, cloudSaveStatus, updateState, undo, redo, toasts, dismissToast } = useAppData();
   const [page, setPage] = useState<PageId>('journal');
+  const [changelogOpen, setChangelogOpen] = useState(false);
 
   useEffect(() => {
     if ((page === 'journal' || page === 'prompts' || page === 'planner') && !state.settings.modules[page]) {
@@ -54,6 +59,17 @@ export default function App() {
   }, [page, state.settings.modules]);
 
   const navigate = useCallback((target: PageId) => setPage(target), []);
+  const noteInstalledVersionShown = useCallback((version: string) => {
+    markChangelogVersionSeen(version);
+    setChangelogOpen(false);
+  }, []);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      if (getChangelogRelease(APP_VERSION) && !hasSeenChangelogVersion(APP_VERSION)) setChangelogOpen(true);
+    }, 1200);
+    return () => window.clearTimeout(timeout);
+  }, []);
 
   if (loading) return <LoadingScreen/>;
   if (loadError) return <ErrorScreen message={loadError} retry={() => window.location.reload()}/>;
@@ -65,7 +81,9 @@ export default function App() {
     <div className="app-canvas">
       <PageTransition page={page}/>
     </div>
-    <UpdateModal/>
+    <UpdateModal onInstalledVersionShown={noteInstalledVersionShown}/>
+    <ChangelogModal open={changelogOpen} onClose={() => { markChangelogVersionSeen(APP_VERSION); setChangelogOpen(false); }}/>
+    <TermsModal open={!state.settings.termsAcceptedAt} mandatory onClose={() => undefined} onAccept={() => void updateState((current) => ({ ...current, settings: { ...current.settings, termsAcceptedAt: new Date().toISOString() } }))}/>
     <Modal open={cloudSaveStatus.state === 'conflict'} title="Grosse Cloud-Änderung erkannt" description="Der Cloud-Stand unterscheidet sich stark von deinen lokalen Daten." onClose={() => undefined} dismissible={false}>
       {cloudSaveStatus.state === 'conflict' && <div className="form-stack">
         <p className="confirm-copy">Lokal sind {cloudSaveStatus.localEntries} Einträge gespeichert, in der Cloud {cloudSaveStatus.remoteEntries}. Insgesamt unterscheiden sich {cloudSaveStatus.changedEntries} Einträge. Wähle bewusst, welcher Stand weiterverwendet werden soll.</p>

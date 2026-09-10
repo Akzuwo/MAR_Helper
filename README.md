@@ -7,7 +7,7 @@ MAR Helper ist eine lokale Windows-Desktop-App für Maturaarbeiten. Arbeitsjourn
 Für die normale Nutzung werden weder Node.js noch Git oder andere Entwicklerwerkzeuge benötigt.
 
 1. Öffne die Seite [GitHub Releases](https://github.com/Akzuwo/MAR_Helper/releases/latest).
-2. Lade unter **Assets** die aktuelle Datei `MAR-Helper-Setup-<Version>-<Architektur>.exe` herunter. Für die meisten Windows-PCs ist die Variante `x64` passend.
+2. Lade unter **Assets** die aktuelle Datei `MAR-Helper-Setup-<Version>.exe` herunter. Der Installer erkennt automatisch, ob Windows x64 oder ARM64 verwendet, und installiert die passende App-Version.
 3. Öffne die heruntergeladene `.exe` und folge dem Installationsassistenten.
 4. Starte **MAR Helper** anschliessend über das Startmenü oder die angelegte Verknüpfung.
 
@@ -38,6 +38,7 @@ Installierte Versionen prüfen beim Start, ob ein neues offizielles Release verf
 - es beim Beenden von MAR Helper im Hintergrund installieren lassen.
 
 Nach einer Installation beim Beenden informiert MAR Helper beim nächsten Start darüber, ob das Update erfolgreich war.
+Der Auto-Updater verwendet denselben universellen Installer wie eine manuelle Installation; dessen NSIS-Architekturerkennung installiert auf jedem Gerät automatisch das passende x64- oder ARM64-Paket.
 
 ## Lokale Daten und Datenschutz
 
@@ -153,7 +154,20 @@ Vor dem Import werden alle IDs, Pflichtfelder, Zeitstempel, Zahlenwerte und Stat
 
 Ein Release wird direkt in GitHub unter **Actions → Release Workflow → Run workflow** gestartet. Im Pflichtfeld **Version** wird eine semantische Version ohne `v` eingetragen, zum Beispiel `1.3.0` oder `2.0.0-beta.1`.
 
-Der Workflow validiert die Version und prüft, dass Tag und Release noch nicht existieren. Anschliessend synchronisiert er `package.json`, `package-lock.json` und die in der App angezeigte Version, führt Tests und Build aus, erzeugt den NSIS-Installer, pusht den Release-Commit und den Tag und veröffentlicht den GitHub Release samt Installer und Update-Dateien. Ein manuelles Erstellen oder Pushen des Tags ist nicht notwendig.
+Vor dem Release wird die neue Version in `changelog.json` ergänzt. Pro Version gibt es zwei Listen: `fix` für Fehlerbehebungen und `new` für neue Funktionen. Beispiel:
+
+```json
+{
+  "1.5.0": {
+    "fix": ["GitHub-Icon wird korrekt angezeigt."],
+    "new": ["ARM64-Unterstützung", "Changelog"]
+  }
+}
+```
+
+Die Update-Meldung lädt den Eintrag direkt vom Git-Tag der angebotenen Version. Für ältere App-Versionen erzeugt der Workflow zusätzlich den GitHub-Release-Text aus denselben Daten. Beim ersten Start einer neuen Version wird deren Changelog einmal angezeigt – sowohl nach automatischen als auch nach manuellen Installationen. Über **Einstellungen → Changelog** bleiben alle mitgelieferten Versionen erreichbar. Der Release-Workflow bricht ab, wenn für die zu veröffentlichende Version kein gültiger Eintrag vorhanden ist.
+
+Der Workflow validiert die Version und prüft, dass Tag und Release noch nicht existieren. Anschliessend synchronisiert er `package.json`, `package-lock.json` und die in der App angezeigte Version, prüft die Produktionsabhängigkeiten auf native ARM64-Risiken, führt Tests und Build aus und erzeugt einen universellen NSIS-Installer mit x64- und ARM64-App-Paket. Er verifiziert beide PE-Architekturen sowie die Update-Metadaten, pusht den Release-Commit und den Tag und veröffentlicht den GitHub Release samt Installer und Update-Dateien. Ein manuelles Erstellen oder Pushen des Tags ist nicht notwendig. Die separate Datei `electron-builder.release.cjs` gilt nur für GitHub-Releases; lokale Builds bleiben unverändert.
 
 Für einen normalen Release müssen keine eigenen Repository-Secrets eingerichtet werden. Der Workflow verwendet das von GitHub Actions automatisch bereitgestellte `GITHUB_TOKEN`.
 

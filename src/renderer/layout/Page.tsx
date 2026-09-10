@@ -46,7 +46,7 @@ export function Page({ children, className = '' }: { children: React.ReactNode; 
     const observeChildren = () => {
       const rootBounds = root.getBoundingClientRect();
       const candidates = new Set<HTMLElement>([
-        ...Array.from(root.children) as HTMLElement[],
+        ...(Array.from(root.children) as HTMLElement[]).filter((element) => !element.hasAttribute('data-scroll-static')),
         ...Array.from(root.querySelectorAll<HTMLElement>('.journal-row:not(.journal-row--head), .prompt-card, .task-row, .settings-card, .export-card'))
       ]);
       for (const element of candidates) {
