@@ -12,7 +12,8 @@
   },
     "1.5.1": {
     "fix": [
-      "Chat-Selector Dropdown wird jetzt korrekt angezeigt."
+      "Chat-Selector Dropdown wird jetzt korrekt angezeigt.",
+      "Kaputter auto-updater wurde repariert."
     ],
     "new": [
     ]

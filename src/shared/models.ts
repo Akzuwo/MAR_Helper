@@ -275,5 +275,6 @@ export interface MarHelperApi {
   downloadAndInstallUpdate: () => Promise<void>;
   postponeUpdate: (request: UpdatePostponeRequest) => Promise<UpdateActionResult>;
   consumeUpdateInstallationResult: () => Promise<UpdateInstallationResult | null>;
+  getUpdateStatus: () => Promise<UpdateStatus | null>;
   onUpdateStatus: (listener: (status: UpdateStatus) => void) => () => void;
 }

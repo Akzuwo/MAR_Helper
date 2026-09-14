@@ -21,13 +21,9 @@ export function UpdateModal({ onInstalledVersionShown }: { onInstalledVersionSho
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    void window.marHelper.consumeUpdateInstallationResult().then((result) => {
-      if (!result) return;
-      if (result.state === 'success') onInstalledVersionShown?.(result.version);
-      setInstallationResult(result);
-      setOpen(true);
-    });
-    return window.marHelper.onUpdateStatus((next) => {
+    let active = true;
+    const applyStatus = (next: UpdateStatus) => {
+      if (!active) return;
       setStatus(next);
       if (next.state === 'available') {
         setPostponeOpen(false);
@@ -44,7 +40,18 @@ export function UpdateModal({ onInstalledVersionShown }: { onInstalledVersionSho
       } else if (next.state === 'error' && next.operation !== 'check') {
         setOpen(true);
       }
+    };
+    const unsubscribe = window.marHelper.onUpdateStatus(applyStatus);
+    void window.marHelper.getUpdateStatus().then((current) => {
+      if (current) applyStatus(current);
     });
+    void window.marHelper.consumeUpdateInstallationResult().then((result) => {
+      if (!active || !result) return;
+      if (result.state === 'success') onInstalledVersionShown?.(result.version);
+      setInstallationResult(result);
+      setOpen(true);
+    });
+    return () => { active = false; unsubscribe(); };
   }, [onInstalledVersionShown, toast]);
 
   if (installationResult) {

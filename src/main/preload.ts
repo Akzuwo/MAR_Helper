@@ -43,6 +43,7 @@ const api: MarHelperApi = {
   downloadAndInstallUpdate: () => ipcRenderer.invoke('update:download-and-install'),
   postponeUpdate: (request: UpdatePostponeRequest) => ipcRenderer.invoke('update:postpone', request),
   consumeUpdateInstallationResult: () => ipcRenderer.invoke('update:consume-installation-result'),
+  getUpdateStatus: () => ipcRenderer.invoke('update:get-status'),
   onUpdateStatus: (listener: (status: UpdateStatus) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, status: UpdateStatus) => listener(status);
     ipcRenderer.on('update:status', handler);

@@ -63,6 +63,7 @@ let installerQuit = false;
 let reminderTimer: NodeJS.Timeout | null = null;
 let preferenceWriteQueue: Promise<void> = Promise.resolve();
 let backgroundQuitFailureInProgress = false;
+let latestStatus: UpdateStatus | null = null;
 
 const safeMessage = (error: unknown, fallback: string) => error instanceof Error && error.message ? error.message : fallback;
 
@@ -127,6 +128,7 @@ export function configureAutoUpdater(getWindow: () => BrowserWindow | null) {
   preferencesReady = loadPreferences();
 
   const send = (status: UpdateStatus) => {
+    latestStatus = status;
     const window = getWindow();
     if (window && !window.isDestroyed()) window.webContents.send('update:status', status);
   };
@@ -305,6 +307,8 @@ export function configureAutoUpdater(getWindow: () => BrowserWindow | null) {
     }
     return result;
   });
+
+  ipcMain.handle('update:get-status', () => latestStatus);
 
   app.on('before-quit', (event) => {
     if (installerQuit || preferences.pendingInstallation?.mode !== 'on-quit') return;
