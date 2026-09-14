@@ -184,7 +184,7 @@ export function PromptsPage() {
     <ChatEditor open={chatEditorOpen} chat={editingChat} onClose={() => { setChatEditorOpen(false); setEditingChat(null); }} onSave={saveChat}/>
     <Modal open={assignOpen} title="Einzelprompt zu Chat hinzufügen" description="Der Prompt erhält im ausgewählten Chat automatisch die nächste freie Unter­nummer." onClose={() => setAssignOpen(false)}>
       <div className="form-stack">
-        <Field label="Chat"><Select value={assignChatId} onChange={(event) => setAssignChatId(event.target.value)}>{state.promptChats.map((chat) => <option key={chat.id} value={chat.id}>#{chat.number} – {chat.title}</option>)}</Select></Field>
+        <Field label="Chat"><Select portal value={assignChatId} onChange={(event) => setAssignChatId(event.target.value)}>{state.promptChats.map((chat) => <option key={chat.id} value={chat.id}>#{chat.number} – {chat.title}</option>)}</Select></Field>
         <div className="form-actions"><Button variant="secondary" onClick={() => setAssignOpen(false)}>Abbrechen</Button><Button onClick={() => { if (!selected) return; void updateState((current) => movePromptToChat(current, selected.id, assignChatId), 'Prompt zum Chat hinzugefügt'); setAssignOpen(false); navigateView(() => { setSelectedChatId(assignChatId); setSelectedId(null); }, 'back'); }}>Hinzufügen</Button></div>
       </div>
     </Modal>

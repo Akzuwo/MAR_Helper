@@ -1,5 +1,5 @@
 import { AlertCircle, Check, ChevronDown, Info, X } from 'lucide-react';
-import { Children, forwardRef, isValidElement, useCallback, useEffect, useId, useRef, useState } from 'react';
+import { Children, forwardRef, isValidElement, useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { IntroAnimation } from './IntroAnimation';
 
@@ -42,9 +42,12 @@ const optionText = (content: React.ReactNode): string => Children.toArray(conten
   return isValidElement<{ children?: React.ReactNode }>(item) ? optionText(item.props.children) : '';
 }).join('');
 
-export function Select({ children, value = '', onChange, disabled, className = '', 'aria-label': ariaLabel }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+export function Select({ children, value = '', onChange, disabled, className = '', portal = false, 'aria-label': ariaLabel }: React.SelectHTMLAttributes<HTMLSelectElement> & { portal?: boolean }) {
   const [open, setOpen] = useState(false);
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuId = useId();
   const options = Children.toArray(children).filter(isValidElement).map((option) => ({
     value: String((option.props as { value?: string | number }).value ?? ''),
     label: optionText((option.props as { children?: React.ReactNode }).children),
@@ -54,11 +57,50 @@ export function Select({ children, value = '', onChange, disabled, className = '
   const selected = options.find((option) => option.value === selectedValue) ?? options[0];
 
   useEffect(() => {
-    const close = (event: PointerEvent) => { if (!wrapperRef.current?.contains(event.target as Node)) setOpen(false); };
+    const close = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!wrapperRef.current?.contains(target) && !menuRef.current?.contains(target)) setOpen(false);
+    };
     document.addEventListener('pointerdown', close);
     return () => document.removeEventListener('pointerdown', close);
   }, []);
   useEffect(() => { if (disabled) setOpen(false); }, [disabled]);
+
+  const positionMenu = useCallback(() => {
+    if (!portal || !wrapperRef.current || !menuRef.current) return;
+    const gap = 7;
+    const viewportPadding = 12;
+    const trigger = wrapperRef.current.getBoundingClientRect();
+    const menuHeight = Math.min(menuRef.current.scrollHeight, 240);
+    const spaceBelow = window.innerHeight - trigger.bottom - viewportPadding - gap;
+    const spaceAbove = trigger.top - viewportPadding - gap;
+    const opensUpward = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+    const availableHeight = Math.max(80, opensUpward ? spaceAbove : spaceBelow);
+    const height = Math.min(menuHeight, availableHeight);
+    const width = Math.min(trigger.width, window.innerWidth - viewportPadding * 2);
+    const left = Math.min(Math.max(viewportPadding, trigger.left), window.innerWidth - viewportPadding - width);
+    setMenuStyle({
+      left,
+      top: opensUpward ? Math.max(viewportPadding, trigger.top - gap - height) : trigger.bottom + gap,
+      width,
+      maxHeight: availableHeight
+    });
+  }, [portal]);
+
+  useLayoutEffect(() => { if (open) positionMenu(); }, [open, positionMenu, options.length]);
+  useEffect(() => {
+    if (!open || !portal) return;
+    const update = () => positionMenu();
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, true);
+    const observer = new ResizeObserver(update);
+    if (wrapperRef.current) observer.observe(wrapperRef.current);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+      observer.disconnect();
+    };
+  }, [open, portal, positionMenu]);
 
   const choose = (nextValue: string) => {
     if (nextValue === selectedValue) { setOpen(false); return; }
@@ -76,15 +118,17 @@ export function Select({ children, value = '', onChange, disabled, className = '
     if (next) choose(next.value);
   };
 
+  const menu = <div ref={menuRef} id={menuId} className={`select-menu ${portal ? 'select-menu--portal' : ''}`} style={portal ? menuStyle : undefined} role="listbox" aria-label={ariaLabel} aria-hidden={!open}>
+    {options.map((option) => <button type="button" role="option" aria-selected={option.value === selectedValue} className="select-option" key={option.value} disabled={option.disabled} tabIndex={open ? 0 : -1} onClick={() => choose(option.value)}>
+      <span>{option.label}</span>{option.value === selectedValue && <Check size={16}/>}
+    </button>)}
+  </div>;
+
   return <div ref={wrapperRef} className={`custom-select ${open ? 'custom-select--open' : ''} ${className}`}>
-    <button type="button" className="input select-trigger" role="combobox" aria-label={ariaLabel} aria-expanded={open} aria-haspopup="listbox" disabled={disabled} onClick={() => setOpen((current) => !current)} onKeyDown={onKeyDown}>
+    <button type="button" className="input select-trigger" role="combobox" aria-label={ariaLabel} aria-controls={menuId} aria-expanded={open} aria-haspopup="listbox" disabled={disabled} onClick={() => setOpen((current) => !current)} onKeyDown={onKeyDown}>
       <span>{selected?.label || 'Auswählen'}</span><ChevronDown size={17}/>
     </button>
-    <div className="select-menu" role="listbox" aria-label={ariaLabel} aria-hidden={!open}>
-      {options.map((option) => <button type="button" role="option" aria-selected={option.value === selectedValue} className="select-option" key={option.value} disabled={option.disabled} tabIndex={open ? 0 : -1} onClick={() => choose(option.value)}>
-        <span>{option.label}</span>{option.value === selectedValue && <Check size={16}/>}
-      </button>)}
-    </div>
+    {portal ? open && createPortal(menu, document.body) : menu}
   </div>;
 }
 
