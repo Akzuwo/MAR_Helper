@@ -17,5 +17,12 @@
     ],
     "new": [
     ]
+  },
+      "1.5.2": {
+    "fix": [
+    ],
+    "new": [
+      "Importvorgang von bestehenden Daten wurde überarbeitet und verbessert."
+    ]
   }
 }
