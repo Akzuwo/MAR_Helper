@@ -1,13 +1,13 @@
 import { AlertCircle, BookOpenText, CalendarClock, CheckCircle2, ClipboardPaste, Clock3, Copy, Download, FileOutput, FolderOpen, Import, LoaderCircle, PackageOpen, RefreshCw, WandSparkles } from 'lucide-react';
 import { useState } from 'react';
 import { exportAllJson, exportJournalCsv, exportModuleJson, exportPlannerCsv, exportPromptsMarkdown } from '../../../shared/exporters';
-import { IMPORT_FORMATTING_PROMPT } from '../../../shared/import-format-prompt';
 import type { ImportSelectResult } from '../../../shared/models';
 import { useAppData } from '../../state/AppDataContext';
 import { Button, EmptyState } from '../../components/ui';
 import { Page, PageHeader } from '../../layout/Page';
 import { ImportDialog } from './ImportDialog';
 import { ImportGuideModal } from './ImportGuideModal';
+import { ImportPromptModal } from './ImportPromptModal';
 
 const dateSuffix = () => new Date().toISOString().slice(0, 10);
 
@@ -17,6 +17,7 @@ export function ExportPage() {
   const [importSelection, setImportSelection] = useState<ImportSelectResult | null>(null);
   const [importSource, setImportSource] = useState<'file' | 'rawText'>('file');
   const [guideOpen, setGuideOpen] = useState(false);
+  const [promptModalOpen, setPromptModalOpen] = useState(false);
   const active = state.settings.modules;
   const activeCount = [active.journal, active.prompts, active.planner].filter(Boolean).length;
 
@@ -43,15 +44,6 @@ export function ExportPage() {
     setImportOpen(true);
   };
 
-  const copyFormattingPrompt = async () => {
-    try {
-      await navigator.clipboard.writeText(IMPORT_FORMATTING_PROMPT);
-      toast('KI-Formatierungsprompt kopiert');
-    } catch {
-      toast('Der Prompt konnte nicht in die Zwischenablage kopiert werden.', 'error');
-    }
-  };
-
   const runAutoExport = async () => {
     const result = await window.marHelper.runAutoExport();
     if (result.state === 'success') toast('PDF erfolgreich aktualisiert');
@@ -74,8 +66,8 @@ export function ExportPage() {
         <Button
           variant="ghost"
           icon={<Copy size={17}/>}
-          title="Prompt, um deine bestehenden Daten selbst mit KI zu formatieren. Kopiere ihn zusammen mit deinen Daten in ein KI-Tool."
-          onClick={() => void copyFormattingPrompt()}
+          title="Vorlage für Chatverläufe oder bestehende Protokolle auswählen"
+          onClick={() => setPromptModalOpen(true)}
         >KI-Prompt kopieren</Button>
         <Button variant="ghost" icon={<BookOpenText size={17}/>} onClick={() => setGuideOpen(true)}>Format-Anleitung</Button>
         {state.settings.betaFeatures.rawTextImport && <Button variant="secondary" icon={<ClipboardPaste size={17}/>} onClick={startRawImport}>Rohtext <span className="beta-badge">Beta</span></Button>}
@@ -120,6 +112,7 @@ export function ExportPage() {
     </>}
     <section className="backup-card"><div className="backup-card__icon"><PackageOpen size={24}/></div><div><h2>Vollständiges Backup</h2><p>Alle Daten, Einstellungen und gespeicherten Git-Diffs in einer einzigen JSON-Datei sichern.</p></div><Button icon={<Download size={17}/>} onClick={() => save(`mar-helper-backup-${dateSuffix()}.json`, 'json', 'JSON', exportAllJson(state))}>Alles exportieren</Button></section>
     <ImportDialog open={importOpen} selection={importSelection} allowRawText={state.settings.betaFeatures.rawTextImport} initialSource={importSource} onClose={() => setImportOpen(false)}/>
+    <ImportPromptModal open={promptModalOpen} onClose={() => setPromptModalOpen(false)}/>
     <ImportGuideModal open={guideOpen} betaEnabled={state.settings.betaFeatures.rawTextImport} onClose={() => setGuideOpen(false)}/>
   </Page>;
 }

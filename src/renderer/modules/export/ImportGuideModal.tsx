@@ -29,6 +29,28 @@ const promptExample = `{
   }]
 }`;
 
+const chatExample = `{
+  "format": "mar-helper-export",
+  "formatVersion": 3,
+  "module": "prompts",
+  "promptChats": [{
+    "id": "chat-001",
+    "number": 1,
+    "title": "Recherche mit GPT-5",
+    "createdAt": "2026-08-18T09:45:00.000Z",
+    "nextPromptNumber": 2
+  }],
+  "data": [{
+    "id": "prompt-001",
+    "number": 1,
+    "chatId": "chat-001",
+    "modelName": "GPT-5",
+    "prompt": "Fasse den Text zusammen.",
+    "response": "Zusammenfassung …",
+    "createdAt": "2026-08-18T09:45:00.000Z"
+  }]
+}`;
+
 const plannerExample = `{
   "format": "mar-helper-export",
   "formatVersion": 2,
@@ -74,6 +96,16 @@ export function ImportGuideModal({ open, betaEnabled, onClose }: { open: boolean
         <FormatDetails title="Promptprotokoll" summary="Prompt, Antwort, Modell, Reasoning-Level, Zeitpunkt und optionale Chat-Zuordnung" required="id, modelName, prompt, response, createdAt" optional="number, title, modelId, reasoningLevel (light, medium, high, extra high oder ultra), chatId, updatedAt und gitSnapshot; promptChats enthält Chat-Titel und Nummern" example={promptExample}/>
         <FormatDetails title="Zeitplan" summary="Aufgabe, Status und Erstellungsdatum" required="id, title, completed, createdAt" optional="description, dueDate und updatedAt" example={plannerExample}/>
       </div>
+      <section className="guide-chat">
+        <h3>Ganze Chats importieren</h3>
+        <ol>
+          <li>Öffne den gewünschten Chat im KI-Tool. Kopiere unter „KI-Prompt kopieren“ die Vorlage „Chatverlauf importieren“ und sende sie im selben Chat.</li>
+          <li>Speichere die ausgegebene JSON-Antwort ohne Codeblock als <code>.json</code>-Datei. Prüfe, ob alle Nachrichten enthalten sind.</li>
+          <li>Wähle in MAR Helper „JSON auswählen“, kontrolliere in der Vorschau die Anzahl der Chats und Einträge und klicke auf „Importieren“.</li>
+        </ol>
+        <p>Für jeden Chat steht ein Eintrag in <code>promptChats</code>. Jede Nutzerfrage und ihre KI-Antwort bilden einen Eintrag in <code>data</code>. <code>chatId</code> muss auf die passende Chat-<code>id</code> verweisen. Mit <code>number</code> und <code>nextPromptNumber</code> bleibt die Reihenfolge erhalten. Wenn du mehrere Chats hast, erstelle für jeden eine eigene JSON-Datei und importiere sie nacheinander.</p>
+        <pre><code>{chatExample}</code></pre>
+      </section>
       <section className={`raw-guide ${betaEnabled ? '' : 'raw-guide--disabled'}`}>
         <header><FlaskConical size={19}/><div><strong>Rohtext-Import (Beta)</strong><span>{betaEnabled ? 'In deinen Einstellungen aktiviert' : 'Kann in den Einstellungen unter Beta-Funktionen aktiviert werden'}</span></div></header>
         <p>Du kannst Daten aus anderen Apps als JSON oder direkt aus Excel und Google Sheets einfügen. Häufige deutsche und englische Feldnamen, unterschiedliche Reihenfolgen sowie eingebettete Sitzungslisten werden automatisch zugeordnet.</p>
