@@ -53,7 +53,15 @@ async function run() {
     socket.send(JSON.stringify({ id: callId, method, params }));
   });
   await call('Page.enable');
-  await delay(1200);
+  const waitFor = async (expression) => {
+    for (let attempt = 0; attempt < 80; attempt += 1) {
+      const response = await call('Runtime.evaluate', { expression, returnByValue: true });
+      if (response.result?.result?.value) return;
+      await delay(150);
+    }
+    throw new Error(`Smoke UI timeout: ${expression}`);
+  };
+  await waitFor(`Boolean(document.querySelector('.sidebar, .error-screen'))`);
   const result = await call('Runtime.evaluate', { expression: `({ title: document.title, text: document.body.innerText.slice(0, 2500), hasApi: Boolean(window.marHelper), errors: document.querySelector('.error-screen')?.innerText || '' })`, returnByValue: true });
   await call('Runtime.evaluate', {
     expression: `document.querySelector('.terms-consent input')?.click()`
@@ -74,7 +82,7 @@ async function run() {
     expression: `window.localStorage.removeItem('mar-helper:last-seen-changelog-version')`
   });
   await call('Page.reload');
-  await delay(1800);
+  await waitFor(`Boolean([...document.querySelectorAll('[role="dialog"]')].find((item) => item.textContent?.includes('Alle Änderungen von MAR Helper')))`);
   const changelogDialogResult = await call('Runtime.evaluate', {
     expression: `(() => {
       const dialog = [...document.querySelectorAll('[role="dialog"]')].find((item) => item.textContent?.includes('Alle Änderungen von MAR Helper'));

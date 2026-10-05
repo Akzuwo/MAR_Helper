@@ -10,6 +10,7 @@ import { AutoExportService } from './auto-export';
 import { BackgroundWork } from './background-work';
 import { CloudSaveService } from './cloud-save';
 import { JsonStore } from './store';
+import { LocalAssistantService } from './local-assistant';
 import { configureAutoUpdater } from './updater';
 import { checkGit, checkRemoteRepository, listCommits, readCommit, resolveRepository } from './git-integration/GitService';
 
@@ -17,9 +18,11 @@ let mainWindow: BrowserWindow | null = null;
 let store: JsonStore;
 let autoExporter: AutoExportService;
 let cloudSaver: CloudSaveService;
+let localAssistant: LocalAssistantService;
 const backgroundWork = new BackgroundWork();
 let backgroundShutdownStarted = false;
 let allowWindowClose = false;
+let shutdownPreparation: Promise<void> | undefined;
 const importSessions = new Map<string, { bundle: ImportBundle; createdAt: number }>();
 const IMPORT_SESSION_TTL = 15 * 60 * 1000;
 const MAX_STORED_FILE_SIZE = 100 * 1024 * 1024;
@@ -91,16 +94,39 @@ function importError(error: unknown, rawText = false) {
 
 const wait = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-async function finishInBackground(window: BrowserWindow): Promise<void> {
+function prepareForShutdown(): Promise<void> {
+  if (shutdownPreparation) return shutdownPreparation;
+  const closedAt = new Date();
+  localAssistant?.shutdown();
   cloudSaver.beginShutdown();
-  do {
-    await Promise.all([backgroundWork.waitForIdle(), autoExporter.waitForIdle(), cloudSaver.waitForIdle()]);
-    await wait(250);
-  } while (backgroundWork.isBusy() || autoExporter.isBusy() || cloudSaver.isBusy());
+  shutdownPreparation = (async () => {
+    const state = await store.prepareForShutdown(closedAt);
+    autoExporter.schedule(state);
+    cloudSaver.schedule(state);
+    do {
+      await Promise.all([backgroundWork.waitForIdle(), autoExporter.waitForIdle(), cloudSaver.waitForIdle()]);
+      await wait(250);
+    } while (backgroundWork.isBusy() || autoExporter.isBusy() || cloudSaver.isBusy());
+    cloudSaver.stop();
+  })().catch((error) => {
+    shutdownPreparation = undefined;
+    cloudSaver.cancelShutdown();
+    throw error;
+  });
+  return shutdownPreparation;
+}
 
-  cloudSaver.stop();
+async function finishInBackground(window: BrowserWindow | null): Promise<void> {
+  try {
+    await prepareForShutdown();
+  } catch (error) {
+    backgroundShutdownStarted = false;
+    window?.show();
+    dialog.showErrorBox('Arbeitsjournal konnte nicht gespeichert werden', error instanceof Error ? error.message : 'Bitte versuche erneut, die App zu schliessen.');
+    return;
+  }
   allowWindowClose = true;
-  if (!window.isDestroyed()) window.destroy();
+  if (window && !window.isDestroyed()) window.destroy();
   app.quit();
 }
 
@@ -164,24 +190,36 @@ app.whenReady().then(() => {
   cloudSaver = new CloudSaveService(
     store,
     (status: CloudSaveStatus) => mainWindow?.webContents.send('cloud-save:status', status),
-    (state: AppState) => { autoExporter.schedule(state); mainWindow?.webContents.send('cloud-save:state-updated', state); }
+    (state: AppState) => { autoExporter.schedule(state); localAssistant?.configure(state.settings.localAssistant); mainWindow?.webContents.send('cloud-save:state-updated', state); }
   );
-  ipcMain.handle('state:load', async () => { const state = await store.load(); cloudSaver.configure(state, true); return state; });
+  localAssistant = new LocalAssistantService(path.join(app.getPath('userData'), 'local-assistant'), {
+    load: () => store.load(), transaction: (mutator) => backgroundWork.track(store.transaction(mutator))
+  },
+    (status) => mainWindow?.webContents.send('assistant:status', status),
+    (state) => { autoExporter.schedule(state); cloudSaver.schedule(state); mainWindow?.webContents.send('assistant:state-updated', state); });
+  void store.load().then((state) => localAssistant.configure(state.settings.localAssistant)).catch((error) => console.warn('KI-Einstellungen konnten nicht geladen werden.', error));
+  ipcMain.handle('assistant:plan', () => localAssistant.getPlan());
+  ipcMain.handle('assistant:status', () => localAssistant.getStatus());
+  ipcMain.handle('assistant:retry', () => { void localAssistant.retry(); });
+  ipcMain.handle('assistant:cancel', () => localAssistant.cancelChat());
+  ipcMain.handle('assistant:chat', (_event, messages: unknown, page: unknown) => localAssistant.sendChat(messages, page));
+  ipcMain.handle('state:load', async () => { const state = await store.load(); cloudSaver.configure(state, true); localAssistant.configure(state.settings.localAssistant); return state; });
   ipcMain.handle('history:status', () => store.historyStatus());
   ipcMain.handle('history:undo', () => backgroundWork.track((async () => {
     const result = await store.undo();
-    if (result.ok) { autoExporter.schedule(result.state); cloudSaver.schedule(result.state); }
+    if (result.ok) { autoExporter.schedule(result.state); cloudSaver.schedule(result.state); localAssistant.configure(result.state.settings.localAssistant); }
     return result;
   })()));
   ipcMain.handle('history:redo', () => backgroundWork.track((async () => {
     const result = await store.redo();
-    if (result.ok) { autoExporter.schedule(result.state); cloudSaver.schedule(result.state); }
+    if (result.ok) { autoExporter.schedule(result.state); cloudSaver.schedule(result.state); localAssistant.configure(result.state.settings.localAssistant); }
     return result;
   })()));
   ipcMain.handle('state:save', (_event, state: AppState) => backgroundWork.track((async () => {
     const persisted = await store.save(state);
     autoExporter.schedule(persisted);
     cloudSaver.schedule(persisted);
+    localAssistant.configure(persisted.settings.localAssistant);
     return persisted;
   })()));
   ipcMain.handle('export:save', async (_event, request: SaveFileRequest) => {
@@ -339,6 +377,7 @@ app.whenReady().then(() => {
       autoExporter.schedule(state);
       cloudSaver.schedule(state);
       importSessions.delete(sessionId);
+      localAssistant.configure(state.settings.localAssistant);
       return { ok: true, state, summary };
     } catch {
       return { ok: false, message: 'Der Import konnte nicht abgeschlossen werden. Deine bestehenden Daten wurden nicht verändert.' };
@@ -359,10 +398,19 @@ app.whenReady().then(() => {
   });
   ipcMain.handle('git:open-download', () => shell.openExternal('https://git-scm.com/downloads'));
   createWindow();
-  configureAutoUpdater(() => mainWindow);
+  configureAutoUpdater(() => mainWindow, prepareForShutdown);
   app.on('activate', () => {
     if (!backgroundShutdownStarted && BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+});
+
+app.on('before-quit', (event) => {
+  if (!store || allowWindowClose) return;
+  event.preventDefault();
+  if (backgroundShutdownStarted) return;
+  backgroundShutdownStarted = true;
+  if (mainWindow) { saveWindowPreferences(mainWindow); mainWindow.hide(); }
+  void finishInBackground(mainWindow);
 });
 
 app.on('window-all-closed', () => {

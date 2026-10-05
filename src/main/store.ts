@@ -3,12 +3,14 @@ import path from 'node:path';
 import { app } from 'electron';
 import { createDefaultState, normalizeState } from '../shared/defaults';
 import type { AppState, HistoryResult, HistoryStatus } from '../shared/models';
+import { completeActiveTimer } from '../shared/timer';
 
 interface HistoryData { past: AppState[]; future: AppState[] }
 const HISTORY_LIMIT = 50;
 
 export class JsonStore {
   private writeQueue: Promise<void> = Promise.resolve();
+  private shutdownAt: Date | undefined;
   private readonly filePath: string;
   private readonly historyPath: string;
 
@@ -37,8 +39,9 @@ export class JsonStore {
   }
 
   async save(input: AppState): Promise<AppState> {
-    const state = normalizeState(input);
+    let state = normalizeState(input);
     const write = async () => {
+      state = this.normalizeForWrite(state);
       const current = await this.readCurrent().catch(() => undefined);
       if (current && JSON.stringify(current) !== JSON.stringify(state)) {
         const history = await this.readHistory();
@@ -54,12 +57,27 @@ export class JsonStore {
     return state;
   }
 
+  async prepareForShutdown(at = new Date()): Promise<AppState> {
+    this.shutdownAt ??= at;
+    try {
+      return await this.transaction((current) => current);
+    } catch (error) {
+      this.shutdownAt = undefined;
+      throw error;
+    }
+  }
+
+  private normalizeForWrite(input: AppState): AppState {
+    const state = normalizeState(input);
+    return this.shutdownAt ? completeActiveTimer(state, this.shutdownAt) : state;
+  }
+
   async transaction(mutator: (current: AppState) => AppState): Promise<AppState> {
     let result: AppState | undefined;
     const run = async () => {
       const raw = await fs.readFile(this.filePath, 'utf8');
       const current = normalizeState(JSON.parse(raw) as Partial<AppState>);
-      result = normalizeState(mutator(current));
+      result = this.normalizeForWrite(mutator(current));
       if (JSON.stringify(current) !== JSON.stringify(result)) {
         const history = await this.readHistory();
         history.past.push(current);
@@ -97,7 +115,7 @@ export class JsonStore {
         return;
       }
       const current = await this.readCurrent();
-      const target = normalizeState(source.pop());
+      const target = this.normalizeForWrite(normalizeState(source.pop()));
       const destination = direction === 'undo' ? history.future : history.past;
       destination.push(current);
       if (destination.length > HISTORY_LIMIT) destination.splice(0, destination.length - HISTORY_LIMIT);

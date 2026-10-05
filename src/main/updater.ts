@@ -122,7 +122,7 @@ async function fetchGitHubRelease(version: string): Promise<{ name?: string; not
   }
 }
 
-export function configureAutoUpdater(getWindow: () => BrowserWindow | null) {
+export function configureAutoUpdater(getWindow: () => BrowserWindow | null, prepareForShutdown: () => Promise<void>) {
   if (configured) return;
   configured = true;
   preferencesReady = loadPreferences();
@@ -160,6 +160,7 @@ export function configureAutoUpdater(getWindow: () => BrowserWindow | null) {
   };
 
   const launchInstaller = async (runAfter: boolean) => {
+    await prepareForShutdown();
     const pending = preferences.pendingInstallation ?? { version: updateVersion, mode: runAfter ? 'now' : 'on-quit', downloaded: true };
     preferences.pendingInstallation = { ...pending, downloaded: true, attemptedAt: new Date().toISOString() };
     await writePreferences();

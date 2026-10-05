@@ -11,6 +11,7 @@ import { FilesPage } from './modules/files/FilesPage';
 import { UpdateModal } from './components/UpdateModal';
 import { TermsModal } from './components/TermsModal';
 import { ChangelogModal } from './components/ChangelogModal';
+import { AssistantChat } from './components/AssistantChat';
 import { APP_VERSION } from '../shared/app-version';
 import { getChangelogRelease, hasSeenChangelogVersion, markChangelogVersionSeen } from './changelog';
 
@@ -95,5 +96,6 @@ export default function App() {
       </div>}
     </Modal>
     <Toasts toasts={toasts} dismiss={dismissToast}/>
+    <AssistantChat page={page}/>
   </div>;
 }

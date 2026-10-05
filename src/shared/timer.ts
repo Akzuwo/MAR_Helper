@@ -1,4 +1,4 @@
-import type { ActiveTimer, JournalTimeSegment } from './models';
+import type { ActiveTimer, AppState, JournalEntry, JournalTimeSegment } from './models';
 
 const closedSegment = (type: JournalTimeSegment['type'], startedAt: string, at: Date): JournalTimeSegment => ({
   type,
@@ -47,6 +47,27 @@ export function resumeTimer(timer: ActiveTimer, at = new Date()): ActiveTimer {
 export function completeTimeSegments(timer: ActiveTimer, at = new Date()): JournalTimeSegment[] | undefined {
   if (!timer.timeSegments || !timer.currentSegmentStartedAt) return undefined;
   return [...timer.timeSegments, closedSegment(timer.status === 'paused' ? 'pause' : 'work', timer.currentSegmentStartedAt, at)];
+}
+
+export function completeTimer(timer: ActiveTimer, at = new Date()): JournalEntry {
+  // A start/pause command may still be queued when the window is closed.
+  const end = new Date(Math.max(at.getTime(), Date.parse(timer.currentSegmentStartedAt ?? timer.pausedAt ?? timer.startedAt)));
+  return {
+    id: timer.id, title: timer.title, notes: timer.notes,
+    startedAt: timer.startedAt, endedAt: end.toISOString(),
+    workingTimeMs: getWorkingTimeMs(timer, end.getTime()),
+    pausedTimeMs: getPausedTimeMs(timer, end.getTime()),
+    timeSegments: completeTimeSegments(timer, end), linkedTaskId: timer.linkedTaskId
+  };
+}
+
+export function completeActiveTimer(state: AppState, at = new Date()): AppState {
+  if (!state.activeTimer) return state;
+  const entry = completeTimer(state.activeTimer, at);
+  return {
+    ...state, activeTimer: null,
+    journalEntries: [...state.journalEntries.filter((item) => item.id !== entry.id), entry]
+  };
 }
 
 export function formatDuration(ms: number, compact = false): string {

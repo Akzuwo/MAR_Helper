@@ -24,5 +24,12 @@
     "new": [
       "Importvorgang von bestehenden Daten wurde überarbeitet und verbessert."
     ]
+  },
+        "1.6.0": {
+    "fix": [
+    ],
+    "new": [
+      "Lokaler KI Chatbot (Beta)"
+    ]
   }
 }

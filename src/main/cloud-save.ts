@@ -88,6 +88,11 @@ export class CloudSaveService {
     this.notifyIfIdle();
   }
 
+  cancelShutdown(): void {
+    this.shuttingDown = false;
+    if (this.state) this.configure(this.state);
+  }
+
   isBusy(): boolean {
     return this.running !== null || this.pushTimer !== null;
   }

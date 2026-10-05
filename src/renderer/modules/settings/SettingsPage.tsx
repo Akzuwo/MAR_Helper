@@ -8,6 +8,7 @@ import { Page, PageHeader } from '../../layout/Page';
 import { GitIntegrationSettings } from '../git-integration/GitIntegrationSettings';
 import { AutoExportSettingsModal } from './AutoExportSettingsModal';
 import { CloudSaveSettingsModal } from './CloudSaveSettingsModal';
+import { LocalAssistantSettings } from './LocalAssistantSettings';
 import { TermsModal } from '../../components/TermsModal';
 import { ChangelogModal } from '../../components/ChangelogModal';
 import { markChangelogVersionSeen } from '../../changelog';
@@ -126,6 +127,7 @@ export function SettingsPage() {
     </section>
     <section className="settings-card beta-settings">
       <header><div className="settings-heading"><span><FlaskConical size={20}/></span><div><h2>Beta-Funktionen</h2><p>Teste neue Funktionen vor ihrer finalen Veröffentlichung. Sie können sich noch verändern.</p></div></div></header>
+      <LocalAssistantSettings/>
       <div className="setting-row">
         <span className="setting-row__icon"><ClipboardPaste size={21}/></span>
         <div><strong>Automatischer Rohtext-Import</strong><span>Erkennt fremde JSON-Daten, Tabellen, Journal-Zeitspannen, Chatverläufe und Aufgabenlisten automatisch.</span></div>

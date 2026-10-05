@@ -17,7 +17,8 @@ export const createDefaultState = (): AppState => ({
       journalFileName: 'MAR-Helper-Arbeitsjournal.pdf',
       promptsFileName: 'MAR-Helper-Promptprotokoll.pdf'
     },
-    cloudSave: { enabled: false }
+    cloudSave: { enabled: false },
+    localAssistant: { enabled: false, model: '' }
   },
   journalEntries: [],
   activeTimer: null,
@@ -140,6 +141,11 @@ export function normalizeState(input: Partial<AppState> | undefined): AppState {
         enabled: input.settings?.betaFeatures?.cloudSave === true && input.settings?.cloudSave?.enabled === true
           && typeof input.settings.cloudSave.repositoryId === 'string',
         repositoryId: typeof input.settings?.cloudSave?.repositoryId === 'string' ? input.settings.cloudSave.repositoryId : undefined
+      },
+      localAssistant: {
+        enabled: input.settings?.localAssistant?.enabled === true,
+        model: ['qwen3.5:2b', 'qwen3.5:4b', 'qwen3.5:9b'].includes(input.settings?.localAssistant?.model ?? '')
+          ? input.settings!.localAssistant.model : ''
       },
       termsAcceptedAt: typeof input.settings?.termsAcceptedAt === 'string' && !Number.isNaN(Date.parse(input.settings.termsAcceptedAt))
         ? input.settings.termsAcceptedAt

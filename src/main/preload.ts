@@ -2,6 +2,21 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type { AppState, AutoExportStatus, CloudSaveStatus, MarHelperApi, SaveFileRequest, UpdatePostponeRequest, UpdateStatus } from '../shared/models';
 
 const api: MarHelperApi = {
+  getAssistantPlan: () => ipcRenderer.invoke('assistant:plan'),
+  getAssistantStatus: () => ipcRenderer.invoke('assistant:status'),
+  retryAssistantSetup: () => ipcRenderer.invoke('assistant:retry'),
+  cancelAssistant: () => ipcRenderer.invoke('assistant:cancel'),
+  chatWithAssistant: (messages, page) => ipcRenderer.invoke('assistant:chat', messages, page),
+  onAssistantStatus: (listener) => {
+    const handler = (_event: Electron.IpcRendererEvent, status: Parameters<typeof listener>[0]) => listener(status);
+    ipcRenderer.on('assistant:status', handler);
+    return () => ipcRenderer.removeListener('assistant:status', handler);
+  },
+  onAssistantStateUpdated: (listener) => {
+    const handler = (_event: Electron.IpcRendererEvent, state: AppState) => listener(state);
+    ipcRenderer.on('assistant:state-updated', handler);
+    return () => ipcRenderer.removeListener('assistant:state-updated', handler);
+  },
   loadState: () => ipcRenderer.invoke('state:load') as Promise<AppState>,
   saveState: (state) => ipcRenderer.invoke('state:save', state) as Promise<AppState>,
   getHistoryStatus: () => ipcRenderer.invoke('history:status'),

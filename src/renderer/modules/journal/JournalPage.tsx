@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, CirclePause, CirclePlay, Clock3, Link2, ListChecks, Plus, RotateCcw, Square, StickyNote, Trash2 } from 'lucide-react';
 import type { ActiveTimer, JournalEntry } from '../../../shared/models';
-import { completeTimeSegments, formatDuration, getPausedTimeMs, getWorkingTimeMs, pauseTimer, resumeTimer } from '../../../shared/timer';
+import { completeTimer, formatDuration, getPausedTimeMs, getWorkingTimeMs, pauseTimer, resumeTimer } from '../../../shared/timer';
 import { useAppData } from '../../state/AppDataContext';
 import { Button, ConfirmDialog, EmptyState, Field, Input, Modal, Select, Textarea } from '../../components/ui';
 import { Page, PageHeader } from '../../layout/Page';
@@ -94,18 +94,7 @@ export function JournalPage() {
 
   const stop = () => {
     if (!timer) return;
-    const endedAt = new Date();
-    const entry: JournalEntry = {
-      id: timer.id,
-      title: timer.title,
-      notes: timer.notes,
-      startedAt: timer.startedAt,
-      endedAt: endedAt.toISOString(),
-      workingTimeMs: getWorkingTimeMs(timer, endedAt.getTime()),
-      pausedTimeMs: getPausedTimeMs(timer, endedAt.getTime()),
-      timeSegments: completeTimeSegments(timer, endedAt),
-      linkedTaskId: timer.linkedTaskId
-    };
+    const entry = completeTimer(timer);
     const showCompletion = state.settings.visualEffects.scrollEffects;
     if (showCompletion) {
       setCompletedTimer({ title: timer.title });

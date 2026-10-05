@@ -23,6 +23,8 @@ Beim ersten Start kannst du in den Einstellungen festlegen, welche Bereiche du v
 
 Die Bereiche lassen sich später jederzeit ein- oder ausblenden. Bereits erfasste Daten bleiben dabei erhalten.
 
+Beim Schliessen der App wird eine laufende oder pausierte Journalsitzung automatisch beendet und gespeichert. Öffne einen gespeicherten Eintrag, um einzelne Arbeits- und Pausenblöcke zu ändern, hinzuzufügen oder zu löschen. Die Arbeits- und Pausensummen werden aus den verbleibenden Blöcken berechnet; Lücken zwischen Blöcken werden nicht mitgezählt. Bei älteren Einträgen ohne detaillierte Zeitachse kannst du weiterhin den Gesamtzeitraum bearbeiten.
+
 ## Daten sichern, exportieren und importieren
 
 Unter **Import & Export** kannst du deine MAR-Helper-Daten sichern, wiederherstellen und in verschiedenen Formaten ausgeben. Vollständige Backups enthalten alle aktivierten Module und Einstellungen. Für eine möglichst verlustfreie Übertragung zwischen Installationen wird der JSON-Export empfohlen.
@@ -41,6 +43,14 @@ Nach einer Installation beim Beenden informiert MAR Helper beim nächsten Start 
 Der Auto-Updater verwendet denselben universellen Installer wie eine manuelle Installation; dessen NSIS-Architekturerkennung installiert auf jedem Gerät automatisch das passende x64- oder ARM64-Paket.
 
 ## Lokale Daten und Datenschutz
+
+Unter **Einstellungen → Beta-Funktionen → Lokaler KI-Assistent** kann eine lokale Ollama-Integration aktiviert werden. Vor der Aktivierung zeigt die App Modell, Downloadumfang und die erkannten RAM-Daten. Sie wählt **Qwen 3.5 2B** ab 8 GB RAM, **4B** ab 12 GB und **9B** ab 24 GB. Die Auswahl ist bewusst konservativ und setzt keine GPU voraus; ohne passende GPU können Antworten länger dauern.
+
+Ein vorhandenes Ollama wird verwendet. Fehlt Ollama unter Windows x64 oder ARM64, lädt MAR Helper das offizielle portable Paket aus dem Ollama-GitHub-Release, prüft dessen SHA-256-Prüfsumme und installiert es im eigenen App-Datenordner. Ein separates Terminal, Administratorrechte oder ein manueller Installer sind nicht nötig. Anschliessend wird das Modell über Ollama heruntergeladen. Fortschritt und Fehler werden in den Einstellungen und im Chat angezeigt; unterbrochene Modelldownloads können erneut gestartet werden. Auf anderen Betriebssystemen muss Ollama zunächst manuell installiert sein.
+
+Bei aktiviertem Assistenten prüft MAR Helper beim Appstart Ollama und startet es bei Bedarf unsichtbar im Hintergrund. Rechts unten öffnet ein schwebender Button den Chat. Der Assistent kann Journal, Prompts, Chats, Modellliste und Aufgaben lesen, erstellen, bearbeiten und löschen, Rohtext importieren, Module umschalten sowie Sitzungen starten, pausieren, fortsetzen und speichern. Änderungen werden validiert, zusammenhängend gespeichert und sind über die normale Änderungshistorie rückgängig machbar. Bei zwischenzeitlich geänderten App-Daten wird die Anfrage zur Vermeidung veralteter Überschreibungen abgebrochen.
+
+Anfragen und App-Inhalte werden ausschliesslich an die lokale Ollama-API gesendet. Nur die Einrichtung benötigt Internet für Laufzeit- und Modelldownloads. Angeheftete Textdateien (TXT, Markdown, CSV, TSV, JSON, LOG bis 1 MB) können gelesen werden; andere Dateiformate stehen derzeit als Metadaten zur Verfügung. Exportdialoge, Git-Aktionen und weitere Einstellungen werden über die App-Oberfläche bedient. Der Chatverlauf bleibt nur für die aktuelle App-Sitzung im Speicher. Beim Deaktivieren oder Beenden werden Anfragen/Downloads abgebrochen und nur ein durch MAR Helper gestarteter Ollama-Prozess beendet; ein vorher laufendes Ollama bleibt erhalten. Installierte Modelle und Laufzeitdateien bleiben auf dem Gerät.
 
 MAR Helper speichert deine Daten standardmässig lokal auf deinem Gerät. Timerzustände werden direkt bei Start, Pause, Fortsetzen und Beenden gesichert. Exporte werden nur an einem von dir gewählten Speicherort abgelegt.
 
@@ -95,6 +105,19 @@ npm test
 npm run build
 node scripts/smoke.cjs
 ```
+
+Gezielte KI-Tests nach dem Build:
+
+```powershell
+# Isolierte echte Windows-Neuinstallation (lädt das offizielle portable Ollama-Paket herunter)
+node scripts/test-ollama-runtime.cjs
+# Echte Modellanfragen gegen ein laufendes Ollama mit installiertem qwen3.5:9b
+node scripts/test-assistant-live.cjs
+# Aktivierungsdialog, Chatfenster, App-Neustart und Deaktivierung
+node scripts/smoke-assistant.cjs
+```
+
+Diese Tests verwenden eigene Profile unter `.smoke-artifacts`; die Neuinstallation startet ihren Testserver auf Port 11439 mit leerem Modellordner und verändert die vorhandene Ollama-Installation nicht. Der UI-Test aktiviert das anhand des RAM gewählte Modell und lädt es bei Bedarf herunter.
 
 Der Smoke-Test startet die gebaute Electron-App isoliert und prüft Renderer, Preload-Bridge und grundlegendes Rendering. Ein Screenshot wird nur lokal unter `.smoke-artifacts` erzeugt.
 

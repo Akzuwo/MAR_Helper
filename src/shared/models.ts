@@ -25,8 +25,21 @@ export interface AppSettings {
   betaFeatures: BetaFeatureSettings;
   autoExport: AutoExportSettings;
   cloudSave: CloudSaveSettings;
+  localAssistant: LocalAssistantSettings;
   termsAcceptedAt?: string;
 }
+
+export interface LocalAssistantSettings { enabled: boolean; model: string }
+export interface AssistantSetupPlan {
+  platform: string; arch: string; memoryGb: number; model: string; modelDownloadGb: number;
+  runtimeInstalled: boolean; supported: boolean; reason: string;
+}
+export interface AssistantStatus {
+  phase: 'disabled' | 'checking' | 'downloading-runtime' | 'installing-runtime' | 'starting' | 'downloading-model' | 'ready' | 'error';
+  message: string; percent?: number; model?: string;
+}
+export interface AssistantChatMessage { role: 'user' | 'assistant'; content: string }
+export type AssistantChatResult = { ok: true; message: string; changes: string[]; state: AppState } | { ok: false; message: string };
 
 export interface VisualEffectSettings {
   scrollEffects: boolean;
@@ -246,6 +259,13 @@ export type UpdateActionResult = { ok: true } | { ok: false; message: string };
 export type UpdateInstallationResult = { state: 'success' | 'error'; version: string; message?: string };
 
 export interface MarHelperApi {
+  getAssistantPlan: () => Promise<AssistantSetupPlan>;
+  getAssistantStatus: () => Promise<AssistantStatus>;
+  retryAssistantSetup: () => Promise<void>;
+  cancelAssistant: () => Promise<void>;
+  chatWithAssistant: (messages: AssistantChatMessage[], page: string) => Promise<AssistantChatResult>;
+  onAssistantStatus: (listener: (status: AssistantStatus) => void) => () => void;
+  onAssistantStateUpdated: (listener: (state: AppState) => void) => () => void;
   loadState: () => Promise<AppState>;
   saveState: (state: AppState) => Promise<AppState>;
   getHistoryStatus: () => Promise<HistoryStatus>;
